@@ -719,3 +719,42 @@ body{background:#e9f1ec;color:#20382e}
 .portal-login .link-button{color:#3f7d66}
 .portal-login .login-panel{background:#f8fbf9}
 .pasture-site .overview-section{background:#eef4f0}
+/* Comfortable palette: deep ink-green anchors + soft light-green surfaces */
+:root{--cream:#eaf2ec;--paper:#f7fbf8;--warm:#e4eee7;--sage:#d9e7de;--grass:#5f8b74;--grass-light:#9dc2ae;background:#f0f6f2;color:#20382e}
+body{background:#f0f6f2;color:#20382e}
+.supply-site,.pasture-site,.public-site{background:#f0f6f2;color:#20382e}
+.supply-site .site-header,.pasture-site .site-header{background:rgba(247,251,248,.95);border-bottom-color:#d8e5dc}
+.supply-site .brand,.pasture-site .brand{color:#173a2e}
+.supply-site .site-header nav,.pasture-site .site-header nav{color:#587466}
+.supply-site .site-header nav a:hover,.pasture-site .site-header nav a:hover{color:#173a2e}
+.supply-site .iot-section-nav,.pasture-site .iot-section-nav{background:rgba(247,251,248,.93);border-bottom-color:#d8e5dc;color:#587466;box-shadow:0 5px 20px rgba(23,58,46,.05)}
+.supply-site .iot-section-nav a:hover,.pasture-site .iot-section-nav a:hover{color:#173a2e}
+.supply-site .iot-section-nav a:last-child{color:#1c4438}
+.supply-site .iot-hero{background:radial-gradient(circle at 86% 8%,rgba(95,148,124,.26),transparent 32%),radial-gradient(circle at 6% 92%,rgba(28,68,56,.5),transparent 38%),linear-gradient(122deg,#0b1f1a 0%,#12372c 52%,#1f5a47 100%)}
+.supply-site .pasture-loop-band{background:#e4eee7}
+.pasture-site .overview-section{background:#f0f6f2}
+.pasture-site #capabilities{background:radial-gradient(circle at 5% 5%,rgba(28,68,56,.06),transparent 32%),#f4f9f6}
+.pasture-site .section-intro h2{color:#16332a}
+.pasture-site .section-intro>p{color:#5c7468}
+.pasture-site .iot-eyebrow{color:#5f8b74}
+.pasture-site .iot-accordion details{border-bottom-color:#dbe7df}
+.pasture-site .iot-accordion summary{color:#3d6152}
+.pasture-site .iot-accordion summary .loop-number{border-color:#d3e1d8;color:#6f8f7e}
+.pasture-site .iot-accordion summary i{color:#6f8f7e}
+.pasture-site .iot-accordion details[open] summary{color:#1c4438}
+.pasture-site .iot-accordion details[open] summary .loop-number{background:#e6f0ea;border-color:#8fb4a2;color:#3f7d66}
+.pasture-site .iot-accordion details>p{color:#6b8175}
+.pasture-site .iot-accordion .inline-link{color:#3f7d66}
+.pasture-site .overview-visual{background:linear-gradient(145deg,#f7fbf8,#e9f2ec);border-color:#dbe7df;box-shadow:0 24px 60px rgba(23,58,46,.08)}
+.pasture-site .overview-visual>p{color:#75897d}
+.supply-site .account-section,.pasture-site .account-section{background:radial-gradient(circle at 88% 12%,rgba(31,90,71,.12),transparent 38%),linear-gradient(135deg,#f2f8f4,#e5efe8)}
+.supply-site .account-section:before,.pasture-site .account-section:before{border-color:rgba(63,125,102,.16)}
+.pasture-site .account-copy h2{color:#16332a}
+.pasture-site .account-copy>p{color:#5c7468}
+.pasture-site .account-copy>div{color:#4b6558}
+.pasture-site .account-copy>div .icon{color:#3f7d66}
+.supply-site .site-header nav a:after,.supply-site .iot-section-nav a:after{background:#5f947c}
+.pasture-site .whiteboard-section{background:radial-gradient(circle at 5% 90%,rgba(105,134,91,.2),transparent 32%),radial-gradient(circle at 96% 0,rgba(145,168,115,.14),transparent 30%),#12352c}
+.pasture-site .workflow-band{background:radial-gradient(circle at 90% 0,rgba(85,124,73,.24),transparent 34%),#173a30}
+.pasture-site .iot-footer{background:#102e26}
+.portal-login{background:#eef5f0}
