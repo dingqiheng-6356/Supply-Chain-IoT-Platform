@@ -290,3 +290,108 @@ body:has(.wb-public), body:has(.wb-public-loading) { overflow: hidden; backgroun
   .wb-board-card, .wb-board-open, .wb-toast, .wb-component { transition: none; }
   .wb-public-loading > span { animation: none; }
 }
+
+/* ===== 实时指标卡片（科技感折线图） ===== */
+.wb-metric-card {
+  width: 100%; height: 100%;
+  position: relative;
+  background: linear-gradient(160deg, rgba(8,28,22,.92), rgba(6,20,16,.96));
+  border: 1px solid rgba(34,211,238,.18);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 0 24px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.04);
+}
+.wb-metric-card::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse at 80% 0%, rgba(34,211,238,.08), transparent 60%);
+  pointer-events: none;
+}
+.wb-metric-chart {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+}
+.wb-metric-head {
+  position: absolute; top: 10px; left: 14px; right: 14px;
+  display: flex; align-items: center; justify-content: space-between;
+  z-index: 2;
+}
+.wb-metric-name {
+  font-size: 12px; color: rgba(200,230,220,.7);
+  letter-spacing: .5px; font-weight: 500;
+}
+.wb-metric-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  box-shadow: 0 0 8px currentColor;
+  animation: wb-pulse 1.6s ease-in-out infinite;
+}
+@keyframes wb-pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(1.4)} }
+.wb-metric-value {
+  position: absolute; bottom: 12px; left: 14px;
+  font-size: 38px; font-weight: 700;
+  font-family: 'SF Mono','Consolas',monospace;
+  line-height: 1; z-index: 2;
+}
+.wb-metric-value small {
+  font-size: 14px; font-weight: 500;
+  margin-left: 4px; opacity: .7;
+}
+.wb-metric-empty {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  color: rgba(200,230,220,.5); font-size: 13px;
+  text-align: center; line-height: 1.6;
+}
+
+/* ===== 背景组件 ===== */
+.wb-background {
+  width: 100%; height: 100%;
+  position: relative;
+  border-radius: 0;
+}
+.wb-bg-grid {
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(34,211,238,.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(34,211,238,.06) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+.wb-bg-dots {
+  position: absolute; inset: 0;
+  background-image: radial-gradient(rgba(255,255,255,.12) 1.5px, transparent 1.5px);
+  background-size: 24px 24px;
+}
+.wb-bg-circuit {
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(90deg, rgba(34,211,238,.1) 1px, transparent 1px),
+    linear-gradient(0deg, rgba(34,211,238,.1) 1px, transparent 1px);
+  background-size: 60px 60px;
+  background-position: 30px 30px;
+}
+.wb-bg-circuit::after {
+  content: '';
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(circle at 30px 30px, rgba(34,211,238,.2) 3px, transparent 3px),
+    radial-gradient(circle at 90px 90px, rgba(34,211,238,.15) 2px, transparent 2px);
+  background-size: 120px 120px;
+}
+
+/* ===== 画布科技感升级 ===== */
+.wb-canvas {
+  box-shadow: 0 0 60px rgba(0,0,0,.5), inset 0 0 80px rgba(0,0,0,.3);
+}
+.wb-canvas.show-grid {
+  background-image:
+    linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px),
+    linear-gradient(rgba(34,211,238,.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(34,211,238,.03) 1px, transparent 1px);
+  background-size: 20px 20px, 20px 20px, 100px 100px, 100px 100px;
+}
+
+/* ===== 科技感组件库按钮 ===== */
+.wb-component[data-wb-add="metric"] span { color: #22d3ee; }
+.wb-component[data-wb-add="background"] span { color: #a78bfa; }
+
