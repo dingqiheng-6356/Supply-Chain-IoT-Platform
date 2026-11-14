@@ -4,6 +4,26 @@
 
 **首次接手请先阅读 [项目交接与使用指南](项目交接与使用指南.md)**：包含平台介绍、管理员开通、公司创建、邀请码注册、设备分配、新闻发布和让 AI 修改功能的方法。部署到新服务器请继续阅读下节。
 
+## 快速开始（本机运行）
+
+```bash
+cd "Supply Chain IoT Platform"
+python platform_server.py
+```
+
+打开 **http://localhost:8002/** ，使用下方演示账号登录（密码均为 `123456`）：
+
+| 用户名 | 姓名 | 角色 | 说明 |
+| --- | --- | --- | --- |
+| `owner` | 牧源管理员 | 公司管理员 | 推荐日常使用，可管理设备、场景、成员 |
+| `developer` | 陈默 | 客户开发者 | 设备接入与配置 |
+| `customer` | 林晓 | 公司客户 | 只读已分配设备 |
+| `admin` | 周宁 | 平台管理员 | 平台总览与公司管理 |
+
+- 默认 Web 端口 `8002`，MQTT 端口 `1883`
+- 牧业链演示设备：`ENV-001`（正常）、`ENV-002`（氨气超标告警）、`ENV-003`（离线）
+- 启动参数：`--port`、`--mqtt-port`、`--database`、`--production`、`--public-origin`
+
 ## 新服务器、新域名部署与交接
 
 本节适用于接手者在 **Ubuntu 24.04 LTS、Python 3.12、systemd、Nginx** 环境部署完整后端平台。其他发行版请调整安装命令。域名、IP、目录和账号均由新维护者决定；本文示例不绑定原作者服务器。
@@ -371,12 +391,12 @@ node tests/portal.test.cjs
 新增 `platform_server.py`，一次启动网页、设备登记数据库和带设备认证的 MQTT Broker。此模式模拟云端平台的接入流程，不依赖华为云服务，也不需要先启动匿名测试 Broker。
 
 ```bash
-cd /home/vovl773/rd-web
-.venv/bin/pip install -r requirements.txt
-.venv/bin/python platform_server.py --port 8002
+cd "Supply Chain IoT Platform"
+pip install -r requirements.txt
+python platform_server.py --port 8002
 ```
 
-打开 `http://127.0.0.1:8002/`，登录 `developer`（密码 `123456`）→ **设备管理**：
+打开 `http://127.0.0.1:8002/`，登录 `owner`（密码 `123456`，公司管理员）或 `developer` → **设备管理**：
 
 1. 填写名称、设备类型和安装位置；设备 ID 留空可自动生成。
 2. 点击“创建设备并生成接入配置”，设备立即归属当前开发者的公司，显示“待激活”。
@@ -449,11 +469,23 @@ node tests/portal.test.cjs
 
 | 身份 | 登录后入口 | 功能 |
 | --- | --- | --- |
-| 平台管理员 `admin` | 供应链平台 | 农牧链 / 工业链 / 物流链 / 测试，查看公司，编辑公司 Markdown 页面 |
+| 平台管理员 `admin` | 供应链平台 | 平台总览、公司与管理员、跨公司查看设备 |
+| 公司管理员 `company_admin` | 所属公司 | 公司管理（场景、成员邀请、设备分配）、管理本公司设备 |
 | 客户开发者 `developer` | 所属公司 | 首页 / 新闻 / 我的，查看设备，添加 / 删除 / 恢复本公司设备，修改阈值、查看报错 |
-| 客户 `customer` | 所属公司 | 首页 / 新闻 / 我的，只读设备数据 |
+| 公司客户 `customer` | 所属公司 | 首页 / 新闻 / 我的，只读设备数据 |
 
-演示账号为 `admin`、`developer`、`customer`、`customer_b`，密码均为 `123456`。`customer` 和 `developer` 属于公司 A；`customer_b` 属于公司 B。
+### 演示账号（本机 / 静态演示）
+
+所有演示账号密码均为 `123456`（SHA-256: `8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92`）：
+
+| 用户名 | 姓名 | 角色 | 所属公司 |
+| --- | --- | --- | --- |
+| `owner` | 牧源管理员 | 公司管理员 `company_admin` | company-c（推荐日常使用） |
+| `developer` | 陈默 | 客户开发者 `developer` | company-c |
+| `customer` | 林晓 | 公司客户 `customer` | company-c |
+| `admin` | 周宁 | 平台管理员 `admin` | — |
+
+后端模式首次启动会从 `users.json` 导入以上体验账号；正式部署使用 `manage_accounts.py` 创建正式账号，生产模式（`--production`）禁用体验账号。
 
 管理员进入农牧链后可选种植园、养殖场；工业链可选生产、维保；物流链可选仓储，云仓物流展示仓库温度、湿度与光照强度的模拟采样。进入场景后选择公司。
 
@@ -543,7 +575,14 @@ cp dist/news-index.json news-index.json
 
 ### GitHub Pages 自动发布
 
-仓库已包含 `.github/workflows/pages.yml`。在 GitHub 仓库 **Settings → Pages → Source** 选择 **GitHub Actions**，之后推送到 `main` 会自动扫描 `_news/`、生成 `dist/` 并发布。文章格式错误会让构建失败，避免静默漏发；本地新闻页会显示错误文件。本次未在 GitHub 远程执行发布。
+仓库已包含 `.github/workflows/pages.yml`。在 GitHub 仓库 **Settings → Pages → Build and deployment → Source** 选择 **GitHub Actions**，之后推送到 `main` 会自动扫描 `_news/`、生成 `dist/` 并发布。
+
+> **注意：GitHub Pages 仅能托管静态演示站。** 本平台核心功能（登录鉴权、设备数据 API、告警闭环、白板持久化、MQTT Broker）依赖 Python 后端 `platform_server.py`，GitHub Pages 无法运行 Python，因此部署到 Pages 后只能浏览首页和静态演示数据，不能登录或操作真实设备。完整功能需按本文「新服务器部署」章节部署到支持 Python 的服务器。
+
+部署失败排查：
+1. 确认 Settings → Pages → Source 已设为 **GitHub Actions**（不是 "Deploy from a branch"）。
+2. 确认 `_news/*.md` 的 YAML 头信息格式正确（`title` 必填、`companyId` 需存在于 `platform.json`）。
+3. 本地运行 `python scripts/build_site.py` 验证构建是否成功。
 
 ## 本地预览与测试
 
