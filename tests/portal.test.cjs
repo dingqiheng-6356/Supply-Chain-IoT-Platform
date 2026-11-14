@@ -29,7 +29,7 @@ assert.throws(()=>run("parseTemplate('bad')"),/dashboard/);
 assert.throws(()=>run("parseTemplate(template+template)"),/dashboard/);
 assert.throws(()=>run("parseTemplate(template.replace('green','red'))"),/accent/);
 assert.equal(run("markdown('<img src=x onerror=alert(1)>').includes('<img')"),false);
-run("currentUser=users.find(u=>u.username==='customer');companyId=currentUser.companyId;view='company';templates[companyId]=template;");
+run("currentUser=users.find(u=>u.username==='customer');companyId=currentUser.companyId;chainId='livestock';view='company';templates[companyId]=template;");
 assert.equal(run('companyDevices().length'),3);
 assert.equal(run('warningDevices().length'),1);
 run('openWarnings()');assert.equal(run('deviceId'),'ENV-002');assert.equal(run('view'),'detail');assert.equal(run('canEdit()'),false);

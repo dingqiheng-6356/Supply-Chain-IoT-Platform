@@ -219,3 +219,5 @@ select:focus,select:focus-visible{outline:none!important;box-shadow:none}
 .link-button:hover{color:#1f5138}
 .auth-extra{margin:8px 0 0;text-align:right}
 @media(max-width:650px){.code-row{flex-wrap:wrap}.code-button{width:100%}}
+.chain-lock-note{display:flex;gap:8px;align-items:flex-start;margin:10px 14px 0;padding:10px 12px;border:1px dashed #cfdde6;border-radius:10px;background:#f7fbfd;color:#5c7484;font-size:12px;line-height:1.6}
+.chain-lock-note svg{width:15px;height:15px;flex:none;margin-top:2px;color:#2f7f9e}
