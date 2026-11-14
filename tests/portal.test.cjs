@@ -98,7 +98,7 @@ assert.equal(run("platform.categories.find(c=>c.id==='breeding').chainId"),'live
 assert.equal(run("platform.categories.find(c=>c.id==='breeding').sceneIds.join(',')"),'pig-house');
 run("currentUser=users.find(u=>u.role==='admin');openCompany('company-c')");
 assert.equal(run('chainId'),'livestock');assert.equal(run('companyDevices().length'),3);
-assert.equal(run("authPage().includes('牧业单链')"),true);
+assert.equal(run("authPage().includes('多链并行')&&authPage().includes('平台首页')"),true);
 console.log('Livestock checks passed: single chain, breeding/company routing and public introduction.');
 
 run("currentUser=users.find(u=>u.role==='admin');openCompany('company-c');openDevice('ENV-003')");

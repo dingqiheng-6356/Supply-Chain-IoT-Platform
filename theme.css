@@ -602,3 +602,40 @@ input::placeholder,textarea::placeholder{color:#9aa89b}
  .pasture-site .will-reveal,.workspace .will-reveal{opacity:1;transform:none}
  .console-trend{stroke-dashoffset:0}
 }
+/* Supply chain platform landing palette */
+.supply-site .site-header{background:rgba(248,252,254,.94);border-bottom-color:#dbe6ee}
+.supply-site .brand{color:#123548}
+.supply-site .brand-mark{background:linear-gradient(145deg,#12405a,#2f7f9e);color:#eaf7fd;box-shadow:0 6px 16px rgba(18,53,72,.16)}
+.supply-site .site-header nav{color:#58707f}
+.supply-site .site-header nav a:hover{color:#12405a}
+.supply-site .site-header nav a:after{background:#2f8fae}
+.supply-site .header-login{background:#12405a;border-color:#12405a;color:#f4fbff}
+.supply-site .header-login:hover{background:#0c3045;border-color:#0c3045}
+.supply-site .iot-section-nav{background:rgba(248,252,254,.92);border-bottom-color:#dbe6ee;color:#54707f}
+.supply-site .iot-section-nav a:hover{color:#12405a}
+.supply-site .iot-section-nav a:after{background:#3d97b5}
+.supply-site .iot-section-nav a:last-child{color:#12405a}
+.supply-site .iot-hero{background:radial-gradient(circle at 86% 8%,rgba(61,159,194,.28),transparent 30%),radial-gradient(circle at 4% 92%,rgba(42,125,158,.24),transparent 36%),linear-gradient(122deg,#071d2c 0%,#0d2f46 52%,#155775 100%)}
+.supply-site .hero-eyebrow{color:#9fd3e6}
+.supply-site .hero-eyebrow i{background:#6fbfd9}
+.supply-site .hero-copy h1{color:#f4fbff}
+.supply-site .hero-copy h1 em{color:#bfe6f5}
+.supply-site .hero-copy>p{color:#cfe2ee}
+.supply-site .iot-button{background:#e8f6fb;border-color:#f2fbff;color:#0d3448}
+.supply-site .iot-button:hover{background:#f8fdff;box-shadow:0 16px 34px rgba(4,20,31,.42)}
+.supply-site .hero-more{color:#dbeaf3}
+.supply-site .hero-floating-card{color:#123548}
+.supply-site .hero-bottom-note{color:#9fbccd;border-top-color:rgba(219,234,243,.18)}
+.supply-site .hero-bottom-note i{background:#6fbfd9}
+.supply-site .pasture-loop-band{background:#eef4f7}
+.platform-console .chain-list{display:grid;gap:8px;margin:2px 0 4px}
+.platform-console .chain-row{display:flex;align-items:center;gap:12px;padding:11px 14px;border:1px solid #e3ecf0;border-radius:12px;background:#fbfdfe}
+.platform-console .chain-row>div{flex:1;min-width:0}
+.platform-console .chain-row strong{display:block;font-size:12px;color:#123548}
+.platform-console .chain-row small{display:block;margin-top:3px;color:#8299a4;font-size:10px}
+.platform-console .chain-dot{width:8px;height:8px;border-radius:50%;flex:none}
+.platform-console .chain-dot.online{background:#3f9e6b;box-shadow:0 0 0 4px rgba(63,158,107,.12)}
+.platform-console .chain-dot.building{background:#c9a24a;box-shadow:0 0 0 4px rgba(201,162,74,.12)}
+.platform-console .chain-state{font-size:10px;padding:3px 8px;border-radius:99px;flex:none}
+.platform-console .chain-state.online{background:#e7f4ec;color:#2f7a52}
+.platform-console .chain-state.building{background:#f8efdc;color:#8a6c25}
