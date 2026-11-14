@@ -480,6 +480,10 @@ def main():
     # 云平台（Render/Railway 等）通过 PORT 环境变量指定监听端口。
     if os.environ.get('PORT'):
         args.port = int(os.environ['PORT'])
+    # Render 会自动注入对外访问地址，用它补全 public-origin（用于 Cookie、分享链接和 Host 校验）。
+    if not args.public_origins and os.environ.get('RENDER_EXTERNAL_URL'):
+        args.public_origins = [os.environ['RENDER_EXTERNAL_URL'].rstrip('/')]
+        args.public_origin = args.public_origins[0]
     registry = DeviceRegistry(args.database.resolve(), ROOT,import_demo=not args.production,retention_days=args.retention_days)
     if not args.production:
         registry.import_demo_devices()

@@ -6,7 +6,7 @@ services:
     region: singapore
     branch: main
     buildCommand: pip install -r requirements.txt
-    startCommand: python platform_server.py --host 0.0.0.0 --no-mqtt --public-origin https://muyuan-livestock-iot.onrender.com
+    startCommand: python platform_server.py --host 0.0.0.0 --no-mqtt
     healthCheckPath: /api/platform
     autoDeploy: true
     envVars:
