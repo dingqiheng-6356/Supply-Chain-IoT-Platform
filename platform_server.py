@@ -6,6 +6,7 @@ from functools import partial
 from http.cookies import SimpleCookie
 from http.server import ThreadingHTTPServer
 import json
+import os
 from pathlib import Path
 import secrets
 import socket
@@ -102,7 +103,8 @@ class PlatformHandler(Handler):
             if method == 'GET' and path == '/api/platform':
                 self.respond({'enabled': True, 'mqttHost': self.server.device_host,
                               'mqttFallbackHost': getattr(self.server,'device_host_fallback',None),
-                              'mqttPort': getattr(self.server,'device_port',self.server.mqtt_port), 'broker': 'running',
+                              'mqttPort': getattr(self.server,'device_port',self.server.mqtt_port),
+                              'broker': 'running' if getattr(self.server,'mqtt_enabled',True) else 'disabled',
                               'mqttTls':getattr(self.server,'mqtt_tls',False),
                               'demoAccounts':not getattr(self.server,'production',False),
                               'retentionDays':registry.retention_days,
@@ -362,6 +364,7 @@ def parse_args(argv=None):
     parser.add_argument('--mqtt-cert',type=Path)
     parser.add_argument('--mqtt-key',type=Path)
     parser.add_argument('--mqtt-ca',type=Path,help='供设备信任的根 CA PEM 公钥证书')
+    parser.add_argument('--no-mqtt',action='store_true',help='不启动内置 MQTT Broker（仅 Web 模式，适合不开放 1883 端口的云平台）')
     parser.add_argument('--production',action='store_true',help='禁用演示账号，并要求 HTTPS / MQTTS')
     parser.add_argument('--retention-days',type=int,default=90)
     parser.add_argument('--database', type=Path, default=ROOT / 'data' / 'platform.sqlite3')
@@ -451,6 +454,7 @@ def configure_server(server,registry,args):
     server.public_origin=args.public_origin
     server.secure_cookies=bool(args.https_cert or any(item.startswith('https://') for item in args.public_origins))
     server.mqtt_tls=bool(args.mqtt_cert)
+    server.mqtt_enabled=not args.no_mqtt
     server.mqtt_ca=Path(args.mqtt_ca).read_text() if args.mqtt_ca else ''
     server.mqtt_local_only = args.mqtt_bind in ('127.0.0.1', 'localhost')
     server.device_host=args.device_host or ('127.0.0.1' if server.mqtt_local_only else lan_address())
@@ -473,6 +477,9 @@ def configure_server(server,registry,args):
 
 def main():
     args=parse_args()
+    # 云平台（Render/Railway 等）通过 PORT 环境变量指定监听端口。
+    if os.environ.get('PORT'):
+        args.port = int(os.environ['PORT'])
     registry = DeviceRegistry(args.database.resolve(), ROOT,import_demo=not args.production,retention_days=args.retention_days)
     if not args.production:
         registry.import_demo_devices()
@@ -480,15 +487,20 @@ def main():
         with registry.connect() as db:
             if not db.execute("SELECT 1 FROM accounts WHERE role='admin' AND demo=0 AND disabled=0 AND password_hash LIKE 'scrypt$%'").fetchone():
                 raise SystemExit('请先使用 manage_accounts.py 在此数据库创建正式管理员。')
-    broker = LocalBroker(registry,args.mqtt_bind,args.mqtt_port,args.mqtt_cert,args.mqtt_key)
-    broker.start()
+    broker = None
+    if not args.no_mqtt:
+        broker = LocalBroker(registry,args.mqtt_bind,args.mqtt_port,args.mqtt_cert,args.mqtt_key)
+        broker.start()
     monitors = {'usb': SerialMonitor(args.device, args.baudrate)}
     server=None
     try:
         server = ThreadingHTTPServer((args.host, args.port), partial(PlatformHandler, monitors=monitors, directory=str(ROOT)))
         configure_server(server,registry,args)
         print(f'网页：{args.public_origin or ("https" if args.https_cert else "http")+"://127.0.0.1:"+str(args.port)}/',flush=True)
-        print(f'板子接入：{server.device_host}:{server.device_port}（'+('TLS' if server.mqtt_tls else '本机明文 MQTT')+'）',flush=True)
+        if broker:
+            print(f'板子接入：{server.device_host}:{server.device_port}（'+('TLS' if server.mqtt_tls else '本机明文 MQTT')+'）',flush=True)
+        else:
+            print('MQTT Broker 已禁用（--no-mqtt）：仅提供网页与接口。',flush=True)
         print(f'历史保留 {args.retention_days} 天；Ctrl+C 停止。',flush=True)
         server.serve_forever()
     except KeyboardInterrupt:
@@ -496,7 +508,8 @@ def main():
     finally:
         if server:
             server.server_close()
-        broker.close()
+        if broker:
+            broker.close()
         for monitor in monitors.values():
             monitor.close()
 
