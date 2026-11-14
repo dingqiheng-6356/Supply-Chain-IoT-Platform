@@ -1,0 +1,23 @@
+{
+  "chains": [{
+    "id": "livestock",
+    "name": "牧业链",
+    "icon": "environment",
+    "color": "green",
+    "description": "连接养殖现场的每一个感知终端，让环境、告警与展示形成闭环。"
+  }],
+  "categories": [{
+    "id": "breeding",
+    "chainId": "livestock",
+    "name": "智慧养殖场",
+    "icon": "environment",
+    "sceneIds": ["pig-house"]
+  }],
+  "companies": [{
+    "id": "company-c",
+    "name": "牧源养殖",
+    "description": "智慧养殖 · 温湿氨气监测 · 可视化展示",
+    "categoryId": "breeding",
+    "template": "content/companies/company-c.md"
+  }]
+}
