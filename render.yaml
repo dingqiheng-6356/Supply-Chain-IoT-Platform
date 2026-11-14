@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: muyuan-livestock-iot
+    runtime: python
+    plan: free
+    region: singapore
+    branch: main
+    buildCommand: pip install -r requirements.txt
+    startCommand: python platform_server.py --host 0.0.0.0 --no-mqtt --public-origin https://muyuan-livestock-iot.onrender.com
+    healthCheckPath: /api/platform
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.10
+      - key: PYTHONUNBUFFERED
+        value: "1"
