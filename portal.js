@@ -257,18 +257,16 @@ function platformPage(){
  return `<div class="admin-dashboard"><section class="admin-hero"><div><span class="admin-kicker">PLATFORM / OPERATIONS</span><h1>平台管理总览</h1><p>供应链物联网平台</p><div class="admin-hero-tags"><span>${icon('shield')} 跨公司管理</span><span>${platform.chains.length} 条产业链 · ${platform.categories.length} 个业务场景</span></div></div><div class="admin-network" aria-hidden="true"><span>${icon('grid')}</span><i>${icon('environment')}</i><i>${icon('power')}</i><i>${icon('device')}</i></div></section><div class="admin-metrics">${[['users','接入公司',platform.companies.length,'家','按产业与场景独立管理','blue'],['device','设备总数',h.total,'台',h.normal+' 台正常运行','purple'],['check','在线设备',h.online,'台',(h.total?Math.round(h.online/h.total*100):0)+'% 在线率','green'],['bell','待关注设备',attention.length,'台',h.warning+' 台预警 · '+h.offline+' 台离线','orange']].map(([i,label,n,unit,note,color])=>`<section class="admin-metric ${color}"><span class="feature-icon ${color}">${icon(i)}</span><span>${label}</span><strong>${n}<small>${unit}</small></strong><p>${note}</p></section>`).join('')}</div><div class="admin-section-title"><div><span class="admin-kicker">INDUSTRY SPACES</span><h2>产业工作空间</h2></div><button class="secondary" data-route="tests">${icon('code')} 设备接入测试</button></div><div class="admin-industries">${platform.chains.map(c=>{const categories=platform.categories.filter(x=>x.chainId===c.id),companies=platform.companies.filter(x=>categories.some(k=>k.id===x.categoryId)),rows=devices.filter(d=>companies.some(k=>k.id===d.companyId)),health=platformHealth(rows);return `<button class="admin-industry ${safe(c.color)}" data-chain="${safe(c.id)}"><div class="admin-industry-top"><span class="feature-icon ${safe(c.color)}">${icon(c.icon)}</span><span>${companies.length} 家公司 / ${rows.length} 台设备</span>${c.status==='building'?'<span class="badge blue">建设中</span>':''}${icon('arrow')}</div><h3>${safe(c.name)}</h3><p>${safe(c.description)}</p><div class="admin-category-tags">${categories.map(k=>`<span>${safe(k.name)}</span>`).join('')}</div><div class="admin-status-track" aria-hidden="true"><i style="width:${rows.length?health.normal/rows.length*100:0}%"></i><i style="width:${rows.length?health.warning/rows.length*100:0}%"></i><i style="width:${rows.length?health.offline/rows.length*100:0}%"></i></div><small>正常 ${health.normal} · 预警 ${health.warning} · 离线 ${health.offline}</small></button>`;}).join('')}</div><div class="admin-management-grid"><section class="admin-panel"><div class="admin-section-title"><h2>公司管理</h2><span>${platform.companies.length} 家公司</span></div><div class="table-wrap"><table class="admin-company-table"><thead><tr><th>公司 / 场景</th><th>设备</th><th>运行状态</th><th>管理</th></tr></thead><tbody>${platform.companies.map(c=>{const h=platformHealth(devices.filter(d=>d.companyId===c.id));return `<tr><td><button data-company="${safe(c.id)}">${safe(c.name)}</button><small>${safe(platform.categories.find(k=>k.id===c.categoryId)?.name||'未分类')}</small></td><td>${h.total} 台</td><td><span class="admin-table-state ${h.warning||h.offline?'attention':'healthy'}">${h.warning||h.offline?h.warning+' 预警 / '+h.offline+' 离线':'运行正常'}</span></td><td><button class="dashboard-text-link" data-company="${safe(c.id)}">管理 ${icon('arrow')}</button></td></tr>`;}).join('')}</tbody></table></div></section><section class="admin-panel admin-attention"><div class="admin-section-title"><h2>待关注设备</h2><span>${attention.length} 台</span></div>${attention.map(raw=>{const d=effective(raw),c=platform.companies.find(c=>c.id===d.companyId);return `<button class="admin-alert" data-admin-device="${safe(d.id)}"><span class="feature-icon ${d.online?'orange':'blue'}">${icon(d.online?'bell':'device')}</span><span><strong>${safe(d.name)}</strong><small>${safe(c?.name||'未分配公司')} · ${d.online?'指标超出范围':'设备离线'}</small></span>${icon('arrow')}</button>`;}).join('')||'<p class="dashboard-empty">当前设备无异常</p>'}</section></div><p class="admin-data-note">统计来自当前 JSON 演示数据；点击异常设备可直接查看详情。</p></div>`;
 }
 
-const chainStorageKey='iot-selected-chain-v1';
 function currentChain(){return platform.chains.find(c=>c.id===chainId)||platform.chains.find(c=>c.id==='livestock')||platform.chains[0];}
 function chainSwitcher(){
  const c=chainId?platform.chains.find(x=>x.id===chainId):null,cats=platform.categories.filter(k=>k.chainId===c?.id);
  return `<div class="chain-switcher"><span class="feature-icon ${safe(c?.color||'green')}">${icon(c?.icon||'grid')}</span><span><small>当前供应链</small><strong>${safe(c?.name||'未选择')}</strong><em>${c?`${cats.length} 个业务场景`:'选择后进入工作台'}</em></span><button data-route="chains">${c?'切换':'选择'}</button></div>`;
 }
 function chainPickerPage(){
- const entered=sessionStorage.getItem(chainStorageKey);
  return heading('SUPPLY CHAIN / SELECT','选择供应链','平台已接入多条供应链，选择你要进入的模块，查看该链下的公司与设备。')+
  `<div class="chain-picker">${platform.chains.map(c=>{
   const online=c.status!=='building',cats=platform.categories.filter(k=>k.chainId===c.id),companies=platform.companies.filter(x=>cats.some(k=>k.id===x.categoryId)),own=companies.some(x=>x.id===currentUser?.companyId);
-  return `<button class="chain-card${online?'':' is-building'}${entered===c.id?' is-current':''}" ${online?`data-chain-enter="${safe(c.id)}"`:'disabled aria-disabled="true"'}>
+  return `<button class="chain-card${online?'':' is-building'}" ${online?`data-chain-enter="${safe(c.id)}"`:'disabled aria-disabled="true"'}>
    <span class="chain-card-icon ${safe(c.color||'green')}">${icon(c.icon)}</span>
    <span class="chain-card-body"><span class="chain-card-kicker">${online?'AVAILABLE':'COMING SOON'}</span><strong>${safe(c.name)}</strong><p>${safe(c.description)}</p><span class="chain-card-meta">${online?`${cats.length} 个业务场景 · ${companies.length} 家公司${own?' · 包含你所在的公司':''}`:'模块建设中，敬请期待'}</span></span>
    <span class="badge ${online?'green':'blue'}">${online?'进入':'建设中'}</span>
@@ -350,16 +348,14 @@ function render(live=false){
 }
 async function readJson(path){const response=await fetch(path,{cache:'no-store'});if(!response.ok)throw new Error(`无法读取 ${path}（${response.status}）`);return response.json();}
 async function passwordHash(text){const bytes=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(text));return Array.from(new Uint8Array(bytes),b=>b.toString(16).padStart(2,'0')).join('');}
-function enterUser(user,restore=false){
+function enterUser(user){
  currentUser=normalizeUser(user);sessionStorage.setItem('workspace-user',currentUser.id);notice='';organizationError='';deviceSceneFilter='';companyTab='home';companyId=currentUser.companyId||null;
- const savedChain=platform.chains.find(c=>c.id===sessionStorage.getItem(chainStorageKey)&&c.status!=='building');
  categoryId=company()?.categoryId||null;
  if(isAdmin()){view='platform';chainId=null;}
- else if(restore&&savedChain){chainId=savedChain.id;view='company';}
- else{sessionStorage.removeItem(chainStorageKey);chainId=null;view='chains';}
+ else{chainId=null;view='chains';}
  render();window.scrollTo({top:0,behavior:'instant'});
 }
-async function logout(){if(platformBackend)await platformRequest('logout',{method:'POST',body:'{}'}).catch(()=>{});resetRegistry();if(typeof historyQuery!=='undefined'){historyQuery=null;historyRequest++;}stopSerialPolling();sessionStorage.removeItem('workspace-user');sessionStorage.removeItem(chainStorageKey);currentUser=null;companyId=null;chainId=null;deviceId=null;companyMembers=[];companyScenes=[];organizationError='';notice='';authMode='login';render();window.scrollTo({top:0,behavior:'instant'});}
+async function logout(){if(platformBackend)await platformRequest('logout',{method:'POST',body:'{}'}).catch(()=>{});resetRegistry();if(typeof historyQuery!=='undefined'){historyQuery=null;historyRequest++;}stopSerialPolling();sessionStorage.removeItem('workspace-user');currentUser=null;companyId=null;chainId=null;deviceId=null;companyMembers=[];companyScenes=[];organizationError='';notice='';authMode='login';render();window.scrollTo({top:0,behavior:'instant'});}
 function bindAuth(){
  document.querySelectorAll('[data-auth]').forEach(b=>b.onclick=()=>{authMode=b.dataset.auth;notice='';render();document.querySelector('#account').scrollIntoView({block:'start'});});
  const toggle=document.querySelector('#toggle-password');
@@ -421,7 +417,7 @@ function bindPortal(){
   if(c.status==='building'){notice=`${c.name}模块建设中，敬请期待。`;render();return;}
   const cats=platform.categories.filter(k=>k.chainId===c.id),own=platform.companies.find(x=>x.id===currentUser.companyId);
   if(own&&!cats.some(k=>k.id===own.categoryId)){notice=`当前账号所属公司暂未开通${c.name}，请联系平台管理员。`;render();return;}
-  sessionStorage.setItem(chainStorageKey,c.id);chainId=c.id;
+  chainId=c.id;
   if(own){categoryId=own.categoryId;companyId=own.id;}
   companyTab='home';notice='';navigate('company');
  });
@@ -472,7 +468,7 @@ async function init(){
   const showcase=new URLSearchParams(location.search).get('showcase');if(showcase){await initPublicWhiteboard(showcase);return;}
   await Promise.all(platform.companies.map(async c=>{try{if(!/^content\/companies\/[a-z0-9-]+\.md$/.test(c.template))throw new Error('公司模板路径无效。');const r=await fetch('./'+c.template,{cache:'no-store'});if(!r.ok)throw new Error(`无法读取 ${c.template}`);templates[c.id]=await r.text();}catch(error){templateErrors[c.id]=error.message;}}));
   await loadNews();window.addEventListener('hashchange',routeArticleHash);
-  let u;if(platformBackend){try{u=(await platformRequest('session')).user;await refreshBeforeEnter(u,false);}catch{sessionStorage.removeItem('workspace-user');currentUser=null;}}else{const saved=sessionStorage.getItem('workspace-user');u=allUsers().find(u=>u.id===saved);}if(u){enterUser(u,true);routeArticleHash();}else render();
+  let u;if(platformBackend){try{u=(await platformRequest('session')).user;await refreshBeforeEnter(u,false);}catch{sessionStorage.removeItem('workspace-user');currentUser=null;}}else{const saved=sessionStorage.getItem('workspace-user');u=allUsers().find(u=>u.id===saved);}if(u){enterUser(u);routeArticleHash();}else render();
  }catch(error){app.innerHTML=`<main class="load-error"><h1>页面加载失败</h1><p>${safe(error.message)}</p><p>请通过本地预览服务或 GitHub Pages 打开。</p><button class="primary" onclick="location.reload()">重试</button></main>`;}
 }
 init();
