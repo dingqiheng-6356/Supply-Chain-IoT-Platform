@@ -639,43 +639,83 @@ input::placeholder,textarea::placeholder{color:#9aa89b}
 .platform-console .chain-state{font-size:10px;padding:3px 8px;border-radius:99px;flex:none}
 .platform-console .chain-state.online{background:#e7f4ec;color:#2f7a52}
 .platform-console .chain-state.building{background:#f8efdc;color:#8a6c25}
-/* Unified supply-chain blue for login page */
-.portal-login{background:#f5f8fb}
-.portal-login .login-story{background:radial-gradient(circle at 90% 15%,rgba(61,159,194,.28),transparent 35%),linear-gradient(145deg,#0a2233,#123f57);color:#eef8fd}
-.portal-login .login-story .brand{color:#f4fbff}
-.portal-login .login-story .brand-mark{background:linear-gradient(145deg,#2f7f9e,#3d97b5);color:#f4fbff;box-shadow:none}
-.portal-login .story-body .eyebrow{color:#9fd3e6}
-.portal-login .story-body h1>span{color:#bfe6f5}
-.portal-login .story-body>p,.portal-login .login-story footer{color:#a9c3d3}
-.portal-login .supply-preview{border-color:rgba(255,255,255,.16);background:rgba(255,255,255,.06);color:#eef8fd}
-.portal-login .supply-line small,.portal-login .supply-preview-foot{color:#a9c3d3}
+/* Unified ink-green palette: deep ink green + light ink-green surfaces */
+:root{--cream:#e9f1ec;--paper:#f8fbf9;--warm:#e3ede7;--sage:#d6e6dc;--grass:#5f8b74;--grass-light:#9dc2ae;background:#e9f1ec;color:#20382e}
+body{background:#e9f1ec;color:#20382e}
+::selection{background:#cfe3d7;color:#123328}
+.supply-site .site-header{background:rgba(247,251,248,.95);border-bottom-color:#d8e5dc}
+.supply-site .brand,.pasture-site .brand{color:#173a2e}
+.supply-site .brand-mark{background:linear-gradient(145deg,#1c4438,#3f7d66);color:#f2f9f5;box-shadow:0 6px 16px rgba(23,58,46,.18)}
+.supply-site .site-header nav{color:#587466}
+.supply-site .site-header nav a:hover{color:#173a2e}
+.supply-site .site-header nav a:after{background:#5f947c}
+.supply-site .header-login{background:#1c4438;border-color:#1c4438;color:#f2f9f5}
+.supply-site .header-login:hover{background:#14352c;border-color:#14352c}
+.supply-site .iot-section-nav,.pasture-site .iot-section-nav{background:rgba(247,251,248,.93);border-bottom-color:#d8e5dc;color:#587466;box-shadow:0 5px 20px rgba(23,58,46,.05)}
+.supply-site .iot-section-nav a:hover,.pasture-site .iot-section-nav a:hover{color:#173a2e}
+.supply-site .iot-section-nav a:after{background:#5f947c}
+.supply-site .iot-section-nav a:last-child{color:#1c4438}
+.supply-site .iot-hero{background:radial-gradient(circle at 86% 8%,rgba(95,148,124,.26),transparent 32%),radial-gradient(circle at 6% 92%,rgba(28,68,56,.5),transparent 38%),linear-gradient(122deg,#0b1f1a 0%,#12372c 52%,#1f5a47 100%)}
+.supply-site .hero-eyebrow{color:#a9d3bd}
+.supply-site .hero-eyebrow i{background:#7fbf9f}
+.supply-site .hero-copy h1{color:#f4fbf7}
+.supply-site .hero-copy h1 em{color:#c6e6d4}
+.supply-site .hero-copy>p{color:#cfe4d8}
+.supply-site .iot-button{background:#eaf4ee;border-color:#f3faf6;color:#123328}
+.supply-site .iot-button:hover{background:#f7fcf9;box-shadow:0 16px 34px rgba(6,20,15,.42)}
+.supply-site .hero-more{color:#dcebe3}
+.supply-site .hero-floating-card{color:#173a2e}
+.supply-site .hero-bottom-note{color:#a8c4b5;border-top-color:rgba(219,234,226,.18)}
+.supply-site .hero-bottom-note i{background:#7fbf9f}
+.supply-site .pasture-loop-band{background:#e6efe8}
+.platform-console .chain-row{border-color:#dde8e1;background:#f9fcfa}
+.platform-console .chain-row strong{color:#173a2e}
+.pasture-site .console-top,.pasture-site .console-metrics>div,.pasture-site .console-chart{background:#f9fcfa;border-color:#dde8e1;color:#284c3b}
+.pasture-site #capabilities{background:radial-gradient(circle at 5% 5%,rgba(28,68,56,.07),transparent 32%),#eef4f0}
+.pasture-site .capability-card,.pasture-site .capability-card:nth-child(2),.pasture-site .capability-card:nth-child(3),.pasture-site .capability-card:nth-child(4){--cap-color:#3f7d66;--cap-soft:#e3efe8;--cap-edge:#d7e5dd;--cap-tint:#f3f9f5;background:var(--cap-tint)}
+.pasture-site .capability-card h3{color:#1c3a2e}
+.pasture-site .capability-card p{color:#6a8074}
+.vital-signs article{background:#f6faf7;border-color:#d7e5dd;box-shadow:0 10px 25px rgba(23,58,46,.05)}
+.vital-signs article:after,.vital-signs article:nth-child(2):after,.vital-signs article:nth-child(3):after{background:#e2eee7}
+.vital-signs article>span,.vital-signs article:nth-child(3)>span{background:#e3efe8;color:#3f7d66}
+.vital-signs strong{color:#1c3a2e}
+.vital-signs p{color:#7d9186}
+.supply-site .account-section{background:radial-gradient(circle at 88% 12%,rgba(31,90,71,.14),transparent 38%),linear-gradient(135deg,#f1f7f3,#e6efe9)}
+.supply-site .account-section:before{border-color:rgba(63,125,102,.18);box-shadow:0 0 0 70px rgba(255,255,255,.16),0 0 0 140px rgba(255,255,255,.1)}
+.supply-site .account-copy h2{color:#16332a}
+.supply-site .account-copy>p{color:#5c7468}
+.supply-site .account-copy>div{color:#4b6558}
+.supply-site .account-copy>div .icon{color:#3f7d66}
+.supply-site .account-section>.portal-login{border-color:#d7e5dd;background:#f9fcfa;box-shadow:0 25px 65px rgba(16,47,39,.14)}
+.supply-site .account-section .auth-switch{border-color:#dde8e1;background:#e8f0ea}
+.supply-site .account-section .auth-switch button{color:#6a8074}
+.supply-site .account-section .auth-switch .active{background:#f9fcfa;color:#1c4438}
+.supply-site .account-section form label{color:#4f6d5f}
+.supply-site .account-section input,.supply-site .account-section select{border-color:#d9e5dd;background:#f9fcfa;color:#20402f}
+.supply-site .account-section input:focus,.supply-site .account-section select:focus{border-color:#3f7d66;box-shadow:0 0 0 4px rgba(63,125,102,.12)}
+.supply-site .account-section .password-wrap button{color:#6a8074}
+.supply-site .account-section .login-submit{background:linear-gradient(135deg,#1c4438,#2f6b56);color:#f7fcf9}
+.supply-site .account-section .login-submit:hover{background:linear-gradient(135deg,#14352c,#275c4a)}
+.supply-site .account-section .login-disclaimer{color:#7d9186}
+.supply-site .account-section .demo-buttons button{border-color:#d9e5dd;background:#f9fcfa;color:#4f6d5f}
+.supply-site .account-section .demo-buttons button:hover{border-color:#3f7d66;background:#eef6f1;color:#1c4438}
+.portal-login{background:#f1f7f3}
+.portal-login .login-story{background:radial-gradient(circle at 90% 15%,rgba(95,148,124,.28),transparent 35%),linear-gradient(145deg,#0c211c,#163f33);color:#eef8f2}
+.portal-login .login-story .brand{color:#f2fbf6}
+.portal-login .login-story .brand-mark{background:linear-gradient(145deg,#2f6b56,#4b9077);color:#f2fbf6;box-shadow:none}
+.portal-login .story-body .eyebrow{color:#a9d3bd}
+.portal-login .story-body h1>span{color:#c6e6d4}
+.portal-login .story-body>p,.portal-login .login-story footer{color:#a8c4b5}
+.portal-login .supply-preview{border-color:rgba(255,255,255,.16);background:rgba(255,255,255,.06);color:#eef8f2}
+.portal-login .supply-line small,.portal-login .supply-preview-foot{color:#a8c4b5}
 .portal-login .supply-preview-foot{border-color:rgba(255,255,255,.14)}
-.portal-login .auth-switch{background:#eaf2f7}
-.portal-login .auth-switch .active{color:#12405a}
-.portal-login .blue-text{color:#2f7f9e}
-.portal-login .login-submit{background:linear-gradient(135deg,#12405a,#1f6f8b);color:#f4fbff;box-shadow:0 16px 30px rgba(15,49,70,.22)}
-.portal-login .login-submit:hover{background:linear-gradient(135deg,#0d3448,#195d75)}
-.portal-login .link-button{color:#2f7f9e}
-.portal-login .login-panel{background:#fbfdfe}
-.portal-login .supply-preview .feature-icon.green,.portal-login .supply-preview .feature-icon.blue{background:rgba(255,255,255,.12);color:#bfe6f5}
-.portal-login .supply-preview .badge.green,.portal-login .supply-preview .badge.blue{background:rgba(255,255,255,.12);color:#d3ecf7}
-/* Unified deep-blue account section on the supply-chain landing page */
-.supply-site .account-section{background:radial-gradient(circle at 88% 12%,rgba(61,159,194,.2),transparent 38%),linear-gradient(135deg,#f2f8fc,#e6f0f6)}
-.supply-site .account-section:before{border-color:rgba(47,127,158,.18);box-shadow:0 0 0 70px rgba(255,255,255,.16),0 0 0 140px rgba(255,255,255,.1)}
-.supply-site .account-copy h2{color:#0f3348}
-.supply-site .account-copy>p{color:#5d7a8c}
-.supply-site .account-copy>div{color:#47697c}
-.supply-site .account-copy>div .icon{color:#2f7f9e}
-.supply-site .account-section>.portal-login{border-color:#d8e6ef;background:#fbfdfe;box-shadow:0 25px 65px rgba(15,49,70,.14)}
-.supply-site .account-section .auth-switch{border-color:#dde9f1;background:#eaf2f7}
-.supply-site .account-section .auth-switch button{color:#6a8394}
-.supply-site .account-section .auth-switch .active{background:#fbfdfe;color:#12405a}
-.supply-site .account-section form label{color:#4f6d7f}
-.supply-site .account-section input,.supply-site .account-section select{border-color:#dbe6ee;background:#fbfdfe;color:#1f3b4d}
-.supply-site .account-section input:focus,.supply-site .account-section select:focus{border-color:#2f7f9e;box-shadow:0 0 0 4px rgba(47,127,158,.12)}
-.supply-site .account-section .password-wrap button{color:#6a8394}
-.supply-site .account-section .login-submit{background:linear-gradient(135deg,#12405a,#1f6f8b);color:#f4fbff}
-.supply-site .account-section .login-submit:hover{background:linear-gradient(135deg,#0d3448,#195d75)}
-.supply-site .account-section .login-disclaimer{color:#7e97a7}
-.supply-site .account-section .demo-buttons button{border-color:#dbe6ee;background:#fbfdfe;color:#4f6d7f}
-.supply-site .account-section .demo-buttons button:hover{border-color:#2f7f9e;background:#eef6fa;color:#12405a}
+.portal-login .supply-preview .feature-icon.green,.portal-login .supply-preview .feature-icon.blue{background:rgba(255,255,255,.12);color:#c6e6d4}
+.portal-login .supply-preview .badge.green,.portal-login .supply-preview .badge.blue{background:rgba(255,255,255,.12);color:#d8efe2}
+.portal-login .auth-switch{background:#e8f0ea}
+.portal-login .auth-switch .active{color:#1c4438}
+.portal-login .blue-text{color:#3f7d66}
+.portal-login .login-submit{background:linear-gradient(135deg,#1c4438,#2f6b56);color:#f7fcf9;box-shadow:0 16px 30px rgba(16,47,39,.22)}
+.portal-login .login-submit:hover{background:linear-gradient(135deg,#14352c,#275c4a)}
+.portal-login .link-button{color:#3f7d66}
+.portal-login .login-panel{background:#f8fbf9}
+.pasture-site .overview-section{background:#eef4f0}
