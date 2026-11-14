@@ -145,13 +145,24 @@ class AccountStore:
         token=data.get('inviteCode')
         if not isinstance(token,str) or not 1<=len(token)<=128:
             raise RegistryError('请输入管理员提供的公司邀请码。')
+        digest = hashlib.sha256(token.strip().encode()).hexdigest()
+        with self.registry.connect() as db:
+            invite = db.execute('SELECT * FROM registration_invites WHERE digest=? AND used=0 AND expires>?',
+                                (digest, now)).fetchone()
+        if not invite:
+            raise RegistryError('邀请码无效、已使用或已过期，请联系公司管理员。')
+        phone = self.validate_phone(data.get('phone'))
+        self._consume_phone_code('register:' + phone, phone, str(data.get('code') or '').strip())
         with self.registry.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             invite=db.execute('SELECT * FROM registration_invites WHERE digest=? AND used=0 AND expires>?',
-                              (hashlib.sha256(token.strip().encode()).hexdigest(),now)).fetchone()
+                              (digest,now)).fetchone()
             if not invite:
                 raise RegistryError('邀请码无效、已使用或已过期，请联系公司管理员。')
+            if db.execute('SELECT 1 FROM accounts WHERE phone=?', (phone,)).fetchone():
+                raise RegistryError('该手机号已注册，请更换手机号或直接登录。', 409)
             user_id=self.create_in_db(db,data.get('username'),data.get('password'),data.get('name'),invite['role'],invite['company'])
+            db.execute('UPDATE accounts SET phone=? WHERE id=?', (phone, user_id))
             db.execute('UPDATE registration_invites SET used=1 WHERE digest=?',(invite['digest'],))
         return self.user(user_id,allow_demo=False)
 
@@ -211,6 +222,15 @@ class AccountStore:
         with self.registry.connect() as db:
             db.execute('UPDATE sms_codes SET used=1 WHERE key=?', (key,))
 
+    def send_register_code(self, phone):
+        phone = self.validate_phone(phone)
+        with self.registry.connect() as db:
+            if db.execute('SELECT 1 FROM accounts WHERE phone=?', (phone,)).fetchone():
+                raise RegistryError('该手机号已注册，请直接登录或更换手机号。', 409)
+        code = self._issue_phone_code('register:' + phone, phone)
+        send_code(phone, code)
+        return {'phone': mask_phone(phone), 'code': code}
+
     def send_bind_code(self, user, phone):
         phone = self.validate_phone(phone)
         with self.registry.connect() as db:
@@ -229,26 +249,30 @@ class AccountStore:
             db.execute('UPDATE accounts SET phone=? WHERE id=?', (phone, user['id']))
         return self.user(user['id'])
 
-    def request_reset_code(self, username):
-        if not isinstance(username, str) or not username.strip():
-            raise RegistryError('请输入账号。')
+    def request_reset_code(self, phone):
+        try:
+            phone = self.validate_phone(phone)
+        except RegistryError:
+            return {'delivered': False, 'phone': '', 'code': ''}
         with self.registry.connect() as db:
-            row = db.execute('SELECT * FROM accounts WHERE username=? AND disabled=0',
-                             (username.strip(),)).fetchone()
-        if not row or not row['phone']:
+            row = db.execute('SELECT * FROM accounts WHERE phone=? AND disabled=0',
+                             (phone,)).fetchone()
+        if not row:
             return {'delivered': False, 'phone': '', 'code': ''}
         code = self._issue_phone_code('reset:' + row['id'], row['phone'])
         send_code(row['phone'], code)
         return {'delivered': True, 'phone': mask_phone(row['phone']), 'code': code}
 
-    def reset_password(self, username, code, new_password):
-        if not isinstance(username, str) or not username.strip():
-            raise RegistryError('请输入账号。')
+    def reset_password(self, phone, code, new_password):
+        try:
+            phone = self.validate_phone(phone)
+        except RegistryError:
+            raise RegistryError('验证码错误或已过期。')
         self.validate_password(new_password)
         with self.registry.connect() as db:
-            row = db.execute('SELECT * FROM accounts WHERE username=? AND disabled=0',
-                             (username.strip(),)).fetchone()
-        if not row or not row['phone']:
+            row = db.execute('SELECT * FROM accounts WHERE phone=? AND disabled=0',
+                             (phone,)).fetchone()
+        if not row:
             raise RegistryError('验证码错误或已过期。')
         self._consume_phone_code('reset:' + row['id'], row['phone'], str(code or '').strip())
         with self.registry.connect() as db:

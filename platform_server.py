@@ -113,19 +113,27 @@ class PlatformHandler(Handler):
             elif method == 'GET' and path == '/api/map/config':
                 self.respond({'key': os.environ.get('AMAP_KEY', '').strip(),
                               'securityCode': os.environ.get('AMAP_SECURITY_CODE', '').strip()})
+            elif method == 'POST' and path == '/api/auth/register/code':
+                data = self.body()
+                result = registry.accounts.send_register_code(data.get('phone'))
+                payload = {'ok': True, 'phone': result['phone'], 'cooldown': 60, 'expiresIn': 300,
+                           'message': '验证码已发送，请查收短信。'}
+                if sms.is_console():
+                    payload['debugCode'] = result['code']
+                self.respond(payload)
             elif method == 'POST' and path == '/api/auth/reset/code':
                 data = self.body()
-                result = registry.accounts.request_reset_code(data.get('username'))
+                result = registry.accounts.request_reset_code(data.get('phone'))
                 payload = {'ok': True, 'delivered': result['delivered'], 'phone': result['phone'],
                            'cooldown': 60, 'expiresIn': 300,
                            'message': '验证码已发送，请查收短信。' if result['delivered']
-                                      else '若该账号已绑定手机号，验证码已发送。'}
+                                      else '若该手机号已绑定账号，验证码已发送。'}
                 if result['delivered'] and sms.is_console():
                     payload['debugCode'] = result['code']
                 self.respond(payload)
             elif method == 'POST' and path == '/api/auth/reset/confirm':
                 data = self.body()
-                registry.accounts.reset_password(data.get('username'), data.get('code'), data.get('newPassword'))
+                registry.accounts.reset_password(data.get('phone'), data.get('code'), data.get('newPassword'))
                 self.respond({'ok': True, 'message': '密码已重置，请使用新密码登录。'})
             elif method == 'POST' and path in ('/api/login','/api/register'):
                 data = self.body()
