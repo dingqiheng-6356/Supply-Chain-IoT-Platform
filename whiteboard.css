@@ -142,6 +142,9 @@
 .wb-lock { position: absolute; top: 5px; right: 5px; padding: 4px 7px; color: #183b2b; background: #d9edaa; border-radius: 5px; font-size: 11px; }
 .wb-delete-btn { position: absolute; z-index: 9; top: -16px; right: -16px; width: 30px; height: 30px; display: grid; place-items: center; color: #fff; background: #e0584b; border: 2px solid #fff; border-radius: 50%; font-size: 20px; line-height: 1; cursor: pointer; box-shadow: 0 3px 10px rgba(200,60,50,.45); transition: transform .15s, background .15s; }
 .wb-delete-btn:hover { background: #c94336; transform: scale(1.12); }
+.wb-move-handle { position: absolute; z-index: 8; top: -30px; left: 50%; transform: translateX(-50%); padding: 5px 14px; color: #fff; background: rgba(44,96,70,.92); border: 1px solid rgba(255,255,255,.5); border-radius: 14px; font-size: 11px; font-weight: 600; letter-spacing: .5px; cursor: grab; white-space: nowrap; box-shadow: 0 4px 12px rgba(7,29,20,.35); user-select: none; touch-action: none; transition: background .15s; }
+.wb-move-handle:hover { background: rgba(56,120,88,.96); }
+.wb-element.dragging .wb-move-handle { cursor: grabbing; }
 
 /* Create dropdown */
 .wb-create-menu { position: relative; display: inline-block; }

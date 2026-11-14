@@ -50,7 +50,7 @@ function wbElementHtml(el,editing=false){
  if(el.type==='image'){const src=wbAssetUrl(p.src);body=src?`<img src="${safe(src)}" alt="${safe(p.alt||'展示图片')}" draggable="false" style="object-fit:${p.fit==='contain'?'contain':'cover'}">`:'<div class="wb-media-empty">图片资源不可用</div>';}
  if(el.type==='video'){const src=wbAssetUrl(p.src);body=src?`<video src="${safe(src)}" ${editing?'':'controls'} ${p.autoplay!==false?'autoplay':''} ${p.loop!==false?'loop':''} muted playsinline></video>`:'<div class="wb-media-empty">视频资源不可用</div>';}
  if(el.type==='model'){const src=wbAssetUrl(p.src);body=src?`<canvas data-3d-src="${safe(src)}" data-src="${safe(src)}" data-auto-rotate="${p.autoRotate!==false}" aria-label="可旋转缩放的三维设备模型"></canvas><span class="wb-model-hint">3D · 拖动旋转 / 滚轮缩放</span>`:'<div class="wb-media-empty">三维模型不可用</div>';}
- const handles=editing&&wbState.selected===el.id?`<span class="wb-rotate" data-wb-rotate title="旋转"></span><span class="wb-delete-btn" data-wb-delete-inline title="删除组件">×</span>${['nw','n','ne','e','se','s','sw','w'].map(h=>`<i class="wb-handle wb-${h}" data-wb-handle="${h}"></i>`).join('')}${p.locked?'<span class="wb-lock">已锁定</span>':''}`:'';
+ const handles=editing&&wbState.selected===el.id?`<span class="wb-move-handle" data-wb-move title="拖动此条移动组件">⋮⋮ 拖动移动</span><span class="wb-rotate" data-wb-rotate title="旋转"></span><span class="wb-delete-btn" data-wb-delete-inline title="删除组件">×</span>${['nw','n','ne','e','se','s','sw','w'].map(h=>`<i class="wb-handle wb-${h}" data-wb-handle="${h}"></i>`).join('')}${p.locked?'<span class="wb-lock">已锁定</span>':''}`:'';
  return `<div class="wb-element wb-type-${el.type}${editing&&wbState.selected===el.id?' selected':''}${p.locked?' locked':''}" data-element-id="${safe(el.id)}" style="${style}">${body}${handles}</div>`;
 }
 function wbCanvasHtml(editing=false){const doc=wbState.current.document,c=doc.canvas;return `<div id="${editing?'wb-canvas':'wb-public-canvas'}" class="wb-canvas${c.grid&&editing?' show-grid':''}" style="background:linear-gradient(135deg,${safe(c.background)},${safe(c.backgroundEnd)})">${doc.elements.slice().sort((a,b)=>a.z-b.z).map(el=>wbElementHtml(el,editing)).join('')}</div>`;}
@@ -111,19 +111,46 @@ function wbFitCanvas(){const viewport=document.querySelector('#wb-viewport'),can
 function wbPoint(event){const canvas=document.querySelector('#wb-canvas'),rect=canvas.getBoundingClientRect();return {x:(event.clientX-rect.left)/(rect.width/1600),y:(event.clientY-rect.top)/(rect.height/900)};}
 function wbBindElements(){
  if(!wbCanEdit())return;
+ const isControl=target=>target.closest('[data-wb-handle],[data-wb-rotate],[data-wb-delete-inline]');
+ const is3DCanvas=target=>target.closest('canvas[data-3d-src]');
  document.querySelectorAll('#wb-canvas .wb-element').forEach(node=>{
   node.onpointerdown=event=>{
-   if(event.target.closest('[data-wb-delete-inline]'))return;
-   const el=wbState.current.document.elements.find(e=>e.id===node.dataset.elementId);if(!el)return;let dragNode=node;
-   if(wbState.selected===el.id){
-    const point=wbPoint(event);const under=wbState.current.document.elements.filter(e=>e.id!==el.id&&point.x>=e.x&&point.x<=e.x+e.width&&point.y>=e.y&&point.y<=e.y+e.height).sort((a,b)=>b.z-a.z);
-    if(under.length){const next=under[0];wbState.selected=next.id;wbRenderCanvas();wbRenderInspector();return;}
-   }
-   if(wbState.selected!==el.id){wbState.selected=el.id;wbRenderCanvas();wbRenderInspector();dragNode=document.querySelector(`#wb-canvas [data-element-id="${CSS.escape(el.id)}"]`);}
-   if(!dragNode||el.props.locked||event.target.closest('[data-wb-handle],[data-wb-rotate],canvas[data-3d-src]'))return;
-   event.preventDefault();dragNode.setPointerCapture(event.pointerId);const start=wbPoint(event),origin={x:el.x,y:el.y},before=wbClone(wbState.current.document);dragNode.classList.add('dragging');
-   dragNode.onpointermove=move=>{if(!dragNode.hasPointerCapture(move.pointerId))return;const point=wbPoint(move),snap=wbState.current.document.canvas.grid!==false?10:1;el.x=Math.round((origin.x+point.x-start.x)/snap)*snap;el.y=Math.round((origin.y+point.y-start.y)/snap)*snap;dragNode.style.left=`${el.x}px`;dragNode.style.top=`${el.y}px`;wbMarkDirty();};
-   dragNode.onpointerup=dragNode.onpointercancel=()=>{dragNode.classList.remove('dragging');dragNode.onpointermove=dragNode.onpointerup=dragNode.onpointercancel=null;if(el.x!==origin.x||el.y!==origin.y){wbPushHistory(before);wbRenderInspector();}};
+   if(isControl(event.target))return;
+   const el=wbState.current.document.elements.find(e=>e.id===node.dataset.elementId);if(!el)return;
+   const fromMoveHandle=!!event.target.closest('[data-wb-move]');
+   // For 3D models, only the move handle can drag; canvas is for rotation.
+   if(!fromMoveHandle&&is3DCanvas(event.target))return;
+   if(el.props.locked)return;
+   // Select on first click; if already selected, set up for potential cycle-on-click.
+   const wasSelected=wbState.selected===el.id;
+   if(!wasSelected){wbState.selected=el.id;wbRenderCanvas();wbRenderInspector();}
+   const dragNode=wasSelected?node:document.querySelector(`#wb-canvas [data-element-id="${CSS.escape(el.id)}"]`);
+   if(!dragNode)return;
+   event.preventDefault();dragNode.setPointerCapture(event.pointerId);
+   const start=wbPoint(event),origin={x:el.x,y:el.y},before=wbClone(wbState.current.document);
+   let moved=false,threshold=4;
+   dragNode.classList.add('dragging');
+   dragNode.onpointermove=move=>{
+    if(!dragNode.hasPointerCapture(move.pointerId))return;
+    const point=wbPoint(move);
+    if(Math.abs(point.x-start.x)>threshold||Math.abs(point.y-start.y)>threshold)moved=true;
+    const snap=wbState.current.document.canvas.grid!==false?10:1;
+    el.x=Math.round((origin.x+point.x-start.x)/snap)*snap;
+    el.y=Math.round((origin.y+point.y-start.y)/snap)*snap;
+    dragNode.style.left=`${el.x}px`;dragNode.style.top=`${el.y}px`;
+    wbMarkDirty();
+   };
+   dragNode.onpointerup=dragNode.onpointercancel=()=>{
+    dragNode.classList.remove('dragging');
+    dragNode.onpointermove=dragNode.onpointerup=dragNode.onpointercancel=null;
+    if(moved){if(el.x!==origin.x||el.y!==origin.y){wbPushHistory(before);wbRenderInspector();}}
+    else if(wasSelected){
+     // Pure click on already-selected element: cycle to element below (if any).
+     const point=wbPoint(event);
+     const under=wbState.current.document.elements.filter(e=>e.id!==el.id&&point.x>=e.x&&point.x<=e.x+e.width&&point.y>=e.y&&point.y<=e.y+e.height).sort((a,b)=>b.z-a.z);
+     if(under.length){wbState.selected=under[0].id;wbRenderCanvas();wbRenderInspector();}
+    }
+   };
   };
  });
  document.querySelectorAll('#wb-canvas [data-wb-delete-inline]').forEach(btn=>btn.onclick=event=>{event.stopPropagation();event.preventDefault();const node=btn.closest('.wb-element');const el=wbState.current?.document.elements.find(e=>e.id===node?.dataset.elementId);if(!el)return;wbMutate(()=>{wbState.current.document.elements=wbState.current.document.elements.filter(e=>e.id!==el.id);wbState.selected=null;});});
