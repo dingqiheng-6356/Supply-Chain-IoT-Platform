@@ -639,3 +639,43 @@ input::placeholder,textarea::placeholder{color:#9aa89b}
 .platform-console .chain-state{font-size:10px;padding:3px 8px;border-radius:99px;flex:none}
 .platform-console .chain-state.online{background:#e7f4ec;color:#2f7a52}
 .platform-console .chain-state.building{background:#f8efdc;color:#8a6c25}
+/* Unified supply-chain blue for login page */
+.portal-login{background:#f5f8fb}
+.portal-login .login-story{background:radial-gradient(circle at 90% 15%,rgba(61,159,194,.28),transparent 35%),linear-gradient(145deg,#0a2233,#123f57);color:#eef8fd}
+.portal-login .login-story .brand{color:#f4fbff}
+.portal-login .login-story .brand-mark{background:linear-gradient(145deg,#2f7f9e,#3d97b5);color:#f4fbff;box-shadow:none}
+.portal-login .story-body .eyebrow{color:#9fd3e6}
+.portal-login .story-body h1>span{color:#bfe6f5}
+.portal-login .story-body>p,.portal-login .login-story footer{color:#a9c3d3}
+.portal-login .supply-preview{border-color:rgba(255,255,255,.16);background:rgba(255,255,255,.06);color:#eef8fd}
+.portal-login .supply-line small,.portal-login .supply-preview-foot{color:#a9c3d3}
+.portal-login .supply-preview-foot{border-color:rgba(255,255,255,.14)}
+.portal-login .auth-switch{background:#eaf2f7}
+.portal-login .auth-switch .active{color:#12405a}
+.portal-login .blue-text{color:#2f7f9e}
+.portal-login .login-submit{background:linear-gradient(135deg,#12405a,#1f6f8b);color:#f4fbff;box-shadow:0 16px 30px rgba(15,49,70,.22)}
+.portal-login .login-submit:hover{background:linear-gradient(135deg,#0d3448,#195d75)}
+.portal-login .link-button{color:#2f7f9e}
+.portal-login .login-panel{background:#fbfdfe}
+.portal-login .supply-preview .feature-icon.green,.portal-login .supply-preview .feature-icon.blue{background:rgba(255,255,255,.12);color:#bfe6f5}
+.portal-login .supply-preview .badge.green,.portal-login .supply-preview .badge.blue{background:rgba(255,255,255,.12);color:#d3ecf7}
+/* Unified deep-blue account section on the supply-chain landing page */
+.supply-site .account-section{background:radial-gradient(circle at 88% 12%,rgba(61,159,194,.2),transparent 38%),linear-gradient(135deg,#f2f8fc,#e6f0f6)}
+.supply-site .account-section:before{border-color:rgba(47,127,158,.18);box-shadow:0 0 0 70px rgba(255,255,255,.16),0 0 0 140px rgba(255,255,255,.1)}
+.supply-site .account-copy h2{color:#0f3348}
+.supply-site .account-copy>p{color:#5d7a8c}
+.supply-site .account-copy>div{color:#47697c}
+.supply-site .account-copy>div .icon{color:#2f7f9e}
+.supply-site .account-section>.portal-login{border-color:#d8e6ef;background:#fbfdfe;box-shadow:0 25px 65px rgba(15,49,70,.14)}
+.supply-site .account-section .auth-switch{border-color:#dde9f1;background:#eaf2f7}
+.supply-site .account-section .auth-switch button{color:#6a8394}
+.supply-site .account-section .auth-switch .active{background:#fbfdfe;color:#12405a}
+.supply-site .account-section form label{color:#4f6d7f}
+.supply-site .account-section input,.supply-site .account-section select{border-color:#dbe6ee;background:#fbfdfe;color:#1f3b4d}
+.supply-site .account-section input:focus,.supply-site .account-section select:focus{border-color:#2f7f9e;box-shadow:0 0 0 4px rgba(47,127,158,.12)}
+.supply-site .account-section .password-wrap button{color:#6a8394}
+.supply-site .account-section .login-submit{background:linear-gradient(135deg,#12405a,#1f6f8b);color:#f4fbff}
+.supply-site .account-section .login-submit:hover{background:linear-gradient(135deg,#0d3448,#195d75)}
+.supply-site .account-section .login-disclaimer{color:#7e97a7}
+.supply-site .account-section .demo-buttons button{border-color:#dbe6ee;background:#fbfdfe;color:#4f6d7f}
+.supply-site .account-section .demo-buttons button:hover{border-color:#2f7f9e;background:#eef6fa;color:#12405a}
