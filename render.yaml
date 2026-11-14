@@ -14,3 +14,7 @@ services:
         value: 3.12.10
       - key: PYTHONUNBUFFERED
         value: "1"
+      - key: AMAP_KEY
+        sync: false
+      - key: AMAP_SECURITY_CODE
+        sync: false

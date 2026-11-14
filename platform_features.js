@@ -47,6 +47,11 @@ async function fetchHistory(query,append=false){
 function bindHistoryMore(){
  const more=document.querySelector('#history-load-more');if(more)more.onclick=()=>{if(historyQuery&&!historyQuery.busy)fetchHistory(historyQuery,true);};
 }
+function accountPhonePanel(){
+ if(typeof platformBackend==='undefined'||!platformBackend)return '';
+ const bound=!!currentUser?.phoneBound,phone=currentUser?.phone||'';
+ return `<section class="panel account-password account-phone"><h2>手机号绑定</h2><p class="settings-note">绑定手机号后，忘记密码时可通过短信验证码重置；号码仅用于身份校验。</p><form id="account-phone-form"><label for="account-phone">手机号</label><div class="code-row"><input id="account-phone" name="phone" inputmode="numeric" autocomplete="tel" maxlength="11" placeholder="${bound?'输入新手机号以更换绑定':'请输入 11 位手机号'}" required><button type="button" class="secondary code-button" id="send-bind-code">获取验证码</button></div><label for="account-phone-code">短信验证码</label><input id="account-phone-code" name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="6 位验证码" required><p class="settings-note" id="account-phone-hint">${bound?`当前绑定：${safe(phone)}`:'尚未绑定手机号。'}</p><p class="error" id="account-phone-error" role="alert"></p><button class="primary" type="submit">${bound?'更换绑定手机号':'绑定手机号'}</button></form></section>`;
+}
 function bindPlatformFeatures(){
  const historyForm=document.querySelector('#history-query-form');
  if(historyForm)historyForm.onsubmit=event=>{
@@ -67,4 +72,25 @@ function bindPlatformFeatures(){
   }catch(problem){error.textContent=problem.message;}
   finally{button.disabled=false;}
  };
+ const phoneForm=document.querySelector('#account-phone-form');
+ if(phoneForm){
+  const send=document.querySelector('#send-bind-code'),hint=document.querySelector('#account-phone-hint'),error=document.querySelector('#account-phone-error');
+  if(send)send.onclick=async()=>{
+   error.textContent='';const phone=phoneForm.elements.phone.value.trim();
+   if(!/^1[3-9]\d{9}$/.test(phone)){error.textContent='请输入有效的 11 位手机号。';return;}
+   send.disabled=true;let remain=60;send.textContent='60 秒后重试';
+   const timer=setInterval(()=>{remain-=1;if(!send.isConnected){clearInterval(timer);return;}if(remain<=0){clearInterval(timer);send.disabled=false;send.textContent='重新获取';return;}send.textContent=`${remain} 秒后重试`;},1000);
+   try{const result=await platformRequest('account/phone/code',{method:'POST',body:JSON.stringify({phone})});
+    hint.textContent=result.debugCode?`演示验证码：${result.debugCode}（未配置短信服务，已输出到服务端日志）`:`验证码已发送至 ${result.phone}，5 分钟内有效。`;
+   }catch(problem){error.textContent=problem.message;clearInterval(timer);send.disabled=false;send.textContent='获取验证码';}
+  };
+  phoneForm.onsubmit=async event=>{
+   event.preventDefault();const button=phoneForm.querySelector('[type=submit]'),error=document.querySelector('#account-phone-error');
+   error.textContent='';button.disabled=true;
+   try{const {user}=await platformRequest('account/phone/bind',{method:'POST',body:JSON.stringify({phone:phoneForm.elements.phone.value.trim(),code:phoneForm.elements.code.value.trim()})});
+    currentUser={...currentUser,...user};notice='手机号已绑定，可用于找回密码。';render();
+   }catch(problem){error.textContent=problem.message;}
+   finally{button.disabled=false;}
+  };
+ }
 }

@@ -17,6 +17,7 @@ from urllib.parse import urlsplit, unquote, parse_qs
 
 from device_registry import DeviceRegistry, RegistryError
 from serial_server import Handler, SerialMonitor
+import sms
 
 ROOT = Path(__file__).resolve().parent
 
@@ -109,6 +110,23 @@ class PlatformHandler(Handler):
                               'demoAccounts':not getattr(self.server,'production',False),
                               'retentionDays':registry.retention_days,
                               'localOnly': getattr(self.server, 'mqtt_local_only', False)})
+            elif method == 'GET' and path == '/api/map/config':
+                self.respond({'key': os.environ.get('AMAP_KEY', '').strip(),
+                              'securityCode': os.environ.get('AMAP_SECURITY_CODE', '').strip()})
+            elif method == 'POST' and path == '/api/auth/reset/code':
+                data = self.body()
+                result = registry.accounts.request_reset_code(data.get('username'))
+                payload = {'ok': True, 'delivered': result['delivered'], 'phone': result['phone'],
+                           'cooldown': 60, 'expiresIn': 300,
+                           'message': '验证码已发送，请查收短信。' if result['delivered']
+                                      else '若该账号已绑定手机号，验证码已发送。'}
+                if result['delivered'] and sms.is_console():
+                    payload['debugCode'] = result['code']
+                self.respond(payload)
+            elif method == 'POST' and path == '/api/auth/reset/confirm':
+                data = self.body()
+                registry.accounts.reset_password(data.get('username'), data.get('code'), data.get('newPassword'))
+                self.respond({'ok': True, 'message': '密码已重置，请使用新密码登录。'})
             elif method == 'POST' and path in ('/api/login','/api/register'):
                 data = self.body()
                 username, password = data.get('username'), data.get('password')
@@ -141,6 +159,19 @@ class PlatformHandler(Handler):
                                                allow_demo=not getattr(self.server,'production',False))
                 registry.accounts.change_password(user,current,data.get('newPassword'))
                 self.respond({'ok':True},cookie=self.cookie('',0))
+            elif method == 'POST' and path == '/api/account/phone/code':
+                user=self.user()
+                data=self.body()
+                result=registry.accounts.send_bind_code(user,data.get('phone'))
+                payload={'ok':True,'phone':result['phone'],'cooldown':60,'expiresIn':300,
+                         'message':'验证码已发送，请查收短信。'}
+                if sms.is_console():
+                    payload['debugCode']=result['code']
+                self.respond(payload)
+            elif method == 'POST' and path == '/api/account/phone/bind':
+                user=self.user()
+                data=self.body()
+                self.respond({'user':registry.accounts.bind_phone(user,data.get('phone'),data.get('code'))})
             elif method == 'GET' and path == '/api/workspace':
                 self.respond(registry.organization.workspace(self.user()))
             elif method == 'GET' and path == '/api/whiteboards':

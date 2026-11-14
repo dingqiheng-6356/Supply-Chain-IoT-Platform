@@ -69,6 +69,17 @@ class DeviceRegistry:
     def digest(secret):
         return hashlib.sha256(secret.encode()).hexdigest()
 
+    @staticmethod
+    def coordinates(lng, lat):
+        if lng is None and lat is None:
+            return {}
+        if (isinstance(lng, bool) or isinstance(lat, bool)
+                or not isinstance(lng, (int, float)) or not isinstance(lat, (int, float))):
+            raise RegistryError('请同时填写有效的经度和纬度。')
+        if not (math.isfinite(lng) and math.isfinite(lat)) or not -180 <= lng <= 180 or not -90 <= lat <= 90:
+            raise RegistryError('经纬度超出范围：经度 -180~180，纬度 -90~90。')
+        return {'lng': round(float(lng), 6), 'lat': round(float(lat), 6)}
+
     def account(self, username, password):
         return self.accounts.authenticate(username, password)
 
@@ -110,6 +121,7 @@ class DeviceRegistry:
             if not isinstance(value, str) or not value.strip() or len(value.strip()) > limit:
                 raise RegistryError(f'请填写有效的设备名称和安装位置（最多 {limit} 字）。')
             config[key] = value.strip()
+        config.update(self.coordinates(data.get('lng'), data.get('lat')))
         interval = data.get('sampleInterval', 30)
         try:
             number = float(interval)
@@ -167,6 +179,10 @@ class DeviceRegistry:
                     if not isinstance(value, str) or not 1 <= len(value.strip()) <= (40 if key == 'name' else 80):
                         raise RegistryError('设备名称或安装位置无效。')
                     config[key] = value.strip()
+            if 'lng' in data or 'lat' in data:
+                config.pop('lng', None)
+                config.pop('lat', None)
+                config.update(self.coordinates(data.get('lng'), data.get('lat')))
             if 'sampleInterval' in data:
                 interval = data['sampleInterval']
                 if isinstance(interval, bool) or not isinstance(interval, (int, float)) or not float(interval).is_integer() or not 1 <= interval <= 3600:
@@ -315,6 +331,7 @@ class DeviceRegistry:
         with self.connect() as db:
             db.execute('CREATE TABLE IF NOT EXISTS device_meta (key TEXT PRIMARY KEY)')
             if db.execute("SELECT 1 FROM device_meta WHERE key='demo-imported'").fetchone():
+                self.backfill_demo_coordinates(db, rows)
                 return
             for raw in rows:
                 config = {key: value for key, value in raw.items()
@@ -340,6 +357,24 @@ class DeviceRegistry:
                                (raw['id'], last - (count - 1 - index) * interval,
                                 json.dumps(payload, ensure_ascii=False)))
             db.execute("INSERT INTO device_meta VALUES ('demo-imported')")
+            db.execute("INSERT OR IGNORE INTO device_grants(user, device) "
+                       "SELECT a.id, d.id FROM accounts a, devices d "
+                       "WHERE a.username='customer' AND d.deleted=0")
+
+    @staticmethod
+    def backfill_demo_coordinates(db, rows):
+        """Fill coordinates for demo devices created before the map feature."""
+        for raw in rows:
+            if not (isinstance(raw.get('lng'), (int, float)) and isinstance(raw.get('lat'), (int, float))):
+                continue
+            row = db.execute('SELECT config FROM devices WHERE id=? AND deleted=0', (raw['id'],)).fetchone()
+            if not row:
+                continue
+            config = json.loads(row['config'])
+            if 'lng' in config and 'lat' in config:
+                continue
+            config['lng'], config['lat'] = raw['lng'], raw['lat']
+            db.execute('UPDATE devices SET config=? WHERE id=?', (json.dumps(config, ensure_ascii=False), raw['id']))
 
     def snapshot(self, user):
         self.authorize(user)

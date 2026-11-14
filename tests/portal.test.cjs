@@ -5,10 +5,10 @@ const path = require('node:path');
 const root = path.resolve(__dirname, '..');
 const storage = new Map();
 const context = vm.createContext({
- document: {querySelector:()=>({innerHTML:''}),querySelectorAll:()=>[]},
+ document: {querySelector:()=>({innerHTML:''}),querySelectorAll:()=>[],addEventListener(){}},
  localStorage:{getItem:k=>storage.get(k)||null,setItem:(k,v)=>storage.set(k,v)},
  sessionStorage:{setItem(){},removeItem(){},getItem(){return null;}},
- window:{scrollTo(){}},setTimeout,clearTimeout,AbortController,URL,Blob,TextDecoder,console,
+ window:{scrollTo(){},matchMedia:()=>({matches:false}),addEventListener(){}},setTimeout,clearTimeout,AbortController,URL,Blob,TextDecoder,console,
 });
 vm.runInContext(fs.readFileSync(path.join(root,'app.js'),'utf8'),context);
 vm.runInContext(fs.readFileSync(path.join(root,'visual.js'),'utf8'),context);
@@ -43,7 +43,7 @@ run("currentUser={id:'other-customer',role:'customer',companyId:'company-other'}
 run("localStorage.setItem(registeredKey,JSON.stringify([{id:'test-user',username:'test-user',role:'admin',companyId:'company-c'}]))");assert.equal(run('registeredUsers()[0].role'),'customer');
 run("currentUser=users.find(u=>u.role==='admin');companyId='company-c';openCompany('company-other')");assert.equal(run('companyId'),'company-c');assert.equal(run('canEdit()'),false);
 assert.equal(run("platform.categories.filter(c=>c.chainId==='livestock').length"),1);
-assert.equal(run('platform.chains.length'),1);
+assert.equal(run('platform.chains.length'),2);
 for(const c of context.fixture.platform.companies){const t=fs.readFileSync(path.join(root,c.template),'utf8');context.testTemplate=t;assert.equal(run('typeof parseTemplate(testTemplate).config.title'),'string');}
 console.log('Portal checks passed: role routes, company scope, warning shortcut, registration role, Markdown validation and escaping.');
 context.newsFixtures=JSON.parse(fs.readFileSync(path.join(root,'news-index.json'),'utf8')).articles;
@@ -78,8 +78,8 @@ assert.equal(run("consoleDeviceRows('env-002').includes('ENV-002')"),true);
 assert.equal(run("consoleDeviceRows('env-002').includes('ENV-001')"),false);
 assert.equal(run("consoleDeviceRows('ENV-404').includes('未找到匹配设备')"),true);
 assert.equal(run("consoleDeviceRows('2 号猪舍').includes('ENV-003')"),true);
-assert.equal(run("consoleDeviceArea().includes('非地理坐标')"),true);
-console.log('Cockpit checks passed: case-insensitive company device search and schematic labels.');
+assert.equal(run("consoleDeviceArea().includes('device-map')"),true);
+console.log('Cockpit checks passed: case-insensitive company device search and AMap container.');
 
 run("currentUser=users.find(u=>u.role==='admin');companyId='company-c'");
 assert.equal(run('JSON.stringify(platformHealth())'),JSON.stringify({total:3,online:2,offline:1,warning:1,normal:1}));

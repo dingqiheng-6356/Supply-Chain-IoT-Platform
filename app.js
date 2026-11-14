@@ -14,7 +14,8 @@ Object.assign(paths, {
  humidity:'<path d="M12 2S4 11 4 15a8 8 0 0 0 16 0c0-4-8-13-8-13Z"/><path d="M8 15a4 4 0 0 0 4 4"/>',
  power:'<path d="m13 2-9 12h7l-1 8 10-13h-7z"/>',
  device:'<rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8 8h8v8H8zM1 8h3m-3 8h3m16-8h3m-3 8h3M8 1v3m8-3v3M8 20v3m8-3v3"/>',
- settings:'<path d="M4 7h16M4 17h16"/><circle cx="9" cy="7" r="3" fill="currentColor"/><circle cx="15" cy="17" r="3" fill="currentColor"/>'
+ settings:'<path d="M4 7h16M4 17h16"/><circle cx="9" cy="7" r="3" fill="currentColor"/><circle cx="15" cy="17" r="3" fill="currentColor"/>',
+ plant:'<path d="M12 21V9"/><path d="M12 9c0-4 3-7 7-7 0 4-3 7-7 7Z"/><path d="M12 13c0-4-3-7-7-7 0 4 3 7 7 7Z"/>'
 });
 const validRole = role => Object.hasOwn(roles, role) ? role : 'customer';
 const canEdit = () => ['company_admin','developer'].includes(currentUser?.role) && device()?.companyId === currentUser.companyId;
@@ -179,3 +180,90 @@ function startSerialPolling() {
  }
  poll();
 }
+/* ===== 统一下拉交互：自定义选项面板，避免系统蓝底与点击焦点边框 ===== */
+(() => {
+ if (window.matchMedia('(pointer: coarse)').matches) return;
+ let popup = null, owner = null, observer = null;
+ const close = () => {
+  if (popup) popup.remove();
+  popup = null; owner = null;
+  if (observer) { observer.disconnect(); observer = null; }
+  document.querySelectorAll('select[data-custom-open]').forEach(s => s.removeAttribute('data-custom-open'));
+ };
+ const choose = (sel, index) => {
+  if (!sel.isConnected) { close(); return; }
+  sel.selectedIndex = index;
+  sel.dispatchEvent(new Event('input', { bubbles: true }));
+  sel.dispatchEvent(new Event('change', { bubbles: true }));
+  close();
+ };
+ const open = sel => {
+  close();
+  owner = sel;
+  const rect = sel.getBoundingClientRect();
+  const style = getComputedStyle(sel);
+  popup = document.createElement('div');
+  popup.className = 'custom-select-popup';
+  popup.setAttribute('role', 'listbox');
+  popup.style.left = rect.left + 'px';
+  popup.style.top = rect.bottom + 4 + 'px';
+  popup.style.width = rect.width + 'px';
+  popup.style.fontSize = Math.max(12, parseFloat(style.fontSize) || 13) + 'px';
+  popup.style.color = style.color;
+  popup.style.borderRadius = style.borderRadius;
+  popup.innerHTML = [...sel.options].map((option, index) =>
+   `<button type="button" role="option" class="custom-select-option${index === sel.selectedIndex ? ' is-selected' : ''}" data-index="${index}" aria-selected="${index === sel.selectedIndex}"${option.disabled ? ' disabled' : ''}>${safe(option.textContent)}</button>`
+  ).join('');
+  document.body.appendChild(popup);
+  const height = popup.offsetHeight;
+  if (rect.bottom + 4 + height > window.innerHeight - 10 && rect.top - 4 - height > 10) {
+   popup.style.top = rect.top - 4 - height + 'px';
+  }
+  popup.addEventListener('mousedown', e => e.preventDefault());
+  popup.addEventListener('click', e => {
+   const option = e.target.closest('.custom-select-option');
+   if (!option || option.disabled || !owner) return;
+   choose(owner, Number(option.dataset.index));
+  });
+  popup.addEventListener('keydown', e => {
+   const options = [...popup.querySelectorAll('.custom-select-option:not(:disabled)')];
+   const current = options.indexOf(document.activeElement);
+   if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+    e.preventDefault();
+    const next = options[Math.min(options.length - 1, Math.max(0, current < 0 ? 0 : current + (e.key === 'ArrowDown' ? 1 : -1)))];
+    next?.focus();
+   } else if (e.key === 'Enter' || e.key === ' ') {
+    e.preventDefault();
+    if (current >= 0 && owner) choose(owner, Number(options[current].dataset.index));
+   } else if (e.key === 'Escape' || e.key === 'Tab') {
+    close();
+   }
+  });
+  popup.querySelector('.is-selected')?.scrollIntoView({ block: 'nearest' });
+  sel.setAttribute('data-custom-open', '');
+  observer = new MutationObserver(() => { if (owner && !owner.isConnected) close(); });
+  observer.observe(document.body, { childList: true, subtree: true });
+ };
+ document.addEventListener('mousedown', e => {
+  const sel = e.target.closest?.('select');
+  if (sel && !sel.multiple && !sel.disabled) {
+   e.preventDefault();
+   if (owner === sel) close(); else open(sel);
+   return;
+  }
+  if (popup && !e.target.closest?.('.custom-select-popup')) close();
+ }, true);
+ document.addEventListener('click', e => { if (e.target.closest?.('select')) e.preventDefault(); }, true);
+ document.addEventListener('keydown', e => {
+  if (popup && e.key === 'Escape') { close(); return; }
+  const sel = e.target.closest?.('select');
+  if (sel && !sel.multiple && !sel.disabled && ['ArrowDown', 'ArrowUp', ' ', 'Enter'].includes(e.key)) {
+   e.preventDefault();
+   if (owner === sel) { close(); return; }
+   open(sel);
+   popup.querySelector('.is-selected, .custom-select-option')?.focus();
+  }
+ }, true);
+ window.addEventListener('resize', close);
+ document.addEventListener('scroll', close, true);
+})();

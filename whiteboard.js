@@ -30,10 +30,10 @@ function wbDefaultDocument(title='牧业链 · 智慧养殖展示'){
   text('footer-status','●  DATA CONNECTED  /  数据持续感知',1030,842,480,32,15,'#8edbb5',6,{align:'right',fontWeight:500})
  ]};
 }
-function wbBlankDocument(title='空白展示白板'){return {version:1,title,canvas:{width:1600,height:900,background:'#0a1f1a',backgroundEnd:'#14352a',grid:true},elements:[]};}
+function wbBlankDocument(title='空白展示白板'){return {version:1,title,canvas:{width:1600,height:900,background:'#ffffff',backgroundEnd:'#ffffff',grid:true},elements:[]};}
 function wbNewElement(type,position={}){
  const base={id:wbId(),type,x:position.x??610,y:position.y??330,width:320,height:180,rotation:0,z:Math.min(1000,wbState.current.document.elements.length+10),props:{opacity:1}};
- if(type==='text')return {...base,width:420,height:110,props:{...base.props,content:'双击属性面板编辑文字',fontSize:38,color:'#f2f8ed',fontWeight:600,align:'left'}};
+ if(type==='text')return {...base,width:420,height:110,props:{...base.props,content:'双击属性面板编辑文字',fontSize:38,color:'#17382c',fontWeight:600,align:'left'}};
  if(type==='metric'){const dev=companyDevices()[0];return {...base,width:460,height:220,props:{...base.props,deviceId:dev?.id||'',metric:'temperature',theme:'cyan',showValue:true,showChart:true}};}
  if(type==='shape')return {...base,props:{...base.props,color:'#2d8c67',radius:24}};
  if(type==='background')return {...base,width:1600,height:900,props:{...base.props,color:'#0a1f1a',gradient:true,pattern:'grid',opacity:.3}};
