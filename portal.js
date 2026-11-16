@@ -442,14 +442,11 @@ function bindPortal(){
   if(view!=='company'||companyTab!=='home')return;
   const target={devices:'#dashboard-devices',monitor:'#console-monitor',alerts:'#console-alerts'}[section];
   document.querySelectorAll('.sidebar [data-console-section]').forEach(b=>b.classList.toggle('active',b.dataset.consoleSection===section));
-  // 用 requestAnimationFrame 确保 navigate 后的 DOM 已完全渲染并处理完 scrollTo(0,0)
-  requestAnimationFrame(()=>{
-   if(target){
-    const el=document.querySelector(target);
-    if(el){el.scrollIntoView({block:'start',behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});return;}
-   }
-   window.scrollTo({top:0,behavior:'instant'});
-  });
+  if(target){
+   const el=document.querySelector(target);
+   if(el){el.scrollIntoView({block:'start'});return;}
+  }
+  window.scrollTo({top:0});
  });
  const bindRowButtons=()=>document.querySelectorAll('#console-device-rows [data-device]').forEach(b=>b.onclick=()=>openDevice(b.dataset.device));
  const searchDevices=query=>{const rows=document.querySelector('#console-device-rows');if(rows){rows.innerHTML=consoleDeviceRows(query);bindRowButtons();}};
