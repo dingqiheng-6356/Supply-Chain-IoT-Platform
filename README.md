@@ -8,7 +8,7 @@
 
 后端已部署到云服务器（Ubuntu 22.04 + systemd + Nginx），不依赖个人电脑，关机后仍可访问：
 
-**👉 https://dingjingqi.site/** （同时兼容 http://124.222.144.15/，HTTP 自动 301 跳 HTTPS）
+**👉 https://dingjingqi.site/** 
 
 > 高德地图 Key 通过服务器环境变量 `AMAP_KEY` / `AMAP_SECURITY_CODE` 注入，不写入仓库。
 
