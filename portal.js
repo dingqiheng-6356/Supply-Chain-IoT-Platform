@@ -1,4 +1,6 @@
 /* Login, company routing and declarative Markdown workspaces. */
+/* 侧边栏区块导航依赖即时滚动，否则 navigate 的 scrollTo 与 scrollIntoView 会互相打断。 */
+document.documentElement.style.setProperty('scroll-behavior','auto','important');
 let platform={chains:[],categories:[],companies:[],news:[]};
 let companyId=null,chainId=null,categoryId=null,companyTab='home',testMode='mqtt';
 let authMode='login',templateDraft=null,templates={},templateErrors={};
@@ -444,7 +446,7 @@ function bindPortal(){
   document.querySelectorAll('.sidebar [data-console-section]').forEach(b=>b.classList.toggle('active',b.dataset.consoleSection===section));
   if(target){
    const el=document.querySelector(target);
-   if(el){el.scrollIntoView({block:'start'});return;}
+   if(el){el.scrollIntoView({block:'start',behavior:'instant'});return;}
   }
   window.scrollTo({top:0});
  });
