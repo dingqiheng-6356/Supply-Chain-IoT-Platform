@@ -27,7 +27,9 @@ class PlatformHandler(Handler):
         host = self.headers.get('Host', '')
         origin = self.headers.get('Origin')
         public_origins = getattr(self.server, 'public_origins', None) or []
-        scheme = 'https' if isinstance(self.connection, ssl.SSLSocket) else 'http'
+        # 优先用客户端实际协议（反代场景下由 Nginx 的 X-Forwarded-Proto 传递）
+        xfp = self.headers.get('X-Forwarded-Proto', '')
+        scheme = xfp.lower() if xfp in ('http', 'https') else ('https' if isinstance(self.connection, ssl.SSLSocket) else 'http')
         allowed = {f'{name}:{self.server.server_port}' for name in self.server.allowed_hosts}
         # Reverse proxies normally forward Host without the backend port, so bare names must pass too.
         allowed |= set(self.server.allowed_hosts)
@@ -43,7 +45,11 @@ class PlatformHandler(Handler):
             raise RegistryError('访问来源不被允许。', 403)
 
     def cookie(self, token, age=43200):
-        secure = getattr(self.server,'secure_cookies',False)
+        # 跟随客户端实际使用的协议（Nginx 反代时通过 X-Forwarded-Proto 传递）
+        # 这样 HTTPS 客户端拿到 Secure cookie，HTTP 客户端（如手机临时访问 IP）拿到普通 cookie
+        xfp = self.headers.get('X-Forwarded-Proto', '')
+        direct_https = isinstance(self.connection, ssl.SSLSocket)
+        secure = (xfp.lower() == 'https' or direct_https)
         return f'iot-session={token}; HttpOnly; SameSite=Strict; Path=/; Max-Age={age}'+('; Secure' if secure else '')
 
     def respond(self, payload, status=200, cookie=None):
