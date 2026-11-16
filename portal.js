@@ -438,9 +438,18 @@ function bindPortal(){
  document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{companyTab=b.dataset.tab;navigate(companyTab==='profile'?'profile':'company');if(companyTab==='news')refreshNews();});
  document.querySelectorAll('[data-console-section]').forEach(button=>button.onclick=()=>{
   const section=button.dataset.consoleSection;if(section==='showcase'){navigate('whiteboards');return;}if(section==='organization'&&canOrganize()){navigate('organization');return;}if(section==='devices'&&canManageDevices()){pendingDeleteId=null;navigate('device-manage');return;}const needsHome=view!=='company'||companyTab!=='home';companyTab='home';if(needsHome)navigate('company');
+  // 路由守卫可能把 view 强制改了（例如非管理员没选供应链时被打回 chains）
+  if(view!=='company'||companyTab!=='home')return;
   const target={devices:'#dashboard-devices',monitor:'#console-monitor',alerts:'#console-alerts'}[section];
   document.querySelectorAll('.sidebar [data-console-section]').forEach(b=>b.classList.toggle('active',b.dataset.consoleSection===section));
-  if(target)document.querySelector(target)?.scrollIntoView({block:'start',behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});else window.scrollTo({top:0,behavior:'instant'});
+  // 用 requestAnimationFrame 确保 navigate 后的 DOM 已完全渲染并处理完 scrollTo(0,0)
+  requestAnimationFrame(()=>{
+   if(target){
+    const el=document.querySelector(target);
+    if(el){el.scrollIntoView({block:'start',behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});return;}
+   }
+   window.scrollTo({top:0,behavior:'instant'});
+  });
  });
  const bindRowButtons=()=>document.querySelectorAll('#console-device-rows [data-device]').forEach(b=>b.onclick=()=>openDevice(b.dataset.device));
  const searchDevices=query=>{const rows=document.querySelector('#console-device-rows');if(rows){rows.innerHTML=consoleDeviceRows(query);bindRowButtons();}};
