@@ -82,7 +82,7 @@ class NewsStore:
 
         title = text('title', '标题', 2, 80)
         summary = text('summary', '摘要', 2, 160)
-        body = text('body', '正文', 10, 8000)
+        body = text('body', '正文', 10, 20000)
         post_id = 'news-' + secrets.token_hex(6)
         created = time.time()
         with self.registry.connect() as db:
