@@ -1,15 +1,22 @@
 """Platform notices and company news posts."""
+import os
+import re
 import secrets
 import time
+from pathlib import Path
 
 from device_registry import RegistryError
 
 
 class NewsStore:
     SCOPES = ('platform', 'company')
+    IMAGE_TYPES = {'.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg',
+                   '.webp': 'image/webp', '.gif': 'image/gif'}
 
     def __init__(self, registry):
         self.registry = registry
+        self.asset_root = Path(os.environ.get('SUPPLY_NEWS_ASSETS') or registry.root / 'data' / 'news_assets')
+        self.asset_root.mkdir(parents=True, exist_ok=True)
         with registry.connect() as db:
             db.execute('''CREATE TABLE IF NOT EXISTS news_posts (
                 id TEXT PRIMARY KEY, scope TEXT NOT NULL, company TEXT,
@@ -17,6 +24,10 @@ class NewsStore:
                 author_id TEXT NOT NULL, author_name TEXT NOT NULL,
                 created REAL NOT NULL)''')
             db.execute('CREATE INDEX IF NOT EXISTS news_posts_feed ON news_posts(scope, company, created)')
+            db.execute('''CREATE TABLE IF NOT EXISTS news_assets (
+                id TEXT PRIMARY KEY, scope TEXT NOT NULL, company TEXT,
+                name TEXT NOT NULL, mime TEXT NOT NULL, extension TEXT NOT NULL,
+                size INTEGER NOT NULL, created REAL NOT NULL)''')
 
     @staticmethod
     def serialize(row):
@@ -81,3 +92,58 @@ class NewsStore:
         return {'id': post_id, 'scope': scope, 'companyId': company, 'title': title,
                 'summary': summary, 'body': body, 'author': user.get('name') or '',
                 'date': time.strftime('%Y-%m-%d', time.localtime(created)), 'createdAt': created}
+
+    def upload_image(self, user, filename, content):
+        if not user:
+            raise RegistryError('请先登录。', 401)
+        role = user.get('role')
+        if role == 'admin':
+            scope, company = 'platform', None
+        elif role == 'company_admin':
+            scope, company = 'company', user.get('companyId')
+            if not company:
+                raise RegistryError('当前账号未分配公司。', 403)
+        else:
+            raise RegistryError('只有平台管理员或公司管理员可以插入图片。', 403)
+        extension = Path(filename or '').suffix.lower()
+        if extension not in self.IMAGE_TYPES:
+            raise RegistryError('图片仅支持 PNG、JPG、WebP 或 GIF。')
+        if not content or len(content) > 8 * 1024 * 1024:
+            raise RegistryError('图片为空或超过 8 MB。')
+        signatures = {'.png': (b'\x89PNG\r\n\x1a\n',), '.jpg': (b'\xff\xd8\xff',),
+                      '.jpeg': (b'\xff\xd8\xff',), '.webp': (b'RIFF',),
+                      '.gif': (b'GIF87a', b'GIF89a')}
+        if not any(content.startswith(sig) for sig in signatures[extension]):
+            raise RegistryError('图片内容与文件扩展名不匹配。')
+        asset_id = secrets.token_hex(16)
+        mime = self.IMAGE_TYPES[extension]
+        path = self.asset_root / f'{asset_id}{extension}'
+        path.write_bytes(content)
+        try:
+            with self.registry.connect() as db:
+                db.execute('INSERT INTO news_assets VALUES (?,?,?,?,?,?,?,?)',
+                           (asset_id, scope, company, Path(filename).name[:160], mime,
+                            extension, len(content), time.time()))
+        except Exception:
+            path.unlink(missing_ok=True)
+            raise
+        return {'id': asset_id, 'url': f'/api/news/assets/{asset_id}',
+                'name': Path(filename).name[:160], 'mime': mime}
+
+    def asset(self, asset_id, user):
+        if not user:
+            raise RegistryError('请先登录。', 401)
+        if not isinstance(asset_id, str) or not re.fullmatch(r'[a-f0-9]{32}', asset_id):
+            raise RegistryError('图片不存在。', 404)
+        with self.registry.connect() as db:
+            row = db.execute('SELECT * FROM news_assets WHERE id=?', (asset_id,)).fetchone()
+        if not row:
+            raise RegistryError('图片不存在。', 404)
+        allowed = (row['scope'] == 'platform' or user.get('role') == 'admin'
+                   or user.get('companyId') == row['company'])
+        if not allowed:
+            raise RegistryError('无权查看该图片。', 403)
+        path = (self.asset_root / f"{asset_id}{row['extension']}").resolve()
+        if not path.is_relative_to(self.asset_root.resolve()) or not path.is_file():
+            raise RegistryError('图片文件不存在。', 404)
+        return path, row['mime']

@@ -304,10 +304,44 @@ class PlatformHandler(Handler):
             else:
                 self.respond({'error': '上传请求长度无效。'}, 400)
 
+    def serve_news_asset(self, asset_id):
+        try:
+            self.local_origin()
+            path, mime = self.server.registry.news.asset(asset_id, self.user())
+            content = path.read_bytes()
+            self.send_response(200)
+            self.send_header('Content-Type', mime)
+            self.send_header('Content-Length', str(len(content)))
+            self.send_header('X-Content-Type-Options', 'nosniff')
+            self.send_header('Cache-Control', 'private, max-age=86400')
+            self.end_headers()
+            self.wfile.write(content)
+        except RegistryError as error:
+            self.respond({'error': str(error)}, error.status)
+
+    def upload_news_asset(self):
+        try:
+            self.local_origin()
+            user = self.user()
+            length = int(self.headers.get('Content-Length', '0'))
+            if not 0 < length <= 8 * 1024 * 1024:
+                raise RegistryError('图片为空或超过 8 MB。')
+            filename = parse_qs(urlsplit(self.path).query).get('name', [''])[0]
+            content = self.rfile.read(length)
+            self.respond({'asset': self.server.registry.news.upload_image(user, filename, content)}, 201)
+        except (ValueError, RegistryError) as error:
+            if isinstance(error, RegistryError):
+                self.respond({'error': str(error)}, error.status)
+            else:
+                self.respond({'error': '上传请求长度无效。'}, 400)
+
     def do_GET(self):
         path = urlsplit(self.path).path
         if path.startswith('/api/whiteboards/assets/'):
             self.serve_whiteboard_asset(unquote(path.rsplit('/', 1)[-1]))
+            return
+        if path.startswith('/api/news/assets/'):
+            self.serve_news_asset(unquote(path.rsplit('/', 1)[-1]))
             return
         if path == '/devices.json':
             types = json.loads((self.server.registry.root / 'devices.json').read_text())['scenes']
@@ -333,6 +367,8 @@ class PlatformHandler(Handler):
     def do_POST(self):
         if urlsplit(self.path).path == '/api/whiteboards/assets':
             self.upload_whiteboard_asset()
+        elif urlsplit(self.path).path == '/api/news/assets':
+            self.upload_news_asset()
         else:
             self.api('POST')
 

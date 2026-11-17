@@ -39,7 +39,7 @@ function newsPublishButton(scope){
 }
 function newsPublishForm(scope){
  const company=platform.companies.find(c=>c.id===currentUser?.companyId)?.name||'本公司';
- return `<section class="panel news-publish"><h2>${scope==='platform'?'发布平台更新通知':'发布公司新闻'}</h2><p class="settings-note">${scope==='platform'?'发布后所有平台用户可见。':`发布后仅 ${safe(company)} 的邀请用户可见。`}</p><form id="news-publish-form"><label for="news-title">标题</label><input id="news-title" name="title" maxlength="80" required><label for="news-summary">摘要</label><input id="news-summary" name="summary" maxlength="160" required><label for="news-body">正文（支持 Markdown）</label><textarea id="news-body" name="body" rows="8" maxlength="8000" required></textarea><p class="error" id="news-publish-error" role="alert"></p><div class="form-actions"><button type="button" class="secondary" data-news-cancel>取消</button><button class="primary" type="submit">发布</button></div></form></section>`;
+ return `<section class="panel news-publish"><h2>${scope==='platform'?'发布平台更新通知':'发布公司新闻'}</h2><p class="settings-note">${scope==='platform'?'发布后所有平台用户可见。':`发布后仅 ${safe(company)} 的邀请用户可见。`}</p><form id="news-publish-form"><label for="news-title">标题</label><input id="news-title" name="title" maxlength="80" required><label for="news-summary">摘要</label><input id="news-summary" name="summary" maxlength="160" required><div class="news-body-head"><label for="news-body">正文（支持 Markdown，可插入图片）</label><button type="button" class="secondary" id="news-image-upload">插入图片</button><input type="file" id="news-image-file" accept="image/png,image/jpeg,image/webp,image/gif" hidden></div><textarea id="news-body" name="body" rows="8" maxlength="8000" required></textarea><p class="news-image-status" id="news-image-status" role="status"></p><p class="error" id="news-publish-error" role="alert"></p><div class="form-actions"><button type="button" class="secondary" data-news-cancel>取消</button><button class="primary" type="submit">发布</button></div></form></section>`;
 }
 function newsSection(kind,rows,action,companyName){
  const platform=kind==='platform',title=platform?'平台更新通知':'公司新闻';
@@ -69,9 +69,29 @@ async function submitNewsPost(form,scope){
   newsDraftScope='';notice='发布成功。';await loadNews();render();
  }catch(requestError){error.textContent=requestError.message;button.disabled=false;}
 }
+async function uploadNewsImage(file){
+ if(!file)return;
+ const status=document.querySelector('#news-image-status'),textarea=document.querySelector('#news-body'),button=document.querySelector('#news-image-upload');
+ if(!status||!textarea||!button)return;
+ if(!/^image\/(png|jpeg|webp|gif)$/.test(file.type)){status.textContent='仅支持 PNG、JPG、WebP 或 GIF 图片。';return;}
+ if(file.size>8*1024*1024){status.textContent='图片不能超过 8 MB。';return;}
+ button.disabled=true;status.textContent='正在上传图片…';
+ try{
+  const response=await fetch(`./api/news/assets?name=${encodeURIComponent(file.name)}`,{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/octet-stream'},body:file});
+  const data=await response.json().catch(()=>({}));
+  if(!response.ok)throw new Error(data.error||`图片上传失败（${response.status}）。`);
+  const alt=(file.name||'图片').replace(/\.[^.]+$/,''),markdown=`\n\n![${alt}](${data.asset.url})\n\n`;
+  const start=textarea.selectionStart??textarea.value.length,end=textarea.selectionEnd??textarea.value.length;
+  textarea.value=textarea.value.slice(0,start)+markdown+textarea.value.slice(end);
+  textarea.focus();textarea.selectionStart=textarea.selectionEnd=start+markdown.length;
+  status.textContent='图片已插入正文，可继续编辑或发布。';
+ }catch(error){status.textContent=error.message;}
+ finally{button.disabled=false;const input=document.querySelector('#news-image-file');if(input)input.value='';}
+}
 function articleUrl(raw){
  const value=String(raw).trim();
  if(/^https?:\/\/[^\s]+$/i.test(value))return value;
+ if(/^(?:\.\/|\/)?api\/news\/assets\/[a-f0-9]{32}$/.test(value))return './'+value.replace(/^(?:\.\/|\/)/,'');
  if(/^(?:\.\/|\/)?assets\/news\/[\w\u4e00-\u9fff./%-]+$/.test(value)&&!value.includes('..'))return './'+value.replace(/^(?:\.\/|\/)/,'');
  return null;
 }
@@ -138,6 +158,8 @@ function bindNews(){
  const retry=document.querySelector('#reload-news');if(retry)retry.onclick=refreshNews;
  document.querySelectorAll('[data-news-publish]').forEach(button=>button.onclick=()=>{newsDraftScope=button.dataset.newsPublish;render();document.querySelector('#news-publish-form')?.scrollIntoView({block:'center'});});
  const cancel=document.querySelector('[data-news-cancel]');if(cancel)cancel.onclick=()=>{newsDraftScope='';render();};
+ const imageButton=document.querySelector('#news-image-upload'),imageFile=document.querySelector('#news-image-file');
+ if(imageButton&&imageFile){imageButton.onclick=()=>imageFile.click();imageFile.onchange=()=>uploadNewsImage(imageFile.files[0]);}
  const form=document.querySelector('#news-publish-form');
  if(form)form.onsubmit=event=>{event.preventDefault();submitNewsPost(form,newsDraftScope||'platform');};
  document.querySelectorAll('[data-article-section]').forEach(a=>a.onclick=event=>{event.preventDefault();document.getElementById(a.dataset.articleSection)?.scrollIntoView({block:'start',behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});});
