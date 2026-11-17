@@ -146,37 +146,71 @@ function accountPage(){
 }
 function dashboardCards(){
  const list=companyDevices(),warnings=warningDevices();
- const data={total:['device','设备总数',list.length,'公司所属监测设备','blue'],online:['check','在线设备',list.filter(d=>d.online).length,platformBackend?'按最近有效上报判断':'当前模拟设备状态','green'],alerts:['bell','预警设备',warnings.length,warnings.length===1?'点击直达异常设备 →':'查看预警设备列表 →','orange']};
+ const data={total:['device','设备总数',list.length],online:['check','在线设备',list.filter(d=>d.online).length],alerts:['bell','告警设备',warnings.length]};
  const cfg=workspaceTemplate().config;
- return `<div class="stats-grid company-stats">${cfg.widgets.map(w=>{const [i,label,n,desc,color]=data[w];return `<${w==='alerts'?'button':'div'} class="stat-card ${w==='alerts'?'stat-action':''}" ${w==='alerts'?'type="button" id="warning-devices" aria-label="查看预警设备"':''}><span class="feature-icon ${color}">${icon(i)}</span><span class="stat-label">${label}</span><strong>${n}<small>台</small></strong><p>${desc}</p></${w==='alerts'?'button':'div'}>`;}).join('')}</div>`;
+ return `<div class="ov-metrics company-stats">${cfg.widgets.map(w=>{const [i,label,n]=data[w];const tag=w==='alerts'?'button':'div';return `<${tag} class="ov-metric ov-metric-${w}" ${w==='alerts'?'type="button" id="warning-devices" aria-label="查看告警设备"':''}><span class="ov-metric-label">${label}</span><strong>${n}<small>台</small></strong><span class="ov-metric-icon">${icon(i)}</span></${tag}>`;}).join('')}</div>`;
 }
 function deviceCards(list){return `<div class="device-grid">${list.map(raw=>{const d=effective(raw),s=deviceScene(d),[label,color]=status(s,d);return `<button class="device-card" data-device="${safe(d.id)}"><div class="card-top"><span class="project-symbol ${s.color}">${icon('device')}</span><span class="badge ${color}"><i class="dot"></i>${label}</span></div><span class="device-code">${safe(d.id)}</span><h2>${safe(d.name)}</h2><p>${safe(d.location)}</p><div class="device-sensors">${s.metrics.map(m=>`<span class="${alarms(s,d).some(a=>a.key===m.key)&&d.online?'warning-metric':''}">${safe(m.name)}</span>`).join('')}</div><div class="device-readings">${s.metrics.map(m=>`<div class="${d.online&&alarms(s,d).some(a=>a.key===m.key)?'reading-alert':''}"><small>${safe(m.name)}</small><strong>${Number.isFinite(d.values[m.key])?safe(d.values[m.key]):'—'}<em>${safe(m.unit)}</em></strong></div>`).join('')}</div>${!d.online?`<span class="last-reading-note">${d.mqtt?'离线 / 等待新上报 · 最后接收值':'离线 · 最后一次模拟采样'}</span>`:''}<div class="device-action"><span>查看传感器数据</span>${icon('arrow')}</div></button>`;}).join('')}</div>`;}
 function workspaceSparkline(metric,d){
- const values=(d.history?.[metric.key]||[]).filter(Number.isFinite);
- if(!values.length)return '<div class="spark-empty">暂无历史采样</div>';
- const lo=Math.min(...values),range=Math.max(...values)-lo||1;
- const points=values.map((v,i)=>`${8+i*304/Math.max(1,values.length-1)},${64-(v-lo)/range*48}`).join(' ');
- return `<svg viewBox="0 0 320 80" role="img" aria-label="${safe(metric.name)}最近 ${values.length} 次${d.mqtt?'实际':'模拟'}采样"><path d="M8 20H312M8 45H312M8 70H312" stroke="currentColor" opacity=".08"/><polygon points="8,78 ${points} 312,78" fill="currentColor" opacity=".07"/><polyline points="${points}" stroke="currentColor" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+ const rawValues=d.history?.[metric.key]||[],rawTimes=d.historyTimes?.[metric.key]||[];
+ const samples=rawValues.map((value,i)=>({value,time:rawTimes[i]})).filter(s=>Number.isFinite(s.value));
+ if(!samples.length)return '<div class="spark-empty">暂无历史采样</div>';
+ const lo=Math.min(...samples.map(s=>s.value)),range=Math.max(...samples.map(s=>s.value))-lo||1;
+ const x=i=>10+i*300/Math.max(1,samples.length-1),y=v=>82-(v-lo)/range*58;
+ const points=samples.map((s,i)=>`${x(i)},${y(s.value)}`).join(' ');
+ const gid='spark-'+String(metric.key).replace(/[^A-Za-z0-9_-]/g,'');
+ const dots=samples.map((s,i)=>{
+  const label=`${metric.name}：${s.value}${metric.unit?' '+metric.unit:''}`,time=sampleTimeLabel(s.time);
+  const tipX=Math.min(184,Math.max(4,x(i)-56)),tipY=Math.max(2,y(s.value)-46);
+  return `<g class="spark-point"><circle cx="${x(i)}" cy="${y(s.value)}" r="9" fill="transparent"/><circle cx="${x(i)}" cy="${y(s.value)}" r="2.6" fill="currentColor"/><g class="spark-tip" transform="translate(${tipX},${tipY})"><rect width="132" height="38" rx="7"/><text x="9" y="15">${safe(label)}</text><text x="9" y="30">${safe(time)}</text></g></g>`;
+ }).join('');
+ return `<svg class="spark-chart" viewBox="0 0 320 92" role="group" aria-label="${safe(metric.name)}最近 ${samples.length} 次采样趋势"><defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="currentColor" stop-opacity=".22"/><stop offset="1" stop-color="currentColor" stop-opacity="0"/></linearGradient></defs><polygon points="${samples.map((s,i)=>x(i)+','+y(s.value)).join(' ')} 310,92 10,92" fill="url(#${gid})"/><polyline points="${points}" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>${dots}</svg>`;
 }
 let overviewDeviceId=null;
-function companyInsights(){
- const list=companyDevices(),warnings=warningDevices(),offline=list.filter(d=>!d.online),healthy=list.length-warnings.length-offline.length;
- const raw=list.find(d=>d.id===overviewDeviceId)||list.find(d=>d.online)||list[0],d=raw?effective(raw):null,s=d?deviceScene(d):null;
- const total=list.length,green=total?healthy/total*100:0,amber=total?(healthy+warnings.length)/total*100:0;
- return `<div class="insight-grid"><section class="insight-panel sampling-panel"><div class="insight-heading"><div><span class="dashboard-kicker">SENSOR OVERVIEW</span><h2>采样数据概览</h2></div>${d?`<label class="overview-select"><span class="sr-only">概览设备</span><select id="overview-device">${list.map(row=>`<option value="${safe(row.id)}" ${row.id===d.id?'selected':''}>${safe(effective(row).name)}</option>`).join('')}</select></label>`:''}</div>${d?`<div class="sampling-context"><span>${safe(d.location)}</span><span>${d.mqtt?(d.online?'MQTT 实时采样':'离线 / 等待新上报'):d.online?'模拟采样快照':Object.values(d.values).some(Number.isFinite)?'离线 · 最后一次模拟采样':'离线 · 暂无采样数据'}</span></div><div class="sampling-grid">${s.metrics.map(m=>{const warning=d.online&&alarms(s,d).some(a=>a.key===m.key);return `<div class="sampling-metric ${warning?'is-alert':''}"><span>${icon(m.icon)} ${safe(m.name)}</span><strong>${Number.isFinite(d.values[m.key])?safe(d.values[m.key]):'—'}<small>${safe(m.unit)}</small></strong>${workspaceSparkline(m,d)}<small>最近 ${(d.history?.[m.key]||[]).filter(Number.isFinite).length} 次${d.mqtt?'实际':'模拟'}采样</small></div>`;}).join('')}</div><button class="dashboard-text-link" data-device="${safe(d.id)}">查看设备详情 ${icon('arrow')}</button>`:'<p class="dashboard-empty">尚未配置监测设备</p>'}</section><section class="insight-panel health-panel"><div class="insight-heading"><div><span class="dashboard-kicker">DEVICE STATUS</span><h2>设备状态分布</h2></div>${icon('device')}</div><div class="health-content"><div class="health-ring" style="--healthy:${green}%;--warning:${amber}%" role="img" aria-label="${healthy} 台正常，${warnings.length} 台预警，${offline.length} 台离线"><div><strong>${total}</strong><span>设备总数</span></div></div><div class="health-legend">${[['normal','运行正常',healthy],['warn','在线预警',warnings.length],['off','设备离线',offline.length]].map(([cls,label,n])=>`<div><span><i class="${cls}"></i>${label}</span><strong>${n}<small> 台</small></strong></div>`).join('')}</div></div><p class="health-foot">${total?`在线率 ${Math.round((total-offline.length)/total*100)}% · 根据设备状态统计`:'暂无设备数据'}</p></section></div>`;
+function consoleHealthPanel(){
+ const list=companyDevices(),warnings=warningDevices(),offline=list.filter(d=>!d.online),total=list.length,healthy=Math.max(0,total-warnings.length-offline.length);
+ const green=total?healthy/total*100:0,amber=total?(healthy+warnings.length)/total*100:0;
+ return `<section class="insight-panel ov-health"><div class="ov-card-head"><div><span class="ov-kicker">DEVICE STATUS</span><h2>设备状态分布</h2></div></div><div class="ov-ring-wrap"><div class="health-ring ov-ring" style="--healthy:${green}%;--warning:${amber}%" role="img" aria-label="${healthy} 台正常，${warnings.length} 台告警，${offline.length} 台离线"><div><strong>${total}</strong><span>设备总数</span></div></div></div><div class="health-legend ov-legend">${[['normal','运行正常',healthy],['warn','在线告警',warnings.length],['off','设备离线',offline.length]].map(([cls,label,n])=>`<div><span><i class="${cls}"></i>${label}</span><strong>${n}<small> 台</small></strong></div>`).join('')}</div><p class="health-foot">${total?`设备在线率：${Math.round((total-offline.length)/total*100)}%`:'暂无设备数据'}</p></section>`;
 }
+function consoleSamplingPanel(){
+ const list=companyDevices();
+ const raw=list.find(d=>d.id===overviewDeviceId)||list.find(d=>d.online)||list[0],d=raw?effective(raw):null,s=d?deviceScene(d):null;
+ const head=`<div class="ov-card-head"><div><span class="ov-kicker">SENSOR OVERVIEW</span><h2>采样数据概览</h2></div>${d?`<label class="ov-select"><span class="sr-only">概览设备</span><select id="overview-device">${list.map(row=>`<option value="${safe(row.id)}" ${row.id===d.id?'selected':''}>${safe(effective(row).name)}</option>`).join('')}</select></label>`:''}</div>`;
+ if(!d)return `<section class="insight-panel ov-sampling">${head}<p class="dashboard-empty">尚未配置监测设备</p></section>`;
+ if(!s||!s.metrics.length)return `<section class="insight-panel ov-sampling">${head}<p class="dashboard-empty">等待设备首次上报后显示指标</p></section>`;
+ return `<section class="insight-panel ov-sampling">${head}<div class="ov-sampling-grid">${s.metrics.map(m=>{const warning=d.online&&alarms(s,d).some(a=>a.key===m.key),value=d.values[m.key],count=(d.history?.[m.key]||[]).filter(Number.isFinite).length;return `<div class="sampling-metric ${warning?'is-alert':''}"><span class="ov-metric-name">${icon(m.icon)} ${safe(m.name)}</span><div class="ov-reading"><strong>${Number.isFinite(value)?safe(value):'—'}</strong><small>${safe(m.unit)}</small></div>${workspaceSparkline(m,d)}<span class="ov-sample-note">最近 ${count} 次${d.mqtt?'实际':'模拟'}采样</span></div>`;}).join('')}</div><button class="dashboard-text-link" data-device="${safe(d.id)}">查看设备详情 ${icon('arrow')}</button></section>`;
+}
+function companyInsights(){return `<div class="insight-grid">${consoleSamplingPanel()}${consoleHealthPanel()}</div>`;}
 function companyAttention(){
  const list=companyDevices(),attention=list.filter(d=>!d.online||alarms(deviceScene(d),effective(d)).length);
  const articles=visibleNews().slice(0,2);
  return `<div class="dashboard-bottom"><section class="insight-panel attention-panel" id="console-alerts"><div class="insight-heading"><div><span class="dashboard-kicker">NEEDS ATTENTION</span><h2>需要关注 <small>${attention.length}</small></h2></div>${icon('bell')}</div>${attention.map(raw=>{const d=effective(raw),s=deviceScene(d);return `<button class="attention-row" data-device="${safe(d.id)}"><span class="attention-symbol ${d.online?'warn':'off'}">${icon(d.online?'bell':'device')}</span><span><strong>${safe(d.name)}</strong><small>${d.online?alarms(s,d).map(m=>safe(m.name)+'超出范围').join('、'):'设备离线 · 请检查供电与网络'}</small></span>${icon('arrow')}</button>`;}).join('')||'<p class="dashboard-empty">'+icon('check')+' 当前没有预警或离线设备</p>'}</section><section class="insight-panel dashboard-news"><div class="insight-heading"><div><span class="dashboard-kicker">LATEST NEWS</span><h2>公司与平台动态</h2></div><button class="dashboard-text-link" data-tab="news">全部新闻 ${icon('arrow')}</button></div>${articles.map(a=>`<a class="dashboard-news-item" href="#article/${encodeURIComponent(a.id)}" data-article="${safe(a.id)}"><time>${safe(a.date)}</time><strong>${safe(a.title)}</strong>${icon('arrow')}</a>`).join('')||'<p class="dashboard-empty">暂无最新动态</p>'}</section></div>`;
 }
+let consoleAttentionTab='alert';
 function consoleAlertPanel(){
- const rows=companyDevices().filter(d=>!d.online||alarms(deviceScene(d),effective(d)).length);
- return `<section class="insight-panel console-alerts" id="console-alerts"><div class="insight-heading"><h2>告警与离线</h2><span class="console-count">${rows.length} 项待关注</span></div>${rows.map(raw=>{const d=effective(raw),s=deviceScene(d);return `<button class="console-alert-row" data-device="${safe(d.id)}"><span class="console-alert-icon ${d.online?'warning':'offline'}">${icon(d.online?'bell':'device')}</span><span><strong>${d.online?alarms(s,d).map(m=>safe(m.name)+'超出范围').join('、'):'设备离线'}</strong><small>${safe(d.name)} · ${safe(d.id)}</small><em>${safe(d.location)}</em></span>${icon('arrow')}</button>`;}).join('')||'<p class="dashboard-empty">'+icon('check')+' 当前设备无异常</p>'}<p class="console-panel-note">点击异常信息，直接查看对应设备</p></section>`;
+ const items=companyDevices().map(raw=>effective(raw));
+ const alerts=items.filter(d=>{const s=deviceScene(d);return d.online&&s&&alarms(s,d).length;}).map(d=>({d,text:alarms(deviceScene(d),d).map(m=>m.name+'超出范围').join('、')}));
+ const offline=items.filter(d=>!d.online).map(d=>({d,text:'设备离线 · 请检查供电与网络'}));
+ const rows=consoleAttentionTab==='offline'?offline:alerts;
+ const tabs=[['alert','告警',alerts.length],['offline','离线',offline.length]];
+ return `<section class="insight-panel ov-attention" id="console-alerts"><div class="ov-card-head"><div><span class="ov-kicker">NEEDS ATTENTION</span><h2>告警与离线</h2></div></div><div class="ov-tabs" role="tablist">${tabs.map(([key,label,count])=>`<button type="button" role="tab" data-attention-tab="${key}" aria-selected="${consoleAttentionTab===key}" class="${consoleAttentionTab===key?'is-active':''}">${label}<i>${count}</i></button>`).join('')}</div><div class="ov-attention-list">${rows.map(({d,text})=>`<button class="console-alert-row" data-device="${safe(d.id)}"><span class="console-alert-icon ${consoleAttentionTab==='alert'?'warning':'offline'}">${icon(consoleAttentionTab==='alert'?'bell':'device')}</span><span><strong>${safe(text)}</strong><small>${safe(d.name)} · ${safe(d.id)}</small><em>${safe(d.location)}</em></span>${icon('arrow')}</button>`).join('')||`<p class="dashboard-empty">${icon('check')} ${consoleAttentionTab==='alert'?'当前没有告警设备':'当前没有离线设备'}</p>`}</div><p class="ov-note">点击条目直接查看对应设备</p></section>`;
+}
+function refreshConsoleAttention(){
+ const current=document.querySelector('.ov-attention');
+ if(!current)return;
+ const box=document.createElement('div');
+ box.innerHTML=consoleAlertPanel();
+ const next=box.firstElementChild;
+ current.replaceWith(next);
+ bindLiveDeviceButtons(next);
+ bindConsoleAttention();
+}
+function bindConsoleAttention(){
+ document.querySelectorAll('[data-attention-tab]').forEach(button=>button.onclick=()=>{consoleAttentionTab=button.dataset.attentionTab;refreshConsoleAttention();});
 }
 function consoleDeviceRows(query=''){
  const rows=companyDevices().filter(raw=>{const d=effective(raw);return (!platformBackend||!deviceSceneFilter||d.workspaceSceneId===deviceSceneFilter)&&[d.name,d.id,d.location].join(' ').toLowerCase().includes(query.trim().toLowerCase());});
- return rows.map(raw=>{const d=effective(raw),s=deviceScene(d),[label,color]=status(s,d);return `<tr><td><button data-device="${safe(d.id)}">${icon('device')} ${safe(d.name)}</button></td><td><code>${safe(d.id)}</code></td><td><span class="badge ${color}"><i></i>${label}</span></td><td>${safe(d.location)}${platformBackend?`<small>${safe(companyScenes.find(s=>s.id===d.workspaceSceneId)?.name||'未分组')}</small>`:''}</td><td><button class="dashboard-text-link" data-device="${safe(d.id)}">查看 ${icon('arrow')}</button></td></tr>`;}).join('')||'<tr><td colspan="5" class="console-no-results">未找到匹配设备</td></tr>';
+ return rows.map(raw=>{const d=effective(raw),s=deviceScene(d),[label,color]=status(s,d);return `<tr><td><button class="ov-device-name" data-device="${safe(d.id)}">${icon('device')} ${safe(d.name)}</button></td><td><code>${safe(d.id)}</code></td><td><span class="badge ${color}"><i></i>${label}</span></td><td>${safe(d.location)}${platformBackend?`<small>${safe(companyScenes.find(s=>s.id===d.workspaceSceneId)?.name||'未分组')}</small>`:''}</td><td><button class="ov-view-link" data-device="${safe(d.id)}">查看 ${icon('arrow')}</button></td></tr>`;}).join('')||'<tr><td colspan="5" class="console-no-results">未找到匹配设备</td></tr>';
 }
 let amapLoader=null,amapConfigCache=null,deviceMapInstance=null;
 function resolveAmapConfig(){
@@ -219,13 +253,20 @@ function bindDeviceMap(){
    const center=Array.isArray(cfg.center)&&cfg.center.length===2?cfg.center:[116.397477,39.908692];
    deviceMapInstance=new AMap.Map(container,{center,zoom:cfg.zoom||16,viewMode:'2D',mapStyle:'amap://styles/whitesmoke',resizeEnable:true});
    deviceMapInstance.addControl(new AMap.Scale());
+   const infoWindow=new AMap.InfoWindow({offset:new AMap.Pixel(0,-16),closeWhenClickMap:true});
    const markers=list.map((raw,index)=>{
     const d=effective(raw),[label,color]=status(deviceScene(d),d);
     const pin=document.createElement('button');
     pin.type='button';pin.className='map-pin '+color;pin.title=d.name+' · '+label;
     pin.innerHTML='<i></i><span>'+safe(d.name)+'</span>';
-    pin.addEventListener('click',()=>openDevice(d.id));
-    return new AMap.Marker({position:deviceMapPoint(d,index,center),content:pin,anchor:'center'});
+    const position=deviceMapPoint(d,index,center);
+    pin.addEventListener('click',()=>{
+     const readings=(d.metrics||[]).slice(0,2).map(m=>`<span>${safe(m.name)} <b>${Number.isFinite(d.values?.[m.key])?safe(d.values[m.key]):'—'}</b> ${safe(m.unit)}</span>`).join('');
+     infoWindow.setContent(`<div class="ov-map-pop"><strong>${safe(d.name)}</strong><small>${safe(d.location)}</small><p>${readings||'<span>暂无实时读数</span>'}</p><button type="button" data-map-device="${safe(d.id)}">查看设备</button></div>`);
+     infoWindow.open(deviceMapInstance,position);
+     setTimeout(()=>{const action=document.querySelector('.ov-map-pop [data-map-device]');if(action)action.onclick=()=>openDevice(d.id);},0);
+    });
+    return new AMap.Marker({position,content:pin,anchor:'center'});
    });
    container.querySelector('.device-map-status')?.remove();
    container.dataset.mapState='ready';
@@ -235,12 +276,14 @@ function bindDeviceMap(){
 }
 function consoleDeviceArea(){
  const list=companyDevices();
- return `<div class="console-device-area" id="dashboard-devices"><section class="insight-panel console-map"><div class="insight-heading"><h2>采集点分布</h2><span class="console-count">${list.length} 个设备</span></div><div class="device-map" id="device-map" data-map-state="loading"><span class="device-map-status">正在加载高德地图…</span></div><div class="site-legend"><span><i></i>正常</span><span><i></i>预警</span><span><i></i>离线</span></div><p class="device-map-note">地图数据 © 高德地图 · 采集点按设备经纬度定位，缺少坐标时在公司中心周边示意</p></section><section class="insight-panel console-device-table"><div class="insight-heading"><h2>设备列表</h2>${platformBackend?`<label>场景<select id="console-scene-filter"><option value="">全部场景</option>${companyScenes.filter(s=>s.company===companyId).map(s=>`<option value="${safe(s.id)}" ${s.id===deviceSceneFilter?'selected':''}>${safe(s.name)}</option>`).join('')}</select></label>`:''}<label class="table-search">${icon('eye')}<input type="search" id="console-device-search" aria-label="搜索设备" placeholder="搜索名称 / ID / 位置"></label></div><div class="table-wrap"><table><thead><tr><th>设备名称</th><th>设备 ID</th><th>状态</th><th>位置</th><th>操作</th></tr></thead><tbody id="console-device-rows">${consoleDeviceRows()}</tbody></table></div><div class="console-table-footer"><span>仅显示 ${safe(company()?.name)} 的设备</span><span>共 ${list.length} 台</span></div></section></div>`;
+ return `<div class="ov-lower-grid" id="dashboard-devices"><section class="insight-panel ov-map-panel"><div class="ov-card-head"><div><span class="ov-kicker">SITE MAP</span><h2>采集点分布</h2></div><span class="ov-count">${list.length} 个设备</span></div><div class="device-map ov-device-map" id="device-map" data-map-state="loading"><span class="device-map-status">正在加载高德地图…</span></div><div class="site-legend ov-site-legend"><span><i class="normal"></i>正常</span><span><i class="warn"></i>告警</span><span><i class="off"></i>离线</span></div><p class="device-map-note">地图数据 © 高德地图 · 缺少坐标时在公司中心周边示意</p></section><section class="insight-panel ov-table-panel"><div class="ov-card-head"><div><span class="ov-kicker">DEVICE LIST</span><h2>设备列表</h2></div><div class="ov-table-tools">${platformBackend?`<label class="ov-select ov-scene"><span class="sr-only">场景筛选</span><select id="console-scene-filter"><option value="">全部场景</option>${companyScenes.filter(s=>s.company===companyId).map(s=>`<option value="${safe(s.id)}" ${s.id===deviceSceneFilter?'selected':''}>${safe(s.name)}</option>`).join('')}</select></label>`:''}<label class="table-search">${icon('eye')}<input type="search" id="console-device-search" aria-label="搜索设备" placeholder="搜索名称 / ID / 位置"></label></div></div><div class="table-wrap ov-table-wrap"><table class="ov-table"><thead><tr><th>设备名称</th><th>设备 ID</th><th>状态</th><th>位置</th><th>操作</th></tr></thead><tbody id="console-device-rows">${consoleDeviceRows()}</tbody></table></div><div class="console-table-footer"><span>仅显示 ${safe(company()?.name)} 的设备</span><span>共 ${list.length} 台</span></div></section></div>`;
 }
-function consoleQuickActions(){return `<section class="insight-panel console-quick"><div class="insight-heading"><h2>快捷操作</h2></div><div>${[['devices','device','查看设备'],['monitor','grid','数据监测'],['alerts','bell','查看告警']].map(([section,i,text])=>`<button data-console-section="${section}"><span>${icon(i)}</span>${text}</button>`).join('')}<button data-tab="news"><span>${icon('chat')}</span>公司新闻</button></div><p>${icon('shield')} ${safe(company()?.name)} · ${safe(roles[currentUser.role].label)}工作空间</p></section>`;}
+function consoleQuickActions(){return `<section class="insight-panel ov-quick"><div class="ov-card-head"><div><span class="ov-kicker">SHORTCUTS</span><h2>快捷操作</h2></div></div><div class="ov-quick-grid">${[['devices','device','查看设备'],['monitor','grid','数据监测'],['alerts','bell','查看告警']].map(([section,i,text])=>`<button type="button" data-console-section="${section}"><span>${icon(i)}</span>${text}</button>`).join('')}<button type="button" data-tab="news"><span>${icon('chat')}</span>公告新闻</button></div></section>`;}
 function customerConsoleHome(t){
- const list=companyDevices(),news=visibleNews().slice(0,2);
- return `${canManageDevices()?'<div class="inventory-toolbar"><span>公司设备维护</span><button class="primary" data-route="device-manage">管理设备 · 添加 / 删除</button></div>':''}<div class="company-dashboard cockpit-dashboard"><div class="console-top-grid"><section class="console-welcome"><div><span>${safe(platform.categories.find(c=>c.id===company()?.categoryId)?.name||'公司空间')} · 运营概览</span><h1>你好，${safe(currentUser.name)}</h1><p>${safe(t.config.subtitle)}</p></div>${dashboardCards()}<div class="console-hero-landscape" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div></section>${consoleQuickActions()}</div><div class="console-analytics" id="console-monitor">${companyInsights()}${consoleAlertPanel()}</div>${t.config.showDevices?consoleDeviceArea():''}<div class="console-bottom-grid"><section class="insight-panel"><div class="insight-heading"><h2>平台与公司动态</h2><button class="dashboard-text-link" data-tab="news">全部新闻 ${icon('arrow')}</button></div>${news.map(a=>`<a class="dashboard-news-item" href="#article/${encodeURIComponent(a.id)}" data-article="${safe(a.id)}"><time>${safe(a.date)}</time><strong>${safe(a.title)}</strong>${icon('arrow')}</a>`).join('')||'<p class="dashboard-empty">暂无新闻</p>'}</section><section class="insight-panel console-notes">${markdown(t.body)}</section></div><p class="console-data-note">${icon('help')} ${platformBackend?'仅显示你有权访问的设备；监测值来自设备实际采样上报。':'当前读数、历史曲线及在线状态来自公司 JSON 模拟数据。'}</p></div>`;
+ const news=visibleNews().slice(0,2);
+ const category=platform.categories.find(c=>c.id===company()?.categoryId)?.name||'公司空间';
+ const subtitle=[company()?.name,t.config.subtitle||'温湿度氨气实时监测与运营闭环'].filter(Boolean).join(' - ');
+ return `${canManageDevices()?'<div class="inventory-toolbar"><span>公司设备维护</span><button class="primary" data-route="device-manage">管理设备 · 添加 / 删除</button></div>':''}<div class="company-dashboard cockpit-dashboard ov-dash"><header class="ov-hero"><span class="ov-eyebrow">${safe(category)} · 运营概览</span><h1>你好，${safe(currentUser.name)}</h1><p>${safe(subtitle)}</p></header>${dashboardCards()}<div class="ov-main"><div class="ov-left"><div class="console-analytics ov-health-slot" id="console-monitor" data-layout="ov">${consoleHealthPanel()}${consoleAlertPanel()}</div></div><div class="ov-center"><div id="console-sampling">${consoleSamplingPanel()}</div></div><div class="ov-right">${consoleQuickActions()}</div></div>${t.config.showDevices?consoleDeviceArea():''}<div class="console-bottom-grid ov-bottom"><section class="insight-panel ov-news"><div class="ov-card-head"><div><span class="ov-kicker">LATEST NEWS</span><h2>平台与公司动态</h2></div><button class="dashboard-text-link" data-tab="news">全部新闻 ${icon('arrow')}</button></div>${news.map(a=>`<a class="dashboard-news-item" href="#article/${encodeURIComponent(a.id)}" data-article="${safe(a.id)}"><time>${safe(a.date)}</time><strong>${safe(a.title)}</strong>${icon('arrow')}</a>`).join('')||'<p class="dashboard-empty">暂无新闻</p>'}</section><section class="insight-panel console-notes ov-notes"><div class="ov-card-head"><div><span class="ov-kicker">OPERATIONS</span><h2>运营提示</h2></div></div>${markdown(t.body)}</section></div><p class="console-data-note">${icon('help')} ${platformBackend?'仅显示你有权访问的设备；监测值来自设备实际采样上报。':'当前读数、历史曲线及在线状态来自公司 JSON 模拟数据。'}</p></div>`;
 }
 function companyHome(){
  try{const t=workspaceTemplate();if(!isAdmin())return customerConsoleHome(t);const list=companyDevices(),warningCount=warningDevices().length,online=list.filter(d=>d.online).length;return `<div class="company-dashboard"><section class="dashboard-welcome accent-${t.config.accent}"><div class="welcome-copy"><span class="welcome-eyebrow">${safe(platform.categories.find(c=>c.id===company()?.categoryId)?.name||'公司空间')} / 设备监测工作台</span><h1>${safe(company()?.name)} · 设备管理</h1><p>查看公司设备、定位异常，统一维护监测页面配置。</p><div class="welcome-actions">${t.config.showDevices?'<button data-scroll-devices>查看公司设备 '+icon('arrow')+'</button>':''}${isAdmin()&&!platformBackend?'<button class="welcome-outline" data-route="template">'+icon('code')+' 配置页面</button>':'<span>'+icon('shield')+' '+safe(roles[currentUser.role].label)+'专属工作空间</span>'}</div></div><div class="welcome-status"><div class="welcome-radar">${icon('device')}<i></i><i></i></div><div><span>运行概况</span><strong>${warningCount?'有 '+warningCount+' 台设备需要关注':online<list.length?'有离线设备待检查':list.length?'在线设备运行正常':'等待添加监测设备'}</strong><small>${online} 台在线 / ${list.length} 台设备 · ${platformBackend?'实际采样':'模拟快照'}</small></div></div></section>`+dashboardCards()+`<div id="console-monitor">`+companyInsights()+`</div>`+`${t.config.showDevices?'<div class="section-heading dashboard-devices-heading" id="dashboard-devices"><div><span class="dashboard-kicker">COMPANY DEVICES</span><h2>公司设备</h2></div><span class="device-count">'+list.length+' 台设备 · 点击查看详情</span></div>'+deviceCards(list):''}`+companyAttention()+`<section class="panel markdown-panel dashboard-notes">${markdown(t.body)}</section></div>`;}catch(e){return heading('COMPANY / CONFIGURATION',safe(company()?.name||'公司空间'),'公司页面配置暂不可用。')+`<div class="offline-note">${safe(e.message)}</div>${isAdmin()?'<button class="primary" data-route="template">修复 Markdown 配置</button>':''}`;}
@@ -520,6 +563,7 @@ function bindPortal(){
  const sceneFilter=document.querySelector('#console-scene-filter');if(sceneFilter)sceneFilter.onchange=()=>{deviceSceneFilter=sceneFilter.value;searchDevices(document.querySelector('#console-device-search')?.value||'');};
  const tableSearch=document.querySelector('#console-device-search');if(tableSearch)tableSearch.oninput=()=>searchDevices(tableSearch.value);
  bindDeviceMap();
+ bindConsoleAttention();
  const globalSearch=document.querySelector('#console-global-search');if(globalSearch)globalSearch.onkeydown=event=>{if(event.key!=='Enter')return;event.preventDefault();const query=globalSearch.value,needsHome=view!=='company'||companyTab!=='home';companyTab='home';if(needsHome)navigate('company');const input=document.querySelector('#console-device-search');if(input){input.value=query;searchDevices(query);input.scrollIntoView({block:'center'});input.focus();}};
  on('#logout',logout);on('#profile-logout',logout);on('#warning-devices',openWarnings);on('#back-devices',()=>{companyTab='home';navigate('company');});
  const overview=document.querySelector('#overview-device');if(overview)overview.onchange=()=>{overviewDeviceId=overview.value;render();};
@@ -595,7 +639,17 @@ function refreshLiveView(){
   const stats=document.querySelector('.company-stats');
   if(stats){try{const box=document.createElement('div');box.innerHTML=dashboardCards();stats.replaceWith(box.firstElementChild);const warning=document.querySelector('#warning-devices');if(warning)warning.onclick=openWarnings;}catch{}}
   const monitor=document.querySelector('#console-monitor');
-  if(monitor){const customer=monitor.classList.contains('console-analytics');monitor.innerHTML=companyInsights()+(customer?consoleAlertPanel():'');bindLiveDeviceButtons(monitor);const overview=monitor.querySelector('#overview-device');if(overview)overview.onchange=()=>{overviewDeviceId=overview.value;render();};}
+  if(monitor){
+   if(monitor.dataset.layout==='ov'){
+    monitor.innerHTML=consoleHealthPanel()+consoleAlertPanel();
+    const sampling=document.querySelector('#console-sampling');if(sampling)sampling.innerHTML=consoleSamplingPanel();
+    bindLiveDeviceButtons(monitor);bindConsoleAttention();
+    const overview=document.querySelector('#overview-device');if(overview)overview.onchange=()=>{overviewDeviceId=overview.value;render();};
+   }else{
+    monitor.innerHTML=companyInsights();bindLiveDeviceButtons(monitor);
+    const overview=monitor.querySelector('#overview-device');if(overview)overview.onchange=()=>{overviewDeviceId=overview.value;render();};
+   }
+  }
   const grid=document.querySelector('.device-grid');
   if(grid){const box=document.createElement('div');box.innerHTML=deviceCards(companyDevices());grid.replaceWith(box.firstElementChild);bindLiveDeviceButtons(box);}
   const rows=document.querySelector('#console-device-rows');
