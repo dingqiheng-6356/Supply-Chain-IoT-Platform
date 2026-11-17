@@ -39,7 +39,7 @@ function newsPublishButton(scope){
 }
 function newsPublishForm(scope){
  const company=platform.companies.find(c=>c.id===currentUser?.companyId)?.name||'本公司';
- return `<section class="panel news-publish"><h2>${scope==='platform'?'发布平台更新通知':'发布公司新闻'}</h2><p class="settings-note">${scope==='platform'?'发布后所有平台用户可见。':`发布后仅 ${safe(company)} 的邀请用户可见。`}</p><form id="news-publish-form"><label for="news-title">标题</label><input id="news-title" name="title" maxlength="80" required><label for="news-summary">摘要</label><input id="news-summary" name="summary" maxlength="160" required><div class="news-editor-grid"><div class="news-editor-pane"><div class="news-body-head"><label for="news-body">正文（Markdown）</label><button type="button" class="secondary" id="news-image-upload">插入图片</button><input type="file" id="news-image-file" accept="image/png,image/jpeg,image/webp,image/gif" hidden></div><textarea id="news-body" name="body" rows="14" maxlength="8000" required></textarea><p class="news-image-status" id="news-image-status" role="status"></p></div><div class="news-editor-pane"><div class="news-body-head"><span class="news-preview-label">实时预览</span><span class="news-preview-hint">支持 Markdown · 点击图片可调整</span></div><div class="news-preview"><div class="article-body news-preview-body" id="news-preview-body"><p class="settings-note">开始输入后这里会实时预览。</p></div></div></div></div><div class="news-image-tools" id="news-image-tools" hidden><span class="news-tools-label">图片设置</span><div class="news-tool-group"><span>宽度</span><button type="button" data-news-width="">原始</button><button type="button" data-news-width="30%">30%</button><button type="button" data-news-width="50%">50%</button><button type="button" data-news-width="80%">80%</button><button type="button" data-news-width="100%">100%</button></div><div class="news-tool-group"><span>位置</span><button type="button" data-news-align="left">左</button><button type="button" data-news-align="center">中</button><button type="button" data-news-align="right">右</button></div></div><p class="error" id="news-publish-error" role="alert"></p><div class="form-actions"><button type="button" class="secondary" data-news-cancel>取消</button><button class="primary" type="submit">发布</button></div></form></section>`;
+ return `<section class="panel news-publish"><h2>${scope==='platform'?'发布平台更新通知':'发布公司新闻'}</h2><p class="settings-note">${scope==='platform'?'发布后所有平台用户可见。':`发布后仅 ${safe(company)} 的邀请用户可见。`}</p><form id="news-publish-form"><label for="news-title">标题</label><input id="news-title" name="title" maxlength="80" required><label for="news-summary">摘要</label><input id="news-summary" name="summary" maxlength="160" required><div class="news-editor-grid" id="news-editor-grid"><div class="news-editor-pane"><div class="news-body-head"><label for="news-body">正文（Markdown）</label><div class="news-body-actions"><button type="button" class="secondary" id="news-image-upload">插入图片</button><button type="button" class="secondary" id="news-preview-toggle">预览</button><input type="file" id="news-image-file" accept="image/png,image/jpeg,image/webp,image/gif" hidden></div></div><textarea id="news-body" name="body" rows="14" maxlength="8000" required></textarea><p class="news-image-status" id="news-image-status" role="status"></p></div><div class="news-editor-pane news-preview-pane" id="news-preview-pane" hidden><div class="news-body-head"><span class="news-preview-label">实时预览</span><span class="news-preview-hint">拖动图片调整大小与位置，文字实时环绕</span></div><div class="news-preview"><div class="article-body news-preview-body" id="news-preview-body"><p class="settings-note">开始输入后这里会实时预览。</p></div></div></div></div><div class="news-image-tools" id="news-image-tools" hidden><span class="news-tools-label">图片设置</span><div class="news-tool-group"><span>宽度</span><button type="button" data-news-width="">原始</button><button type="button" data-news-width="30%">30%</button><button type="button" data-news-width="50%">50%</button><button type="button" data-news-width="80%">80%</button><button type="button" data-news-width="100%">100%</button></div><div class="news-tool-group"><span>位置</span><button type="button" data-news-align="left">左</button><button type="button" data-news-align="center">中</button><button type="button" data-news-align="right">右</button></div></div><p class="error" id="news-publish-error" role="alert"></p><div class="form-actions"><button type="button" class="secondary" data-news-cancel>取消</button><button class="primary" type="submit">发布</button></div></form></section>`;
 }
 function newsSection(kind,rows,action,companyName){
  const platform=kind==='platform',title=platform?'平台更新通知':'公司新闻';
@@ -117,9 +117,30 @@ function renderNewsPreview(){
  if(!textarea||!target)return;
  const value=textarea.value.trim();
  target.innerHTML=value?articleMarkdown(value,true).html:'<p class="settings-note">开始输入后这里会实时预览，支持标题、加粗、列表、链接、代码和图片。</p>';
+ const container=target.closest('.news-preview')||target;
  target.querySelectorAll('[data-news-image]').forEach(figure=>{
-  if(Number(figure.dataset.newsImage)===newsActiveImage)figure.classList.add('is-active');
-  figure.onclick=()=>{newsActiveImage=Number(figure.dataset.newsImage);renderNewsPreview();};
+  const index=Number(figure.dataset.newsImage);
+  if(index===newsActiveImage)figure.classList.add('is-active');
+  const handle=document.createElement('span');handle.className='news-resize-handle';handle.title='拖动调整大小';figure.appendChild(handle);
+  const activate=()=>{newsActiveImage=index;target.querySelectorAll('.article-figure').forEach(node=>node.classList.remove('is-active'));figure.classList.add('is-active');syncNewsImageTools();};
+  figure.onclick=()=>activate();
+  handle.onpointerdown=event=>{
+   event.preventDefault();event.stopPropagation();activate();
+   const startX=event.clientX,startWidth=figure.getBoundingClientRect().width,baseWidth=container.getBoundingClientRect().width;
+   const move=moveEvent=>{const next=Math.max(20,Math.min(100,Math.round((startWidth+moveEvent.clientX-startX)/baseWidth*100)));figure.style.width=next+'%';figure.dataset.dragWidth=String(next);};
+   const up=()=>{window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',up);const width=figure.dataset.dragWidth;if(width)applyNewsImageChange({width:width+'%'});};
+   window.addEventListener('pointermove',move);window.addEventListener('pointerup',up);
+  };
+  figure.onpointerdown=event=>{
+   if(event.target===handle)return;
+   event.preventDefault();activate();
+   const startX=event.clientX,containerRect=container.getBoundingClientRect();
+   const move=moveEvent=>{figure.style.transform=`translateX(${moveEvent.clientX-startX}px)`;figure.style.opacity='.85';};
+   const up=()=>{window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',up);figure.style.transform='';figure.style.opacity='';
+    const rect=figure.getBoundingClientRect(),relative=(rect.left+rect.width/2-containerRect.left)/containerRect.width;
+    applyNewsImageChange({align:relative<0.34?'left':relative>0.66?'right':'center'});};
+   window.addEventListener('pointermove',move);window.addEventListener('pointerup',up);
+  };
  });
  syncNewsImageTools();
 }
@@ -145,7 +166,7 @@ function articleInline(raw,preview=false){
  for(const match of raw.matchAll(pattern)){
   html+=safe(raw.slice(last,match.index));last=match.index+match[0].length;
   if(match[1]!==undefined)html+=`<code>${safe(match[1])}</code>`;
-  else if(match[2]!==undefined){const url=articleUrl(match[3]);if(!url){html+=safe(match[2]);continue;}const attrs=parseNewsImageAttrs(match[4]),align=attrs.align||'center',style=attrs.width?` style="width:${attrs.width}"`:'';html+=`<span class="article-figure align-${align}"${preview?` data-news-image="${imageIndex}"`:''}><img src="${safe(url)}" alt="${safe(match[2])}" loading="lazy"${style}></span>`;imageIndex++;}
+  else if(match[2]!==undefined){const url=articleUrl(match[3]);if(!url){html+=safe(match[2]);continue;}const attrs=parseNewsImageAttrs(match[4]),align=attrs.align||'center',style=attrs.width?` style="width:${attrs.width}" data-width="1"`:'';html+=`<span class="article-figure align-${align}"${style}${preview?` data-news-image="${imageIndex}"`:''}><img src="${safe(url)}" alt="${safe(match[2])}" loading="lazy"></span>`;imageIndex++;}
   else if(match[5]!==undefined){const url=articleUrl(match[6]);html+=url?`<a href="${safe(url)}" target="_blank" rel="noopener noreferrer">${safe(match[5])}</a>`:safe(match[5]);}
   else if(match[7]!==undefined)html+=`<strong>${safe(match[7])}</strong>`;
   else html+=`<em>${safe(match[8])}</em>`;
@@ -204,6 +225,13 @@ function bindNews(){
  const cancel=document.querySelector('[data-news-cancel]');if(cancel)cancel.onclick=()=>{newsDraftScope='';newsActiveImage=-1;render();};
  const imageButton=document.querySelector('#news-image-upload'),imageFile=document.querySelector('#news-image-file');
  if(imageButton&&imageFile){imageButton.onclick=()=>imageFile.click();imageFile.onchange=()=>uploadNewsImage(imageFile.files[0]);}
+ const previewToggle=document.querySelector('#news-preview-toggle'),previewPane=document.querySelector('#news-preview-pane'),editorGrid=document.querySelector('#news-editor-grid');
+ if(previewToggle&&previewPane&&editorGrid)previewToggle.onclick=()=>{
+  const open=previewPane.hidden;
+  previewPane.hidden=!open;editorGrid.classList.toggle('is-split',open);
+  previewToggle.classList.toggle('is-active',open);previewToggle.textContent=open?'关闭预览':'预览';
+  if(open)renderNewsPreview();
+ };
  const bodyField=document.querySelector('#news-body');
  if(bodyField){bodyField.oninput=renderNewsPreview;renderNewsPreview();}
  document.querySelectorAll('[data-news-width]').forEach(button=>button.onclick=()=>applyNewsImageChange({width:button.dataset.newsWidth||undefined}));
