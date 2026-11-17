@@ -30,6 +30,7 @@ function mergeServerDevices(rows){
   return d;
  });
  devices=[...legacy,...registered];
+ if(typeof liveReapply==='function')liveReapply();
 }
 function resetRegistry(){
  clearTimeout(registryTimer);registryController?.abort();registrySession='';registryRequest++;serverDevices=[];registryLoaded=false;registryError='';connectionResult=null;

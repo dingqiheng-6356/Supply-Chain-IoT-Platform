@@ -543,6 +543,76 @@ function bindPortal(){
  on('#preview-template',()=>editTemplate('preview'));on('#save-template',()=>editTemplate('save'));on('#download-template',()=>editTemplate('download'));
  on('#reset-template',()=>{if(!isAdmin())return;const overrides=readStorage(templateKey,{});delete overrides[companyId];localStorage.setItem(templateKey,JSON.stringify(overrides));templateDraft=null;render();});
 }
+/* ===== 实时刷新：只替换数据节点，保留表单输入、地图与滚动位置 ===== */
+function bindLiveDeviceButtons(scope){
+ (scope||document).querySelectorAll('[data-device]').forEach(button=>button.onclick=()=>openDevice(button.dataset.device));
+}
+function refreshSensorCards(s,d){
+ const warnings=alarms(s,d);
+ document.querySelectorAll('.sensor-grid .sensor-card').forEach(card=>{
+  const key=String(card.dataset.liveKey||'').replace('metric-',''),m=s.metrics.find(row=>row.key===key);if(!m)return;
+  const value=d.values?.[key],warning=d.online&&warnings.some(row=>row.key===key);
+  card.classList.toggle('sensor-warning',!!warning);
+  const valueBox=card.querySelector('.sensor-value');if(valueBox)valueBox.innerHTML=`${Number.isFinite(value)?safe(value):'—'}<small>${safe(m.unit)}</small>`;
+  const badge=card.querySelector('.sensor-title .badge');if(badge){badge.className='badge '+(!Number.isFinite(value)?'gray':!d.online?'gray':warning?'orange':'green');badge.textContent=!Number.isFinite(value)?'待接入':!d.online?'历史值':warning?'超出范围':'正常';}
+  const svg=card.querySelector('svg.trend-chart');if(svg)svg.outerHTML=trend(m,d);
+  const caption=card.querySelectorAll('.chart-caption span');if(caption[1])caption[1].textContent=Number.isFinite(value)?'最新':'待接入';
+ });
+}
+function refreshAlertWorkflowPanel(s,d){
+ const current=document.querySelector('#alert-workflow'),html=alertWorkflowPanel(s,d);
+ if(!html){current?.remove();return;}
+ const template=document.createElement('template');template.innerHTML=html;
+ const next=template.content.firstElementChild;
+ if(current)current.replaceWith(next);else document.querySelector('.detail-grid')?.before(next);
+ document.querySelectorAll('.alert-handle-form').forEach(form=>form.onsubmit=event=>submitAlertWorkflow(event,'handle'));
+ document.querySelectorAll('.alert-review-form').forEach(form=>form.onsubmit=event=>submitAlertWorkflow(event,'review'));
+}
+function refreshMonitorLive(){
+ const raw=selectedMonitorDevice();if(!raw)return;
+ const d=effective(raw),s=deviceScene(d),snapshot=monitorSnapshot(d),warnings=alarms(s,d),[label,color]=status(s,d);
+ const summary=document.querySelector('.monitor-summary');
+ if(summary){
+  const badge=summary.querySelector('.badge');if(badge){badge.className='badge '+color;badge.textContent=label;}
+  const values=summary.querySelectorAll(':scope > div > strong');
+  if(values[3]){values[3].textContent=d.online?warnings.length+' 项':'设备离线';values[3].className=warnings.length?'alert-text':'';}
+ }
+ document.querySelectorAll('.monitor-chart-grid .monitor-chart-card').forEach((card,index)=>{
+  const m=s.metrics[index];if(!m)return;
+  const warning=d.online&&warnings.some(row=>row.key===m.key),value=d.values?.[m.key];
+  card.classList.toggle('is-alert',!!warning);
+  const current=card.querySelector('.monitor-current');
+  if(current){current.innerHTML=`${Number.isFinite(value)?safe(value):'—'}<small>${safe(m.unit)}</small>`;current.className='monitor-current'+(warning?' alert-text':'');}
+  const badge=card.querySelector('.monitor-chart-title .badge');
+  if(badge){badge.className='badge '+(warning?'orange':d.online?'green':'gray');badge.textContent=warning?'超出范围':d.online?'正常':'历史值';}
+  const svg=card.querySelector('svg.trend-chart');if(svg)svg.outerHTML=trend(m,snapshot);
+ });
+}
+function refreshLiveView(){
+ if(!currentUser)return;
+ if(view==='whiteboard-editor'){if(typeof wbRefreshLiveNodes==='function')wbRefreshLiveNodes();return;}
+ if(view==='company'&&companyTab==='home'){
+  const stats=document.querySelector('.company-stats');
+  if(stats){try{const box=document.createElement('div');box.innerHTML=dashboardCards();stats.replaceWith(box.firstElementChild);const warning=document.querySelector('#warning-devices');if(warning)warning.onclick=openWarnings;}catch{}}
+  const monitor=document.querySelector('#console-monitor');
+  if(monitor){const customer=monitor.classList.contains('console-analytics');monitor.innerHTML=companyInsights()+(customer?consoleAlertPanel():'');bindLiveDeviceButtons(monitor);const overview=monitor.querySelector('#overview-device');if(overview)overview.onchange=()=>{overviewDeviceId=overview.value;render();};}
+  const grid=document.querySelector('.device-grid');
+  if(grid){const box=document.createElement('div');box.innerHTML=deviceCards(companyDevices());grid.replaceWith(box.firstElementChild);bindLiveDeviceButtons(box);}
+  const rows=document.querySelector('#console-device-rows');
+  if(rows){rows.innerHTML=consoleDeviceRows(document.querySelector('#console-device-search')?.value||'');bindLiveDeviceButtons(rows);}
+  return;
+ }
+ if(view==='detail'){
+  const s=scene(),d=effective(device());if(!s||!d)return;
+  refreshSensorCards(s,d);
+  const statusBadge=document.querySelector('.page-heading [data-live-status]');
+  if(statusBadge){const [label,color]=status(s,d);statusBadge.className='badge '+color;statusBadge.textContent=label;}
+  refreshAlertWorkflowPanel(s,d);
+  return;
+ }
+ if(view==='monitor'){refreshMonitorLive();return;}
+ if(view==='alerts'||(view==='platform'&&isAdmin()))render(true);
+}
 async function init(){
  try{
   await detectPlatform();

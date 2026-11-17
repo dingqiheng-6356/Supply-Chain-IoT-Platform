@@ -118,3 +118,83 @@ function syncMqttPolling(){
  }
  poll();
 }
+/* ===== 实时演示数据：真实上报优先，未被真实数据覆盖的演示设备持续平滑变化 ===== */
+const liveStore=new Map();
+let liveTimer=null;
+function liveDemoBase(d){
+ if(typeof baseDevices==='undefined'||!Array.isArray(baseDevices))return null;
+ return baseDevices.find(row=>row.id===d?.id)||null;
+}
+function liveRealFresh(d){
+ const seen=Date.parse(d?.lastSeen||'');
+ return !!d?.provisioned&&Number.isFinite(seen)&&Date.now()-seen<60000;
+}
+function liveShouldSimulate(d){
+ if(!d)return false;
+ if(d.demo===true)return d.demoOnline!==false&&!liveRealFresh(d);
+ const base=liveDemoBase(d);
+ if(base)return base.online!==false&&!liveRealFresh(d);
+ return !d.provisioned&&!d.mqtt&&d.online===true;
+}
+function liveApply(d){
+ if(d.online!==true)d.online=true;
+ const saved=liveStore.get(d.id);
+ if(!saved)return;
+ for(const key of Object.keys(saved.values))d.values[key]=saved.values[key];
+ for(const key of Object.keys(saved.history)){
+  d.history[key]=[...saved.history[key]];
+  d.historyTimes[key]=[...(saved.historyTimes[key]||[])];
+ }
+}
+function liveDevices(){
+ const list=[];
+ if(typeof devices!=='undefined'&&Array.isArray(devices))list.push(...devices);
+ if(typeof wbState!=='undefined'&&wbState.public&&Array.isArray(wbState.runtimeDevices)&&wbState.runtimeDevices!==devices)list.push(...wbState.runtimeDevices);
+ return list;
+}
+function liveReapply(){for(const d of liveDevices())if(liveShouldSimulate(d))liveApply(d);}
+function liveSeedTimes(d,metric,now){
+ const history=d.history?.[metric.key]||[];
+ d.historyTimes||={};
+ if(d.historyTimes[metric.key]?.length===history.length)return;
+ d.historyTimes[metric.key]=history.map((_,index)=>new Date(now-(history.length-1-index)*Math.max(5,d.sampleInterval||30)*1000).toISOString());
+}
+function liveAdvance(d){
+ const scene=deviceScene(d);if(!scene)return;
+ const now=Date.now();
+ for(const metric of scene.metrics){
+  const config=metricConfig(scene,d,metric),current=d.values?.[metric.key];
+  if(!Number.isFinite(current))continue;
+  d.liveBase||={};
+  if(!Number.isFinite(d.liveBase[metric.key])){d.liveBase[metric.key]=current;liveSeedTimes(d,metric,now);}
+  const span=Number.isFinite(config.max)&&Number.isFinite(config.min)?Math.max(1,config.max-config.min):Math.max(1,Math.abs(current)*0.2);
+  const drift=(d.liveBase[metric.key]-current)*0.06;
+  const noise=span*(0.008+Math.random()*0.022)*(Math.random()<0.5?-1:1);
+  let next=current+drift+noise;
+  const low=Number.isFinite(config.min)?config.min-span*0.12:current-span;
+  const high=Number.isFinite(config.max)?config.max+span*0.12:current+span;
+  next=Math.min(high,Math.max(low,next));
+  next=Math.round(next*10)/10;
+  const history=d.history?.[metric.key]||[],times=history.map((_,index)=>d.historyTimes?.[metric.key]?.[index]??null);
+  d.values[metric.key]=next;
+  d.history||={};d.historyTimes||={};
+  d.history[metric.key]=[...history,next].slice(-60);
+  d.historyTimes[metric.key]=[...times,new Date(now).toISOString()].slice(-60);
+ }
+}
+function livePersist(d){
+ const history={},historyTimes={};
+ for(const key of Object.keys(d.history||{})){history[key]=[...d.history[key]];historyTimes[key]=[...(d.historyTimes?.[key]||[])];}
+ liveStore.set(d.id,{values:{...d.values},history,historyTimes});
+}
+function liveTick(){
+ if(typeof currentUser!=='undefined'&&!currentUser&&!(typeof wbState!=='undefined'&&wbState.public))return;
+ let changed=false;
+ for(const d of liveDevices()){
+  if(liveShouldSimulate(d)){liveApply(d);liveAdvance(d);livePersist(d);changed=true;}
+  else if(liveStore.has(d.id))liveStore.delete(d.id);
+ }
+ if(changed&&typeof refreshLiveView==='function')refreshLiveView();
+}
+function startLiveTelemetry(){if(!liveTimer)liveTimer=setInterval(liveTick,1500);}
+startLiveTelemetry();

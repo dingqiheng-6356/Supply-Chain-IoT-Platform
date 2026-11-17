@@ -336,6 +336,8 @@ class DeviceRegistry:
             for raw in rows:
                 config = {key: value for key, value in raw.items()
                           if key not in {'online', 'values', 'history', 'diagnostics'}}
+                config['demo'] = True
+                config['demoOnline'] = bool(raw.get('online'))
                 cursor = db.execute(
                     'INSERT OR IGNORE INTO devices(id, company, config, secret_hash) VALUES (?, ?, ?, ?)',
                     (raw['id'], raw['companyId'], json.dumps(config, ensure_ascii=False),
@@ -363,17 +365,16 @@ class DeviceRegistry:
 
     @staticmethod
     def backfill_demo_coordinates(db, rows):
-        """Fill coordinates for demo devices created before the map feature."""
+        """Mark demo devices and fill coordinates created before the map feature."""
         for raw in rows:
-            if not (isinstance(raw.get('lng'), (int, float)) and isinstance(raw.get('lat'), (int, float))):
-                continue
             row = db.execute('SELECT config FROM devices WHERE id=? AND deleted=0', (raw['id'],)).fetchone()
             if not row:
                 continue
             config = json.loads(row['config'])
-            if 'lng' in config and 'lat' in config:
-                continue
-            config['lng'], config['lat'] = raw['lng'], raw['lat']
+            config['demo'] = True
+            config['demoOnline'] = bool(raw.get('online'))
+            if isinstance(raw.get('lng'), (int, float)) and isinstance(raw.get('lat'), (int, float)) and ('lng' not in config or 'lat' not in config):
+                config['lng'], config['lat'] = raw['lng'], raw['lat']
             db.execute('UPDATE devices SET config=? WHERE id=?', (json.dumps(config, ensure_ascii=False), raw['id']))
 
     def snapshot(self, user):
