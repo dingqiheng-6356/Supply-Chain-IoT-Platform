@@ -111,10 +111,22 @@ class DeviceRegistry:
             device_id = 'dev-' + secrets.token_hex(6)
         if not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_-]{2,39}', device_id):
             raise RegistryError('设备 ID 应为 3–40 位字母、数字、短横线或下划线。')
-        config = {'id': device_id, 'companyId': user.get('companyId'), 'sceneId': data.get('sceneId')}
+        config = {'id': device_id, 'companyId': user.get('companyId')}
         types = json.loads((self.root / 'devices.json').read_text())['scenes']
-        if not isinstance(config['sceneId'], str) or config['sceneId'] not in {t['id'] for t in types}:
-            raise RegistryError('请选择有效的设备类型。')
+        type_name = data.get('typeName')
+        if isinstance(type_name, str) and type_name.strip():
+            type_name = type_name.strip()
+            if len(type_name) > 40:
+                raise RegistryError('设备类型最多 40 字。')
+            matched = next((t for t in types if t['name'] == type_name), None)
+            config['sceneId'] = matched['id'] if matched else None
+            config['typeName'] = type_name
+        else:
+            scene_id = data.get('sceneId')
+            if not isinstance(scene_id, str) or scene_id not in {t['id'] for t in types}:
+                raise RegistryError('请填写设备类型。')
+            config['sceneId'] = scene_id
+            config['typeName'] = next(t['name'] for t in types if t['id'] == scene_id)
         if config['companyId'] not in {c['id'] for c in self.organization.companies()}:
             raise RegistryError('公司不存在。')
         config['workspaceSceneId'] = data.get('workspaceSceneId') or None

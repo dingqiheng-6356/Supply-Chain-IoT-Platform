@@ -2,10 +2,10 @@
 const mqttCandidates=new Map();
 let mqttSelected='',mqttCursor=0,mqttTimer=null,mqttController=null,mqttSession='',mqttStatus='等待连接本地 MQTT 接收服务';
 const deviceScene=d=>{
- const scene=scenes.find(s=>s.id===d?.sceneId);
- if(!d?.mqtt)return scene;
- return {...scene,metrics:(d.metrics||[]).map(metric=>{
-  const configured=scene?.metrics?.find(item=>item.key===metric.key);
+ const base=scenes.find(s=>s.id===d?.sceneId)||(d?.typeName?{id:d.sceneId||'custom',name:d.typeName,color:'blue',icon:'device',metrics:[...(d.metrics||[])]}:undefined);
+ if(!d?.mqtt)return base;
+ return {...base,metrics:(d.metrics||[]).map(metric=>{
+  const configured=base?.metrics?.find(item=>item.key===metric.key);
   return {...configured,...metric,min:configured?.min,max:configured?.max};
  })};
 };
