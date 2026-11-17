@@ -232,6 +232,11 @@ class PlatformHandler(Handler):
             elif method == 'POST' and path == '/api/company/assignments':
                 registry.organization.assign(self.user(), self.body())
                 self.respond({'ok': True})
+            elif method == 'GET' and path == '/api/news':
+                company = parse_qs(urlsplit(self.path).query).get('company', [None])[0]
+                self.respond({'posts': registry.news.list(self.user(), company)})
+            elif method == 'POST' and path == '/api/news':
+                self.respond({'post': registry.news.create(self.user(), self.body())}, 201)
             elif method == 'GET' and path == '/api/devices':
                 self.respond({'devices': registry.snapshot(self.user())})
             elif method == 'POST' and path == '/api/devices':

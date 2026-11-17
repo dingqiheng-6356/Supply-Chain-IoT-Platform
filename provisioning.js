@@ -151,5 +151,6 @@ async function refreshBeforeEnter(user,enter=true){
  currentUser=normalizeUser(user);
  try{await refreshWorkspace();}catch(error){currentUser=null;companyMembers=[];companyScenes=[];throw error;}
  try{await refreshRegistry();}catch(error){registryError=error.message;}
+ if(typeof loadNews==='function')await loadNews();
  if(enter)enterUser(user);
 }

@@ -54,6 +54,8 @@ class DeviceRegistry:
         self.accounts = AccountStore(self, import_demo=import_demo)
         from whiteboard import WhiteboardStore
         self.whiteboards = WhiteboardStore(self)
+        from news_store import NewsStore
+        self.news = NewsStore(self)
 
     @contextmanager
     def connect(self):
