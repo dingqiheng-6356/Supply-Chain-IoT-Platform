@@ -279,7 +279,68 @@ function chainPage(){const c=platform.chains.find(c=>c.id===chainId);if(c&&c.sta
 function companiesPage(){const category=platform.categories.find(c=>c.id===categoryId);return heading('SCENARIO / COMPANIES',safe(category?.name),'选择公司，进入专属监测页面。','<button class="secondary" data-route="chain">返回产业链</button>')+`<div class="portal-grid">${platform.companies.filter(c=>c.categoryId===categoryId).map(c=>navigationCard({title:c.name,description:c.description,iconName:'users',color:'green',attr:`data-company="${c.id}"`,meta:devices.filter(d=>d.companyId===c.id).length+' 台设备 · Markdown 配置页面'})).join('')}</div>`;}
 function testsPage(){return heading('PLATFORM / TESTING','测试','USB 采集与本地联网测试独立于公司业务。','<button class="secondary" data-route="platform">返回平台</button>')+`<div class="portal-grid">${navigationCard({title:'USB 测试',description:'按行显示本机串口接收到的原始信息。',iconName:'device',attr:'data-route="usb"',meta:'/dev/ttyUSB0 · 9600 baud'})}${navigationCard({title:'本地联网测试',description:'订阅本机 MQTT Broker，接收 WiFi 设备消息。',iconName:'code',color:'green',attr:'data-route="mqtt"',meta:'MQTT · 1883 · rd-web/test/#'})}</div><p class="settings-note">测试需通过本地 Python 接收服务打开。GitHub Pages 仅提供静态公司页面，不会模拟测试连接成功。</p>`;}
 function templatePage(){const raw=templateDraft??rawTemplate(companyId)??'';return heading('ADMIN / MARKDOWN CONFIGURATION','公司页面配置',`${safe(company()?.name)} · 编辑 Markdown，自动生成首页统计与设备布局。`,'<button class="secondary" data-route="company">返回公司</button>')+`<section class="panel template-panel"><div class="section-heading"><h2>Markdown 页面源文件</h2><span class="muted small">${safe(company()?.template)}</span></div><label class="sr-only" for="template-editor">Markdown 配置</label><textarea id="template-editor" spellcheck="false">${safe(raw)}</textarea><p id="template-error" class="error" role="alert"></p><div class="template-actions"><button class="primary" id="save-template">保存并生成首页</button><button class="secondary" id="preview-template">预览</button><button class="secondary" id="download-template">导出 .md</button><button class="text-button" id="reset-template">恢复文件配置</button></div><p class="settings-note">保存仅影响当前浏览器；导出并替换上方 .md 文件后，重新部署可让其他浏览器读取。</p></section><section class="panel markdown-panel" id="template-preview"><p class="muted">点击预览检查配置和正文。</p></section>`;}
-function renderAlerts(){const list=warningDevices();return heading('COMPANY / ALERTS','预警设备',`${safe(company()?.name)} · ${list.length} 台设备需要关注`,'<button class="secondary" data-route="company">返回公司首页</button>')+(list.length?deviceCards(list):'<section class="panel read-only-panel"><span class="feature-icon green">'+icon('check')+'</span><h2>当前没有预警设备</h2><p>在线设备读数均在配置范围内。</p></section>');}
+let monitorDeviceId=null,monitorRange=86400,alertDeviceFilter='',alertLevelFilter='';
+const monitorRanges=[[3600,'近 1 小时'],[86400,'近 24 小时'],[604800,'近 7 天']];
+function selectedMonitorDevice(){
+ const list=companyDevices();
+ return list.find(d=>d.id===monitorDeviceId)||list.find(d=>d.online)||list[0]||null;
+}
+function monitorSnapshot(d){
+ const cutoff=Date.now()-monitorRange*1000,history={},historyTimes={};
+ for(const m of deviceScene(d).metrics){
+  const rows=(d.history?.[m.key]||[]).map((value,i)=>({value,time:d.historyTimes?.[m.key]?.[i]})).filter(row=>Number.isFinite(row.value));
+  const timed=rows.some(row=>row.time&&Number.isFinite(new Date(row.time).getTime()));
+  const selected=timed?rows.filter(row=>row.time&&Number.isFinite(new Date(row.time).getTime())&&new Date(row.time).getTime()>=cutoff):rows;
+  history[m.key]=selected.map(row=>row.value);historyTimes[m.key]=selected.map(row=>row.time);
+ }
+ return {...d,history,historyTimes};
+}
+function updateMonitorHistory(query){
+ const results=document.querySelector('#monitor-history-results');
+ if(results&&query){results.innerHTML=historyResults(query);bindHistoryMore();}
+}
+function renderMonitor(){
+ const raw=selectedMonitorDevice();monitorDeviceId=raw?.id||null;
+ const top=heading('COMPANY / DATA MONITORING','数据监测',`${safe(company()?.name)} · 查看实时采样与历史趋势`,'<button class="secondary" data-route="company">返回概览</button>');
+ if(!raw)return top+'<section class="panel read-only-panel"><span class="feature-icon blue">'+icon('device')+'</span><h2>暂无可监测设备</h2><p>添加设备并收到有效上报后，这里会显示采样曲线。</p></section>';
+ const d=effective(raw),s=deviceScene(d),snapshot=monitorSnapshot(d),[label,color]=status(s,d),warnings=alarms(s,d);
+ const query=historyQuery?.deviceId===d.id&&historyQuery?.userId===currentUser.id&&historyQuery?.range===monitorRange?historyQuery:null;
+ return `<div class="monitor-page">${top}<section class="panel monitor-controls"><label for="monitor-device">监测设备<select id="monitor-device">${companyDevices().map(row=>`<option value="${safe(row.id)}" ${row.id===d.id?'selected':''}>${safe(effective(row).name)} · ${safe(row.id)}</option>`).join('')}</select></label><div class="monitor-range" role="group" aria-label="历史时间范围">${monitorRanges.map(([seconds,text])=>`<button class="secondary ${seconds===monitorRange?'active':''}" data-monitor-range="${seconds}" aria-pressed="${seconds===monitorRange}">${text}</button>`).join('')}</div></section><div class="monitor-summary"><div><span>设备状态</span><strong><span class="badge ${color}">${label}</span></strong></div><div><span>安装位置</span><strong>${safe(d.location)}</strong></div><div><span>采样周期</span><strong>${safe(d.sampleInterval)} 秒 / 次</strong></div><div><span>异常指标</span><strong class="${warnings.length?'alert-text':''}">${d.online?warnings.length+' 项':'设备离线'}</strong></div></div><section class="panel monitor-live-panel"><div class="section-heading"><div><h2>实时采样曲线</h2><p>${safe(d.name)} · ${monitorRanges.find(([seconds])=>seconds===monitorRange)?.[1]}</p></div><span class="muted small">${d.online?'随设备上报持续更新':'设备离线 · 显示已有采样'}</span></div><div class="monitor-chart-grid">${s.metrics.map(m=>{const c=metricConfig(s,d,m),value=d.values[m.key],warning=d.online&&warnings.some(row=>row.key===m.key),count=(snapshot.history[m.key]||[]).length;return `<article class="monitor-chart-card ${warning?'is-alert':''}"><div class="monitor-chart-title"><span>${icon(m.icon)} ${safe(m.name)}</span><span class="badge ${warning?'orange':d.online?'green':'gray'}">${warning?'超出范围':d.online?'正常':'历史值'}</span></div><strong class="monitor-current ${warning?'alert-text':''}">${Number.isFinite(value)?safe(value):'—'}<small>${safe(m.unit)}</small></strong><p>${Number.isFinite(c.min)&&Number.isFinite(c.max)?`正常范围 ${safe(c.min)}–${safe(c.max)} ${safe(m.unit)}`:'尚未配置告警阈值'} · ${count} 个采样点</p>${trend(m,snapshot)}</article>`;}).join('')}</div></section>${platformBackend&&d.provisioned?`<section class="panel history-panel monitor-history"><div class="section-heading"><div><h2>历史数据</h2><p>服务器接收时间 · ${monitorRanges.find(([seconds])=>seconds===monitorRange)?.[1]}</p></div><span class="muted small">每页 200 条</span></div><div id="monitor-history-results" aria-live="polite">${query?historyResults(query):'<p class="muted">正在读取历史数据…</p>'}</div></section>`:'<p class="settings-note">静态演示显示设备已有的最近采样；启动平台服务后可查询服务器历史记录。</p>'}</div>`;
+}
+function startMonitorHistory(){
+ if(!platformBackend||view!=='monitor')return;
+ const raw=selectedMonitorDevice();if(!raw?.provisioned)return;
+ const end=Date.now()/1000;
+ historyQuery={userId:currentUser.id,deviceId:raw.id,range:monitorRange,start:end-monitorRange,end,readings:[],cursor:null};
+ updateMonitorHistory(historyQuery);fetchHistory(historyQuery);
+}
+function bindMonitor(){
+ const select=document.querySelector('#monitor-device');
+ if(select)select.onchange=()=>{monitorDeviceId=select.value;historyQuery=null;historyRequest++;render();startMonitorHistory();};
+ document.querySelectorAll('[data-monitor-range]').forEach(button=>button.onclick=()=>{monitorRange=Number(button.dataset.monitorRange);historyQuery=null;historyRequest++;render();startMonitorHistory();});
+}
+function alertCenterEntries(){
+ const rows=[];
+ for(const raw of companyDevices()){
+  const d=effective(raw),s=deviceScene(d),active=(Array.isArray(d.alertWorkflows)?d.alertWorkflows:[]).filter(row=>row.status==='processing');
+  if(!d.online){
+   rows.push({deviceId:d.id,name:d.name,location:d.location,level:'critical',levelLabel:'严重',kind:d.provisioned&&!d.lastSeen?'设备待激活':'设备离线',detail:'请检查设备供电、网络连接与数据上报状态。',value:'—',unit:'',range:'',status:d.provisioned&&!d.lastSeen?'待激活':'待处理'});
+   continue;
+  }
+  const warnings=alarms(s,d),keys=[...new Set([...warnings.map(m=>m.key),...active.map(row=>row.metric)])];
+  for(const key of keys){
+   const m=s.metrics.find(row=>row.key===key)||{key,name:key,unit:''},warning=warnings.some(row=>row.key===key),workflow=active.find(row=>row.metric===key),c=metricConfig(s,d,m),value=d.values[key];
+   rows.push({deviceId:d.id,name:d.name,location:d.location,level:'warning',levelLabel:'预警',kind:warning?`${m.name}超出范围`:`${m.name}恢复待复核`,detail:warning?'当前读数已超出设备配置的正常范围。':'指标已恢复到配置范围，等待管理员或开发者复核闭环。',value:Number.isFinite(value)?value:'—',unit:m.unit||'',range:Number.isFinite(c.min)&&Number.isFinite(c.max)?`正常范围 ${c.min}–${c.max} ${m.unit||''}`:'',status:workflow?'处理中':'待处理'});
+  }
+ }
+ return rows;
+}
+function renderAlerts(){
+ const all=alertCenterEntries();
+ if(alertDeviceFilter&&!companyDevices().some(d=>d.id===alertDeviceFilter))alertDeviceFilter='';
+ const rows=all.filter(row=>(!alertDeviceFilter||row.deviceId===alertDeviceFilter)&&(!alertLevelFilter||row.level===alertLevelFilter)),processing=all.filter(row=>row.status==='处理中').length,critical=all.filter(row=>row.level==='critical').length;
+ return `<div class="alert-center-page">${heading('COMPANY / ALERT CENTER','告警中心',`${safe(company()?.name)} · 统一查看设备离线与指标异常`,'<button class="secondary" data-route="company">返回概览</button>')}<div class="alert-center-stats">${[['当前告警',all.length,'bell'],['严重',critical,'device'],['预警',all.length-critical,'environment'],['处理中',processing,'task']].map(([label,value,iconName])=>`<section class="panel"><span>${icon(iconName)} ${label}</span><strong>${value}<small> 项</small></strong></section>`).join('')}</div><section class="panel alert-center-panel"><div class="alert-center-filters"><label for="alert-device-filter">设备<select id="alert-device-filter"><option value="">全部设备</option>${companyDevices().map(raw=>{const d=effective(raw);return `<option value="${safe(d.id)}" ${d.id===alertDeviceFilter?'selected':''}>${safe(d.name)} · ${safe(d.id)}</option>`;}).join('')}</select></label><label for="alert-level-filter">告警级别<select id="alert-level-filter"><option value="">全部级别</option><option value="critical" ${alertLevelFilter==='critical'?'selected':''}>严重</option><option value="warning" ${alertLevelFilter==='warning'?'selected':''}>预警</option></select></label><span>筛选出 ${rows.length} 项</span></div><div class="alert-center-list">${rows.map(row=>`<article class="alert-center-row ${row.level}"><span class="alert-center-symbol">${icon(row.level==='critical'?'device':'bell')}</span><div class="alert-center-copy"><div><span class="badge ${row.level==='critical'?'red':'orange'}">${row.levelLabel}</span><span class="badge ${row.status==='处理中'?'blue':row.status==='待激活'?'gray':'orange'}">${row.status}</span></div><h3>${safe(row.kind)}</h3><p>${safe(row.detail)}</p><small>${safe(row.name)} · ${safe(row.deviceId)} · ${safe(row.location)}</small></div><div class="alert-center-reading"><strong>${safe(row.value)}<small>${safe(row.unit)}</small></strong><span>${safe(row.range)}</span></div><button class="secondary" data-device="${safe(row.deviceId)}">查看设备 ${icon('arrow')}</button></article>`).join('')||`<div class="alert-center-empty">${icon(all.length?'eye':'check')}<h2>${all.length?'没有符合筛选条件的告警':'当前没有告警'}</h2><p>${all.length?'请调整设备或告警级别筛选。':'所有设备在线，监测指标均在配置范围内。'}</p></div>`}</div></section><p class="settings-note">点击“查看设备”可查看实时读数、处理告警并完成复核闭环。</p></div>`;
+}
 /* Background telemetry updates reuse DOM nodes so entrance animations and drafts stay intact. */
 function liveNodeKey(node){
  if(node.nodeType!==1)return String(node.nodeType);
@@ -326,7 +387,7 @@ function render(live=false){
  if(!isAdmin()){
   companyId=currentUser.companyId;
   if(!company()){notice='账号尚未分配有效公司，请联系平台管理员分配公司。';view='unassigned';}
-  else if(!['chains','company','detail','alerts','profile','article','device-manage','organization','whiteboards','whiteboard-editor'].includes(view))view='company';
+  else if(!['chains','company','detail','monitor','alerts','profile','article','device-manage','organization','whiteboards','whiteboard-editor'].includes(view))view='company';
  }
  if(!isAdmin()&&!chainId&&view!=='chains'&&view!=='unassigned'){view='chains';notice='请先选择供应链，选择后才能进入工作台。';}
  if(view==='device-manage'&&!canManageDevices())view=isAdmin()?'platform':'company';
@@ -334,16 +395,16 @@ function render(live=false){
  if(platformBackend&&view==='template')view='company';
  if(view==='organization'&&!canOrganize())view=isAdmin()?'platform':'company';
  const r=roles[currentUser.role],c=company();
- const labels={organization:'组织管理','device-manage':'设备管理',platform:'供应链物联网平台',chains:'选择供应链',chain:platform.chains.find(x=>x.id===chainId)?.name,companies:platform.categories.find(x=>x.id===categoryId)?.name,company:c?.name,detail:effective(device()||{}).name,alerts:'预警设备',profile:'我的',template:'页面配置',tests:'测试',usb:'USB 测试',mqtt:'本地联网测试',news:'新闻',article:'文章',whiteboards:'展示白板','whiteboard-editor':'白板编辑器',unassigned:'公司待分配'};
+ const labels={organization:'组织管理','device-manage':'设备管理',platform:'供应链物联网平台',chains:'选择供应链',chain:platform.chains.find(x=>x.id===chainId)?.name,companies:platform.categories.find(x=>x.id===categoryId)?.name,company:c?.name,detail:effective(device()||{}).name,monitor:'数据监测',alerts:'告警中心',profile:'我的',template:'页面配置',tests:'测试',usb:'USB 测试',mqtt:'本地联网测试',news:'新闻',article:'文章',whiteboards:'展示白板','whiteboard-editor':'白板编辑器',unassigned:'公司待分配'};
  const adminNav=[['platform','grid','平台总览'],['whiteboards','eye','展示白板'],['tests','code','测试'],['news','chat','新闻'],['profile','users','我的']];
  if(platformBackend)adminNav.splice(1,0,['organization','users','公司与管理员']);
  const companyNav=[['home','grid','首页'],['news','chat','新闻'],['profile','users','我的']];
  const consoleNav=[['overview','grid','概览'],['devices','device',canManageDevices()?'设备管理':'我的设备'],['monitor','task','数据监测'],['alerts','bell','告警中心'],['showcase','eye','展示白板']];
  if(isCompanyAdmin()&&platformBackend)consoleNav.push(['organization','users','公司管理']);
  const chainLocked=!isAdmin()&&!chainId;
- const nav=chainLocked?'':isAdmin()?adminNav.map(([v,i,t])=>`<button class="nav-item ${view===v?'active':''}" data-route="${v}" aria-label="${t}" title="${t}">${icon(i)}<span>${t}</span></button>`).join(''):consoleNav.map(([section,i,t])=>`<button class="nav-item ${((view==='company'&&companyTab==='home'&&section==='overview')||(view==='device-manage'&&section==='devices')||(view==='organization'&&section==='organization')||(['whiteboards','whiteboard-editor'].includes(view)&&section==='showcase'))?'active':''}" data-console-section="${section}">${icon(i)}<span>${t}</span></button>`).join('')+companyNav.filter(([v])=>v!=='home').map(([v,i,t])=>`<button class="nav-item ${(v==='profile'?view==='profile':view==='company'&&companyTab===v)?'active':''}" data-tab="${v}" aria-label="${t}" title="${t}">${icon(i)}<span>${t}</span></button>`).join('');
+ const nav=chainLocked?'':isAdmin()?adminNav.map(([v,i,t])=>`<button class="nav-item ${view===v?'active':''}" data-route="${v}" aria-label="${t}" title="${t}">${icon(i)}<span>${t}</span></button>`).join(''):consoleNav.map(([section,i,t])=>`<button class="nav-item ${((view==='company'&&companyTab==='home'&&section==='overview')||(view==='device-manage'&&section==='devices')||(view==='monitor'&&section==='monitor')||(view==='alerts'&&section==='alerts')||(view==='organization'&&section==='organization')||(['whiteboards','whiteboard-editor'].includes(view)&&section==='showcase'))?'active':''}" data-console-section="${section}">${icon(i)}<span>${t}</span></button>`).join('')+companyNav.filter(([v])=>v!=='home').map(([v,i,t])=>`<button class="nav-item ${(v==='profile'?view==='profile':view==='company'&&companyTab===v)?'active':''}" data-tab="${v}" aria-label="${t}" title="${t}">${icon(i)}<span>${t}</span></button>`).join('');
  let body;
- if(view==='chains')body=chainPickerPage();else if(view==='organization')body=organizationPage();else if(view==='whiteboards')body=whiteboardListPage();else if(view==='whiteboard-editor')body=wbEditorPage();else if(view==='device-manage')body=deviceManagementPage();else if(view==='platform')body=platformPage();else if(view==='chain')body=chainPage();else if(view==='companies')body=companiesPage();else if(view==='tests')body=testsPage();else if(view==='news')body=newsListPage();else if(view==='article')body=articlePage();else if(view==='profile')body=profilePage();else if(view==='template')body=templatePage();else if(['usb','mqtt'].includes(view))body=renderSerialTest();else if(view==='detail')body=renderDetail();else if(view==='alerts')body=renderAlerts();else if(view==='unassigned')body='<div class="offline-note">'+safe(notice)+'</div>';else body=companyTab==='news'?newsPage():companyHome();
+ if(view==='chains')body=chainPickerPage();else if(view==='organization')body=organizationPage();else if(view==='whiteboards')body=whiteboardListPage();else if(view==='whiteboard-editor')body=wbEditorPage();else if(view==='device-manage')body=deviceManagementPage();else if(view==='platform')body=platformPage();else if(view==='chain')body=chainPage();else if(view==='companies')body=companiesPage();else if(view==='tests')body=testsPage();else if(view==='news')body=newsListPage();else if(view==='article')body=articlePage();else if(view==='profile')body=profilePage();else if(view==='template')body=templatePage();else if(['usb','mqtt'].includes(view))body=renderSerialTest();else if(view==='detail')body=renderDetail();else if(view==='monitor')body=renderMonitor();else if(view==='alerts')body=renderAlerts();else if(view==='unassigned')body='<div class="offline-note">'+safe(notice)+'</div>';else body=companyTab==='news'?newsPage():companyHome();
  const tabs=['company','detail','alerts','article'].includes(view)&&c?`<div class="company-topline"><div><span class="company-initial">${safe(c?.name?.slice(0,1)||'公')}</span><strong>${safe(c?.name)}</strong></div><nav aria-label="公司页面">${companyNav.map(([v,i,t])=>`<button data-tab="${v}" class="${(view==='company'&&companyTab===v)||(view==='article'&&v==='news')?'active':''}">${icon(i)}${t}</button>`).join('')}</nav></div>`:'';
  updateWorkspaceHtml(`<div class="workspace ${!isAdmin()?'customer-console':'admin-console'}"><aside class="sidebar"><a href="./" class="brand">${logo()}</a><div class="workspace-label">${isAdmin()?'平台管理':'公司工作空间'} <span>${isAdmin()?'ADMIN':'WORKSPACE'}</span></div>${isAdmin()?'':chainSwitcher()}${chainLocked?'<p class="chain-lock-note">'+icon('shield')+' 先选择一条供应链，之后才能进入工作台。</p>':''}<nav aria-label="主导航">${nav}</nav><div class="sidebar-bottom"><div class="help-card"><span class="help-icon">${icon('shield')}</span><strong>${isAdmin()?'统一管理，独立配置':'专属空间，清晰可见'}</strong><p>${isAdmin()?'管理公司与公司管理员，查看平台运行情况。':'查看本公司设备与预警，让每一项数据有迹可循。'}</p><span class="badge ${r.color}">${r.label}</span></div><div class="sidebar-user"><span class="user-avatar">${safe(currentUser.name?.slice(0,1)||'用')}</span><div><strong>${safe(currentUser.name)}</strong><small>${r.label}</small></div><button class="icon-button" id="logout" aria-label="退出登录" title="退出登录">${icon('logout')}</button></div></div></aside><div class="main-shell"><header class="topbar">${!isAdmin()&&!chainLocked?`<div class="console-header-search">${icon('eye')}<input id="console-global-search" type="search" aria-label="搜索公司设备" placeholder="搜索设备、设备 ID、位置…"></div><div class="console-header-meta"><span>仅本公司数据</span><button class="icon-button" data-console-section="alerts" aria-label="查看告警中心">${icon('bell')}${warningDevices().length?'<i></i>':''}</button><button class="console-account" data-tab="profile"><span>${safe(currentUser.name?.slice(0,1)||'用')}</span>${safe(currentUser.name)}</button></div>`:''}<div class="legacy-breadcrumb"><button class="crumb-button" data-route="${isAdmin()?'platform':'chains'}">${isAdmin()?'平台管理':safe(chainId?currentChain()?.name:'供应链')}</button><span class="slash">/</span><strong>${safe(labels[view]||'工作台')}</strong></div><div class="topbar-right"><span class="environment"><i></i> ${platformBackend?'平台服务':(['usb','mqtt'].includes(view)||companyDevices().some(d=>d.mqtt)?'MQTT / 本地接收':'演示空间')}</span><span class="badge ${r.color}">${icon('shield')}${r.label}</span></div></header><main class="main-content">${notice&&view!=='unassigned'?`<div class="notice" role="status">${safe(notice)}</div>`:''}${tabs}${body}<footer class="main-footer"><span>物联空间 · 连接供应链的每一环</span><span>${platformBackend?'设备与配置由服务器统一管理，监测值来自实际接收的上报':(['usb','mqtt'].includes(view)||companyDevices().some(d=>d.mqtt)?'MQTT 设备显示实际接收值；其他设备为演示快照':'公司设备数据为演示快照')}</span></footer></main></div></div>`,live);
  bindPortal();bindWhiteboard();bindOrganization();bindDeviceManagement();bindNews();if(typeof bindPlatformFeatures==='function')bindPlatformFeatures();if(!live)bindExperience();syncMqttPolling();syncRegistryPolling();if(['usb','mqtt'].includes(view))startSerialPolling();
@@ -439,17 +500,21 @@ function bindPortal(){
  document.querySelectorAll('[data-device]').forEach(b=>b.onclick=()=>openDevice(b.dataset.device));
  document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{companyTab=b.dataset.tab;navigate(companyTab==='profile'?'profile':'company');if(companyTab==='news')refreshNews();});
  document.querySelectorAll('[data-console-section]').forEach(button=>button.onclick=()=>{
-  const section=button.dataset.consoleSection;if(section==='showcase'){navigate('whiteboards');return;}if(section==='organization'&&canOrganize()){navigate('organization');return;}if(section==='devices'&&canManageDevices()){pendingDeleteId=null;navigate('device-manage');return;}const needsHome=view!=='company'||companyTab!=='home';companyTab='home';if(needsHome)navigate('company');
-  // 路由守卫可能把 view 强制改了（例如非管理员没选供应链时被打回 chains）
+  const section=button.dataset.consoleSection;
+  if(section==='showcase'){navigate('whiteboards');return;}
+  if(section==='organization'&&canOrganize()){navigate('organization');return;}
+  if(section==='devices'&&canManageDevices()){pendingDeleteId=null;navigate('device-manage');return;}
+  if(section==='monitor'){navigate('monitor');startMonitorHistory();return;}
+  if(section==='alerts'){navigate('alerts');return;}
+  const needsHome=view!=='company'||companyTab!=='home';companyTab='home';if(needsHome)navigate('company');
   if(view!=='company'||companyTab!=='home')return;
-  const target={devices:'#dashboard-devices',monitor:'#console-monitor',alerts:'#console-alerts'}[section];
-  document.querySelectorAll('.sidebar [data-console-section]').forEach(b=>b.classList.toggle('active',b.dataset.consoleSection===section));
-  if(target){
-   const el=document.querySelector(target);
-   if(el){el.scrollIntoView({block:'start',behavior:'instant'});return;}
-  }
+  const target=section==='devices'?'#dashboard-devices':null;
+  if(target){const el=document.querySelector(target);if(el){el.scrollIntoView({block:'start',behavior:'instant'});return;}}
   window.scrollTo({top:0});
  });
+ bindMonitor();
+ const alertDevice=document.querySelector('#alert-device-filter');if(alertDevice)alertDevice.onchange=()=>{alertDeviceFilter=alertDevice.value;render();};
+ const alertLevel=document.querySelector('#alert-level-filter');if(alertLevel)alertLevel.onchange=()=>{alertLevelFilter=alertLevel.value;render();};
  const bindRowButtons=()=>document.querySelectorAll('#console-device-rows [data-device]').forEach(b=>b.onclick=()=>openDevice(b.dataset.device));
  const searchDevices=query=>{const rows=document.querySelector('#console-device-rows');if(rows){rows.innerHTML=consoleDeviceRows(query);bindRowButtons();}};
  const sceneFilter=document.querySelector('#console-scene-filter');if(sceneFilter)sceneFilter.onchange=()=>{deviceSceneFilter=sceneFilter.value;searchDevices(document.querySelector('#console-device-search')?.value||'');};

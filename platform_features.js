@@ -34,7 +34,7 @@ function updateHistoryResults(){
 }
 async function fetchHistory(query,append=false){
  const request=++historyRequest;
- query.busy=true;query.error='';updateHistoryResults();
+ query.busy=true;query.error='';updateHistoryResults();if(view==='monitor')updateMonitorHistory(query);
  try{
   const params=new URLSearchParams({start:String(query.start),end:String(query.end),limit:'200'});
   if(append&&query.cursor)params.set('before',query.cursor);
@@ -42,7 +42,7 @@ async function fetchHistory(query,append=false){
   if(historyQuery!==query||historyRequest!==request||currentUser?.id!==query.userId)return;
   query.readings=append?[...query.readings,...result.readings]:result.readings;query.cursor=result.nextBefore;
  }catch(error){if(historyQuery===query&&historyRequest===request)query.error=error.message;}
- finally{if(historyQuery===query&&historyRequest===request){query.busy=false;if(view==='detail'&&deviceId===query.deviceId&&currentUser?.id===query.userId)updateHistoryResults();}}
+ finally{if(historyQuery===query&&historyRequest===request){query.busy=false;if(view==='detail'&&deviceId===query.deviceId&&currentUser?.id===query.userId)updateHistoryResults();if(view==='monitor'&&monitorDeviceId===query.deviceId&&currentUser?.id===query.userId)updateMonitorHistory(query);}}
 }
 function bindHistoryMore(){
  const more=document.querySelector('#history-load-more');if(more)more.onclick=()=>{if(historyQuery&&!historyQuery.busy)fetchHistory(historyQuery,true);};
