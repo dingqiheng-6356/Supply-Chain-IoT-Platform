@@ -1,5 +1,5 @@
 /* News: platform notices for everyone, company news for that company's invitees. */
-let newsArticles=[],newsErrors=[],newsLoadError='',newsRequest=0,articleId=null,newsDraftScope='',newsActiveImage=-1;
+let newsArticles=[],newsErrors=[],newsLoadError='',newsRequest=0,articleId=null,newsDraftScope='',newsActiveImage=-1,newsMode='edit',newsComposerHtml='';
 function newsArticleScope(article){return article.scope||(article.companyId?'company':'platform');}
 function visibleNews(){
  if(platformBackend)return newsArticles;
@@ -38,8 +38,8 @@ function newsPublishButton(scope){
  return `<button class="primary" id="news-publish" data-news-publish="${scope}">${scope==='platform'?'发布平台更新通知':'发布公司新闻'}</button>`;
 }
 function newsPublishForm(scope){
- const company=platform.companies.find(c=>c.id===currentUser?.companyId)?.name||'本公司';
- return `<section class="panel news-publish"><h2>${scope==='platform'?'发布平台更新通知':'发布公司新闻'}</h2><p class="settings-note">${scope==='platform'?'发布后所有平台用户可见。':`发布后仅 ${safe(company)} 的邀请用户可见。`}</p><form id="news-publish-form"><label for="news-title">标题</label><input id="news-title" name="title" maxlength="80" required><label for="news-summary">摘要</label><input id="news-summary" name="summary" maxlength="160" required><div class="news-mode-switch" role="group" aria-label="编辑模式"><button type="button" class="news-mode-button is-active" data-news-mode="edit">编辑</button><button type="button" class="news-mode-button" data-news-mode="compare">比对</button><button type="button" class="news-mode-button" data-news-mode="preview">预览</button></div><div class="news-editor-grid" id="news-editor-grid"><div class="news-editor-pane" id="news-editor-pane"><div class="news-editor-toolbar"><button type="button" data-news-command="bold" title="加粗"><b>B</b></button><button type="button" data-news-command="italic" title="斜体"><i>I</i></button><button type="button" data-news-block="h2" title="二级标题">H2</button><button type="button" data-news-block="h3" title="三级标题">H3</button><button type="button" data-news-command="insertUnorderedList" title="无序列表">• 列表</button><button type="button" data-news-command="insertOrderedList" title="有序列表">1. 列表</button><button type="button" data-news-block="blockquote" title="引用">引用</button><button type="button" data-news-link="1" title="插入链接">链接</button><button type="button" id="news-image-upload" title="插入图片">插入图片</button><input type="file" id="news-image-file" accept="image/png,image/jpeg,image/webp,image/gif" hidden></div><div class="news-rich-editor article-body" id="news-body" contenteditable="true" role="textbox" aria-multiline="true" aria-label="正文" data-placeholder="输入正文，可加粗、设标题、插入图片并拖动排版"></div><p class="news-image-status" id="news-image-status" role="status"></p></div><div class="news-editor-pane news-preview-pane" id="news-preview-pane" hidden><div class="news-body-head"><span class="news-preview-label">预览</span><span class="news-preview-hint">拖动图片调整大小与位置，文字实时环绕</span></div><div class="news-preview"><div class="article-body news-preview-body" id="news-preview-body"></div></div></div></div><div class="news-image-tools" id="news-image-tools" hidden><span class="news-tools-label">图片设置</span><div class="news-tool-group"><span>宽度</span><button type="button" data-news-width="">原始</button><button type="button" data-news-width="30%">30%</button><button type="button" data-news-width="50%">50%</button><button type="button" data-news-width="80%">80%</button><button type="button" data-news-width="100%">100%</button></div><div class="news-tool-group"><span>位置</span><button type="button" data-news-align="left">左</button><button type="button" data-news-align="center">中</button><button type="button" data-news-align="right">右</button></div></div><p class="error" id="news-publish-error" role="alert"></p><div class="form-actions"><button type="button" class="secondary" data-news-cancel>取消</button><button class="primary" type="submit">发布</button></div></form></section>`;
+ const company=platform.companies.find(c=>c.id===currentUser?.companyId)?.name||'本公司',preview=newsMode==='preview';
+ return `<section class="panel news-publish"><h2>${scope==='platform'?'发布平台更新通知':'发布公司新闻'}</h2><p class="settings-note">${scope==='platform'?'发布后所有平台用户可见。':`发布后仅 ${safe(company)} 的邀请用户可见。`}</p><form id="news-publish-form"><label for="news-title">标题</label><input id="news-title" name="title" maxlength="80" required><label for="news-summary">摘要</label><input id="news-summary" name="summary" maxlength="160" required><div class="news-mode-switch" role="group" aria-label="编辑模式"><button type="button" class="news-mode-button${preview?'':' is-active'}" aria-pressed="${preview?'false':'true'}" data-news-mode="edit">编辑</button><button type="button" class="news-mode-button${preview?' is-active':''}" aria-pressed="${preview?'true':'false'}" data-news-mode="preview">预览</button></div><div class="news-editor-grid${preview?' is-preview-only':''}" id="news-editor-grid"><div class="news-editor-pane" id="news-editor-pane"${preview?' hidden':''}><div class="news-editor-toolbar"><button type="button" data-news-command="bold" title="加粗"><b>B</b></button><button type="button" data-news-command="italic" title="斜体"><i>I</i></button><button type="button" data-news-block="h2" title="二级标题">H2</button><button type="button" data-news-block="h3" title="三级标题">H3</button><button type="button" data-news-command="insertUnorderedList" title="无序列表">• 列表</button><button type="button" data-news-command="insertOrderedList" title="有序列表">1. 列表</button><button type="button" data-news-block="blockquote" title="引用">引用</button><button type="button" data-news-link="1" title="插入链接">链接</button><button type="button" id="news-image-upload" title="插入图片">插入图片</button><input type="file" id="news-image-file" accept="image/png,image/jpeg,image/webp,image/gif" hidden></div><div class="news-rich-editor article-body" id="news-body" contenteditable="true" role="textbox" aria-multiline="true" aria-label="正文" data-placeholder="输入正文，可加粗、设标题、插入图片并拖动排版">${newsComposerHtml}</div><p class="news-image-status" id="news-image-status" role="status"></p></div><div class="news-editor-pane news-preview-pane" id="news-preview-pane"${preview?'':' hidden'}><div class="news-body-head"><span class="news-preview-label">预览</span><span class="news-preview-hint">拖动图片调整大小与位置，文字实时环绕</span></div><div class="news-preview"><div class="article-body news-preview-body" id="news-preview-body"></div></div></div></div><div class="news-image-tools" id="news-image-tools" hidden><span class="news-tools-label">图片设置</span><div class="news-tool-group"><span>宽度</span><button type="button" data-news-width="">原始</button><button type="button" data-news-width="30%">30%</button><button type="button" data-news-width="50%">50%</button><button type="button" data-news-width="80%">80%</button><button type="button" data-news-width="100%">100%</button></div><div class="news-tool-group"><span>位置</span><button type="button" data-news-align="left">左</button><button type="button" data-news-align="center">中</button><button type="button" data-news-align="right">右</button></div></div><p class="error" id="news-publish-error" role="alert"></p><div class="form-actions"><button type="button" class="secondary" data-news-cancel>取消</button><button class="primary" type="submit">发布</button></div></form></section>`;
 }
 function newsSection(kind,rows,action,companyName){
  const platform=kind==='platform',title=platform?'平台更新通知':'公司新闻';
@@ -61,8 +61,10 @@ function newsListPage(){
 }
 async function submitNewsPost(form,scope){
  const button=form.querySelector('[type=submit]'),error=form.querySelector('#news-publish-error'),editor=form.querySelector('#news-body');
- const payload={scope,title:form.elements.title.value.trim(),summary:form.elements.summary.value.trim(),body:sanitizeNewsHtml(editor?editor.innerHTML:'').trim()};
- if(payload.title.length<2||payload.summary.length<2||(editor?editor.textContent:'').trim().length<10){error.textContent='请填写完整的标题、摘要和正文。';return;}
+ const rawHtml=(editor&&editor.innerHTML.trim())||newsComposerHtml;
+ const plainText=(()=>{const box=document.createElement('div');box.innerHTML=rawHtml;return (box.textContent||'').trim();})();
+ const payload={scope,title:form.elements.title.value.trim(),summary:form.elements.summary.value.trim(),body:sanitizeNewsHtml(rawHtml).trim()};
+ if(payload.title.length<2||payload.summary.length<2||plainText.length<10){error.textContent='请填写完整的标题、摘要和正文。';return;}
  if(payload.body.length>20000){error.textContent='正文内容过长，请精简后再发布。';return;}
  button.disabled=true;
  try{
@@ -93,15 +95,21 @@ async function uploadNewsImage(file){
   const url=articleUrl(data.asset.url);
   if(!url)throw new Error('图片地址无效。');
   const alt=(file.name||'图片').replace(/\.[^.]+$/,'');
-  const html=`<span class="article-figure align-center" contenteditable="false"><img src="${safe(url)}" alt="${safe(alt)}"></span>`;
+  const html=`<figure class="article-figure align-center" style="width:60%" contenteditable="false"><img src="${safe(url)}" alt="${safe(alt)}"></figure><p><br></p>`;
   editor.focus();
   const selection=window.getSelection();
   if(newsEditorRange&&editor.contains(newsEditorRange.commonAncestorContainer)){selection.removeAllRanges();selection.addRange(newsEditorRange);}
   else{const range=document.createRange();range.selectNodeContents(editor);range.collapse(false);selection.removeAllRanges();selection.addRange(range);}
   document.execCommand('insertHTML',false,html);
+  if(!editor.querySelector('.article-figure img')){
+   const holder=document.createElement('div');holder.innerHTML=html;
+   while(holder.firstChild)editor.appendChild(holder.firstChild);
+  }
+  newsComposerHtml=editor.innerHTML;
   const figures=newsEditorFigures();newsActiveImage=figures.length-1;
   status.textContent='图片已插入正文，可在预览中拖动调整大小和位置。';
-  renderNewsPreview();
+  if(newsMode==='preview')renderNewsPreview();
+  else{syncNewsImageTools();bindNewsFigures(editor,false);}
  }catch(error){status.textContent=error.message;}
  finally{button.disabled=false;const input=document.querySelector('#news-image-file');if(input)input.value='';}
 }
@@ -231,7 +239,9 @@ function setNewsFigureAlign(index,align){
 function renderNewsPreview(){
  const editor=newsEditor(),target=document.querySelector('#news-preview-body');
  if(!editor||!target)return;
- const raw=editor.innerHTML.trim();
+ const raw=(editor.innerHTML.trim()||newsComposerHtml).trim();
+ if(!editor.innerHTML.trim()&&raw)editor.innerHTML=raw;
+ newsComposerHtml=raw;
  target.innerHTML=raw?newsBodyRendered(raw).html:'<p class="settings-note">开始输入后这里会实时预览。</p>';
  bindNewsFigures(editor,false);
  bindNewsFigures(target,true);
@@ -245,14 +255,20 @@ function applyNewsImageChange(patch){
  renderNewsPreview();
 }
 function setNewsMode(mode){
- const grid=document.querySelector('#news-editor-grid'),editorPane=document.querySelector('#news-editor-pane'),previewPane=document.querySelector('#news-preview-pane');
+ const grid=document.querySelector('#news-editor-grid'),editorPane=document.querySelector('#news-editor-pane'),previewPane=document.querySelector('#news-preview-pane'),editor=newsEditor();
  if(!grid||!editorPane||!previewPane)return;
- document.querySelectorAll('[data-news-mode]').forEach(button=>button.classList.toggle('is-active',button.dataset.newsMode===mode));
- grid.classList.toggle('is-split',mode==='compare');
- grid.classList.toggle('is-preview-only',mode==='preview');
- editorPane.hidden=mode==='preview';
- previewPane.hidden=mode==='edit';
- if(mode!=='edit')renderNewsPreview();
+ newsMode=mode==='preview'?'preview':'edit';
+ if(editor&&newsMode==='preview'){newsComposerHtml=editor.innerHTML;editor.blur();}
+ document.querySelectorAll('[data-news-mode]').forEach(button=>{
+  const active=button.dataset.newsMode===newsMode;
+  button.classList.toggle('is-active',active);
+  button.setAttribute('aria-pressed',String(active));
+ });
+ grid.classList.toggle('is-preview-only',newsMode==='preview');
+ editorPane.hidden=newsMode==='preview';
+ previewPane.hidden=newsMode!=='preview';
+ if(newsMode==='preview')renderNewsPreview();
+ else if(editor&&!editor.innerHTML.trim()&&newsComposerHtml)editor.innerHTML=newsComposerHtml;
 }
 function articleUrl(raw){
  const value=String(raw).trim();
@@ -322,8 +338,8 @@ function bindNews(){
  document.querySelectorAll('[data-article]').forEach(a=>a.onclick=event=>{event.preventDefault();openArticle(a.dataset.article);});
  const back=document.querySelector('#back-news');if(back)back.onclick=()=>returnToNews();
  const retry=document.querySelector('#reload-news');if(retry)retry.onclick=refreshNews;
- document.querySelectorAll('[data-news-publish]').forEach(button=>button.onclick=()=>{newsDraftScope=button.dataset.newsPublish;newsActiveImage=-1;render();document.querySelector('#news-publish-form')?.scrollIntoView({block:'center'});});
- const cancel=document.querySelector('[data-news-cancel]');if(cancel)cancel.onclick=()=>{newsDraftScope='';newsActiveImage=-1;render();};
+ document.querySelectorAll('[data-news-publish]').forEach(button=>button.onclick=()=>{newsDraftScope=button.dataset.newsPublish;newsActiveImage=-1;newsMode='edit';newsComposerHtml='';render();document.querySelector('#news-publish-form')?.scrollIntoView({block:'center'});});
+ const cancel=document.querySelector('[data-news-cancel]');if(cancel)cancel.onclick=()=>{newsDraftScope='';newsActiveImage=-1;newsMode='edit';newsComposerHtml='';render();};
  const imageButton=document.querySelector('#news-image-upload'),imageFile=document.querySelector('#news-image-file');
  if(imageButton&&imageFile){imageButton.onclick=()=>{rememberNewsSelection();imageFile.click();};imageFile.onchange=()=>uploadNewsImage(imageFile.files[0]);}
  document.querySelectorAll('[data-news-mode]').forEach(button=>button.onclick=()=>setNewsMode(button.dataset.newsMode));
@@ -359,13 +375,15 @@ function bindNews(){
  const bodyEditor=newsEditor();
  if(bodyEditor){
   bodyEditor.oninput=()=>{
-   if(document.querySelector('#news-preview-pane')?.hidden===false)renderNewsPreview();
+   newsComposerHtml=bodyEditor.innerHTML;
+   if(newsMode==='preview')renderNewsPreview();
    else{syncNewsImageTools();bindNewsFigures(bodyEditor,false);}
   };
   bodyEditor.onkeyup=rememberNewsSelection;bodyEditor.onmouseup=rememberNewsSelection;bodyEditor.onblur=rememberNewsSelection;
   bodyEditor.onpaste=event=>{event.preventDefault();const text=(event.clipboardData||window.clipboardData).getData('text/plain');document.execCommand('insertText',false,text);};
   bindNewsFigures(bodyEditor,false);syncNewsImageTools();
  }
+ if(newsMode==='preview')renderNewsPreview();
  document.querySelectorAll('[data-news-width]').forEach(button=>button.onclick=()=>applyNewsImageChange({width:button.dataset.newsWidth||undefined}));
  document.querySelectorAll('[data-news-align]').forEach(button=>button.onclick=()=>applyNewsImageChange({align:button.dataset.newsAlign}));
  const form=document.querySelector('#news-publish-form');
