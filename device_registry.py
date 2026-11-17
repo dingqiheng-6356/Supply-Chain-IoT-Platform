@@ -171,6 +171,14 @@ class DeviceRegistry:
                 config['activationAfter'] = time.time()
                 db.execute('UPDATE devices SET config = ? WHERE id = ?', (json.dumps(config, ensure_ascii=False), device_id))
                 return config, secret
+            if action == 'purge':
+                if not row['deleted']:
+                    raise RegistryError('请先删除设备，再永久删除。')
+                db.execute('DELETE FROM readings WHERE device = ?', (device_id,))
+                db.execute('DELETE FROM alert_workflows WHERE device = ?', (device_id,))
+                db.execute('DELETE FROM device_grants WHERE device = ?', (device_id,))
+                db.execute('DELETE FROM devices WHERE id = ?', (device_id,))
+                return None
             if action not in ('delete', 'restore'):
                 raise RegistryError('未知设备操作。')
             db.execute('UPDATE devices SET deleted = ? WHERE id = ?', (int(action == 'delete'), device_id))
