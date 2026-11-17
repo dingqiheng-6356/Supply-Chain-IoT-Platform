@@ -778,17 +778,25 @@ body{background:#f0f6f2;color:#20382e}
 .ov-metric-alerts .ov-metric-icon{background:#fff1e8;color:var(--ov-warn)}
 button.ov-metric{cursor:pointer}
 button.ov-metric:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(17,24,39,.08)}
-.ov-dash .ov-main{display:grid;grid-template-columns:repeat(24,minmax(0,1fr));gap:16px;align-items:start}
+.ov-dash .ov-main{display:grid;grid-template-columns:repeat(24,minmax(0,1fr));gap:16px;align-items:stretch}
 .ov-left{grid-column:span 8;display:flex;flex-direction:column;gap:16px;min-width:0}
-.ov-center{grid-column:span 8;min-width:0}
-.ov-right{grid-column:span 8;min-width:0}
+.ov-center{grid-column:span 8;display:flex;flex-direction:column;min-width:0}
+.ov-right{grid-column:span 8;display:flex;flex-direction:column;min-width:0}
+.ov-left>.ov-health-slot{flex:1}
+.ov-left>.ov-health-slot>.ov-health{flex:1}
+.ov-center>#console-sampling{flex:1;display:flex;flex-direction:column;min-height:0}
+.ov-center #console-sampling>.ov-sampling{flex:1}
+.ov-right>.ov-quick{flex:1}
 .ov-health-slot{display:flex!important;flex-direction:column!important;gap:16px;grid-template-columns:none!important}
+.ov-dash .console-analytics.ov-health-slot{margin-bottom:0}
 .ov-dash .insight-panel{background:#fff;border:0;border-radius:14px;box-shadow:var(--ov-shadow);padding:18px 18px 16px;margin:0;min-width:0}
 .ov-dash .ov-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px}
 .ov-kicker{display:block;font-size:10px;font-weight:700;letter-spacing:.14em;color:#a3aca6}
 .ov-dash .ov-card-head h2{margin:2px 0 0;font-size:16px;font-weight:700;color:var(--ov-ink)}
 .ov-count{font-size:12px;color:var(--ov-muted);background:#f4f6f4;border-radius:999px;padding:4px 10px;white-space:nowrap}
-.ov-ring-wrap{display:flex;justify-content:center;padding:2px 0 4px}
+.ov-ring-wrap{display:flex;justify-content:center;align-items:center;padding:2px 0 4px;flex:1}
+.ov-dash .ov-health{display:flex;flex-direction:column}
+.ov-dash .ov-health .ov-legend,.ov-dash .ov-health .health-foot{flex:none}
 .ov-dash .health-ring{width:176px;height:176px;padding:16px}
 .ov-dash .health-ring>div{transform:rotate(90deg)}
 .ov-dash .health-ring>div strong{font-size:42px;line-height:1;color:var(--ov-ink)}
@@ -803,8 +811,13 @@ button.ov-metric:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(17
 .ov-legend strong{font-size:16px;color:var(--ov-ink)}
 .ov-legend strong small{font-size:10px;font-weight:500;color:var(--ov-muted)}
 .ov-dash .health-foot{margin:10px 0 0;text-align:center;font-size:12px;color:var(--ov-muted)}
-.ov-sampling-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
-.sampling-metric{display:flex;flex-direction:column;gap:6px;background:#fbfcfb;border-radius:12px;padding:12px 12px 9px;min-width:0;color:#2fa98c}
+.ov-dash .ov-sampling{display:flex;flex-direction:column;min-height:0}
+.ov-sampling-grid{display:flex;flex-direction:column;gap:10px;flex:1;min-height:0}
+.sampling-metric{flex:1 1 0;display:flex;align-items:center;gap:14px;background:#fbfcfb;border-radius:12px;padding:8px 12px;min-width:0;min-height:0;color:#2fa98c}
+.ov-metric-main{display:flex;flex-direction:column;gap:3px;flex:0 0 auto;min-width:88px}
+.ov-metric-chart{flex:1;min-width:0;display:flex;align-items:center;overflow:hidden}
+.ov-metric-chart .spark-chart{max-height:62px}
+.ov-dash .ov-sampling>.dashboard-text-link{margin-top:10px;align-self:flex-start}
 .sampling-metric:nth-child(1){color:#ff8a5b}
 .sampling-metric:nth-child(2){color:#36cfc9}
 .sampling-metric:nth-child(3){color:#4c9f70}
@@ -815,7 +828,7 @@ button.ov-metric:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(17
 .ov-dash .sampling-metric>svg{height:auto}
 .ov-metric-name .icon{width:15px;height:15px;color:#a3aca6}
 .ov-reading{display:flex;align-items:flex-end;justify-content:flex-end;gap:4px;line-height:1}
-.ov-reading strong{font-size:30px;font-weight:800;color:var(--ov-ink);font-variant-numeric:tabular-nums}
+.ov-reading strong{font-size:26px;font-weight:800;color:var(--ov-ink);font-variant-numeric:tabular-nums}
 .ov-reading small{font-size:11px;color:var(--ov-muted);padding-bottom:3px}
 .ov-dash .spark-chart{width:100%;height:auto;display:block;overflow:visible;color:inherit}
 .spark-tip{opacity:0;transition:opacity .12s ease;pointer-events:none}
@@ -827,8 +840,9 @@ button.ov-metric:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(17
 .ov-select{position:relative;display:inline-flex;align-items:center}
 .ov-select select{appearance:none;border:1px solid #e6eae7;background:#fff;color:#495057;font-size:12px;border-radius:8px;padding:7px 26px 7px 10px;max-width:170px}
 .ov-select:after{content:'';position:absolute;right:10px;top:50%;width:6px;height:6px;border-right:1.5px solid #868e96;border-bottom:1.5px solid #868e96;transform:translateY(-70%) rotate(45deg);pointer-events:none}
-.ov-quick .ov-quick-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-.ov-quick-grid button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;aspect-ratio:1/1;border:0;border-radius:12px;background:#f7faf8;color:var(--ov-label);font-size:13px;font-weight:600;cursor:pointer;transition:transform .18s ease,background .18s ease,box-shadow .18s ease}
+.ov-dash .ov-quick{display:flex;flex-direction:column}
+.ov-quick .ov-quick-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;flex:1;grid-auto-rows:1fr}
+.ov-quick-grid button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;min-height:132px;border:0;border-radius:12px;background:#f7faf8;color:var(--ov-label);font-size:13px;font-weight:600;cursor:pointer;transition:transform .18s ease,background .18s ease,box-shadow .18s ease}
 .ov-quick-grid button>span{display:grid;place-items:center;width:46px;height:46px;border-radius:14px;background:#e9f6f1;color:#2fa98c}
 .ov-quick-grid button .icon{width:24px;height:24px}
 .ov-quick-grid button:hover{transform:translateY(-3px);background:#f2faf7;box-shadow:0 8px 18px rgba(47,169,140,.12)}
@@ -916,7 +930,7 @@ button.ov-metric:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(17
  .ov-dash .ov-main{grid-template-columns:1fr}
  .ov-left,.ov-center,.ov-right{grid-column:auto}
  .ov-quick-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
- .ov-quick-grid button{aspect-ratio:1/1;flex-direction:column}
+ .ov-quick-grid button{flex-direction:column}
  .ov-lower-grid{grid-template-columns:1fr}
  .ov-map-panel,.ov-table-panel{grid-column:auto}
  .ov-bottom{grid-template-columns:1fr}
