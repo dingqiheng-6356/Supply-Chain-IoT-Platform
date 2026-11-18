@@ -190,7 +190,7 @@ function consoleDeviceRows(query=''){
  const rows=companyDevices().filter(raw=>{const d=effective(raw);return (!platformBackend||!deviceSceneFilter||d.workspaceSceneId===deviceSceneFilter)&&[d.name,d.id,d.location].join(' ').toLowerCase().includes(query.trim().toLowerCase());});
  return rows.map(raw=>{const d=effective(raw),s=deviceScene(d),[label,color]=status(s,d);return `<tr><td><button class="ov-device-name" data-device="${safe(d.id)}">${icon('device')} ${safe(d.name)}</button></td><td><code>${safe(d.id)}</code></td><td><span class="badge ${color}"><i></i>${label}</span></td><td>${safe(d.location)}${platformBackend?`<small>${safe(companyScenes.find(s=>s.id===d.workspaceSceneId)?.name||'未分组')}</small>`:''}</td><td><button class="ov-view-link" data-device="${safe(d.id)}">查看 ${icon('arrow')}</button></td></tr>`;}).join('')||'<tr><td colspan="5" class="console-no-results">未找到匹配设备</td></tr>';
 }
-let amapLoader=null,amapConfigCache=null,deviceMapInstance=null;
+let amapLoader=null,amapConfigCache=null,deviceMapInstance=null,deviceMapContainer=null,deviceMapMarkers=[],deviceMapInfo=null,deviceMapCenter=null;
 function resolveAmapConfig(){
  if(amapConfigCache)return Promise.resolve(amapConfigCache);
  const merge=extra=>{amapConfigCache={...((platform&&platform.map)||{}),...(extra||{})};return amapConfigCache;};
@@ -211,16 +211,43 @@ function loadAMap(cfg){
  });
  return amapLoader;
 }
-function disposeDeviceMap(){if(deviceMapInstance){deviceMapInstance.destroy();deviceMapInstance=null;}}
+function disposeDeviceMap(){
+ if(deviceMapInstance){try{deviceMapInstance.clearMap();}catch(error){}deviceMapInstance.destroy();}
+ deviceMapInstance=null;deviceMapContainer=null;deviceMapMarkers=[];deviceMapInfo=null;deviceMapCenter=null;
+}
 function deviceMapPoint(device,index,center){
  const lng=Number(device.lng),lat=Number(device.lat);
  if(Number.isFinite(lng)&&Number.isFinite(lat))return [lng,lat];
  const angle=(index%8)/8*Math.PI*2,radius=0.0014+Math.floor(index/8)*0.0011;
  return [center[0]+Math.sin(angle)*radius,center[1]+Math.cos(angle)*radius];
 }
+function deviceMapMarkerList(list,center,infoWindow){
+ return list.map((raw,index)=>{
+  const d=effective(raw),[label,color]=status(deviceScene(d),d);
+  const pin=document.createElement('button');
+  pin.type='button';pin.className='map-pin '+color;pin.title=d.name+' · '+label;
+  pin.innerHTML='<i></i><span>'+safe(d.name)+'</span>';
+  const position=deviceMapPoint(d,index,center);
+  pin.addEventListener('click',()=>{
+   const readings=(d.metrics||[]).slice(0,2).map(m=>`<span>${safe(m.name)} <b>${Number.isFinite(d.values?.[m.key])?safe(d.values[m.key]):'—'}</b> ${safe(m.unit)}</span>`).join('');
+   infoWindow.setContent(`<div class="ov-map-pop"><strong>${safe(d.name)}</strong><small>${safe(d.location)}</small><p>${readings||'<span>暂无实时读数</span>'}</p><button type="button" data-map-device="${safe(d.id)}">查看设备</button></div>`);
+   infoWindow.open(deviceMapInstance,position);
+   setTimeout(()=>{const action=document.querySelector('.ov-map-pop [data-map-device]');if(action)action.onclick=()=>openDevice(d.id);},0);
+  });
+  return new AMap.Marker({position,content:pin,anchor:'center'});
+ });
+}
+function syncDeviceMapMarkers(){
+ if(!deviceMapInstance||!deviceMapContainer||!deviceMapInfo)return;
+ try{deviceMapInstance.remove(deviceMapMarkers);}catch(error){}
+ deviceMapMarkers=deviceMapMarkerList(companyDevices(),deviceMapCenter,deviceMapInfo);
+ deviceMapContainer.dataset.mapState=deviceMapMarkers.length?'ready':'empty';
+ if(deviceMapMarkers.length)deviceMapInstance.add(deviceMapMarkers);
+}
 function bindDeviceMap(){
  const container=document.querySelector('#device-map');
  if(!container)return;
+ if(deviceMapInstance&&deviceMapContainer===container){syncDeviceMapMarkers();return;}
  disposeDeviceMap();
  const list=companyDevices();
  resolveAmapConfig().then(cfg=>{
@@ -231,24 +258,12 @@ function bindDeviceMap(){
    const center=Array.isArray(cfg.center)&&cfg.center.length===2?cfg.center:[116.397477,39.908692];
    deviceMapInstance=new AMap.Map(container,{center,zoom:cfg.zoom||16,viewMode:'2D',mapStyle:'amap://styles/whitesmoke',resizeEnable:true});
    deviceMapInstance.addControl(new AMap.Scale());
-   const infoWindow=new AMap.InfoWindow({offset:new AMap.Pixel(0,-16),closeWhenClickMap:true});
-   const markers=list.map((raw,index)=>{
-    const d=effective(raw),[label,color]=status(deviceScene(d),d);
-    const pin=document.createElement('button');
-    pin.type='button';pin.className='map-pin '+color;pin.title=d.name+' · '+label;
-    pin.innerHTML='<i></i><span>'+safe(d.name)+'</span>';
-    const position=deviceMapPoint(d,index,center);
-    pin.addEventListener('click',()=>{
-     const readings=(d.metrics||[]).slice(0,2).map(m=>`<span>${safe(m.name)} <b>${Number.isFinite(d.values?.[m.key])?safe(d.values[m.key]):'—'}</b> ${safe(m.unit)}</span>`).join('');
-     infoWindow.setContent(`<div class="ov-map-pop"><strong>${safe(d.name)}</strong><small>${safe(d.location)}</small><p>${readings||'<span>暂无实时读数</span>'}</p><button type="button" data-map-device="${safe(d.id)}">查看设备</button></div>`);
-     infoWindow.open(deviceMapInstance,position);
-     setTimeout(()=>{const action=document.querySelector('.ov-map-pop [data-map-device]');if(action)action.onclick=()=>openDevice(d.id);},0);
-    });
-    return new AMap.Marker({position,content:pin,anchor:'center'});
-   });
+   deviceMapInfo=new AMap.InfoWindow({offset:new AMap.Pixel(0,-16),closeWhenClickMap:true});
+   deviceMapContainer=container;deviceMapCenter=center;
+   deviceMapMarkers=deviceMapMarkerList(list,center,deviceMapInfo);
    container.querySelector('.device-map-status')?.remove();
-   container.dataset.mapState='ready';
-   if(markers.length){deviceMapInstance.add(markers);deviceMapInstance.setFitView(markers,false,[70,45,45,45]);}else container.dataset.mapState='empty';
+   container.dataset.mapState=deviceMapMarkers.length?'ready':'empty';
+   if(deviceMapMarkers.length){deviceMapInstance.add(deviceMapMarkers);deviceMapInstance.setFitView(deviceMapMarkers,false,[70,45,45,45]);}
   });
  }).catch(error=>{if(!document.body.contains(container))return;container.dataset.mapState='error';container.innerHTML='<div class="device-map-status">'+safe(error.message)+'</div>';});
 }
@@ -380,6 +395,7 @@ function liveNodeKey(node){
 }
 function patchLiveNode(current,next){
  if(current.nodeType!==1){if(current.nodeValue!==next.nodeValue)current.nodeValue=next.nodeValue;return;}
+ if(current.id==='device-map')return;
  // Keep field drafts and caret, but let telemetry update review gating and hints.
  if(current.matches('input,textarea,select')){
   if(next.hasAttribute('disabled'))current.setAttribute('disabled','');else current.removeAttribute('disabled');
@@ -413,7 +429,7 @@ function updateWorkspaceHtml(html,live){
 }
 function render(live=false){
  stopSerialPolling();
- disposeDeviceMap();
+ if(!live)disposeDeviceMap();
  if(!currentUser)syncMqttPolling();
  if(!currentUser){app.innerHTML=authPage();bindAuth();bindExperience();return;}
  if(!isAdmin()){
