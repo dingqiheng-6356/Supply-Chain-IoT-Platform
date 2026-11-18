@@ -10,6 +10,9 @@
 
 **👉 http://124.222.144.15/** 
 
+[供应链物联网平台-页面清单与权限矩阵.pptx](https://github.com/user-attachments/files/35002056/-.pptx)
+
+
 > 高德地图 Key 通过服务器环境变量 `AMAP_KEY` / `AMAP_SECURITY_CODE` 注入，不写入仓库。
 
 演示账号（密码均为 `123456`）：
@@ -42,6 +45,8 @@ python platform_server.py
 - 默认 Web 端口 `8002`，MQTT 端口 `1883`
 - 牧业链演示设备：`ENV-001`（正常）、`ENV-002`（氨气超标告警）、`ENV-003`（离线）
 - 启动参数：`--port`、`--mqtt-port`、`--database`、`--production`、`--public-origin`
+
+
 
 ## 新服务器、新域名部署与交接
 
