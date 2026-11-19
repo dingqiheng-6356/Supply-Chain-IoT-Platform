@@ -32,8 +32,13 @@ class OrganizationStore:
     def create_company(self, user, data):
         self.require(user, 'admin')
         name = self.name(data.get('name'))
+        platform = json.loads((self.registry.root / 'platform.json').read_text())
+        category_id = data.get('categoryId')
+        if not isinstance(category_id, str) or not any(
+                category['id'] == category_id for category in platform['categories']):
+            raise RegistryError('请选择有效的业务场景，以确定公司所属供应链。')
         company = {'id': 'company-' + secrets.token_hex(6), 'name': name,
-                   'description': '', 'categoryId': None, 'template': ''}
+                   'description': '', 'categoryId': category_id, 'template': ''}
         with self.registry.connect() as db:
             db.execute('INSERT INTO companies VALUES (?,?)', (company['id'], json.dumps(company, ensure_ascii=False)))
         return company

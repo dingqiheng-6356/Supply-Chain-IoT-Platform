@@ -7,6 +7,10 @@ let authMode='login',templateDraft=null,templates={},templateErrors={};
 const registeredKey='iot-registered-customers-v1',templateKey='iot-company-templates-v1';
 const isAdmin=()=>currentUser?.role==='admin';
 const company=()=>platform.companies.find(c=>c.id===companyId);
+const companyChainId=(ownerId=currentUser?.companyId)=>{
+ const owner=platform.companies.find(c=>c.id===ownerId);
+ return platform.categories.find(category=>category.id===owner?.categoryId)?.chainId||null;
+};
 const companyDevices=()=>devices.filter(d=>d.companyId===companyId && (isAdmin()||d.companyId===currentUser?.companyId));
 const warningDevices=()=>companyDevices().filter(d=>d.online&&alarms(deviceScene(d),effective(d)).length);
 /* Browser-local device inventory; all mutations stay within the developer's company. */
@@ -335,8 +339,8 @@ function platformPage(){
 
 function currentChain(){return platform.chains.find(c=>c.id===chainId)||platform.chains.find(c=>c.id==='livestock')||platform.chains[0];}
 function chainSwitcher(){
- const c=chainId?platform.chains.find(x=>x.id===chainId):null,cats=platform.categories.filter(k=>k.chainId===c?.id);
- return `<div class="chain-switcher"><span class="feature-icon ${safe(c?.color||'green')}">${icon(c?.icon||'grid')}</span><span><small>当前供应链</small><strong>${safe(c?.name||'未选择')}</strong><em>${c?`${cats.length} 个业务场景`:'选择后进入工作台'}</em></span><button data-route="chains">${c?'切换':'选择'}</button></div>`;
+ const c=platform.chains.find(x=>x.id===chainId),cats=platform.categories.filter(k=>k.chainId===c?.id);
+ return `<div class="chain-switcher"><span class="feature-icon ${safe(c?.color||'green')}">${icon(c?.icon||'grid')}</span><span><small>所属供应链</small><strong>${safe(c?.name||'未配置')}</strong><em>${c?`${cats.length} 个业务场景 · 已按所属公司自动进入`:'请联系平台管理员配置'}</em></span></div>`;
 }
 function chainPickerPage(){
  return heading('SUPPLY CHAIN / SELECT','选择供应链','平台已接入多条供应链，选择你要进入的模块，查看该链下的公司与设备。')+
@@ -461,10 +465,11 @@ function render(live=false){
  if(!currentUser){app.innerHTML=accountPage();bindAuth();return;}
  if(!isAdmin()){
   companyId=currentUser.companyId;
+  chainId=companyChainId();
   if(!company()){notice='账号尚未分配有效公司，请联系平台管理员分配公司。';view='unassigned';}
-  else if(!['chains','company','detail','monitor','alerts','profile','article','device-manage','my-devices','organization','whiteboards','whiteboard-editor'].includes(view))view='company';
+  else if(!chainId){notice='所属公司尚未配置供应链，请联系平台管理员完善公司业务场景。';view='unassigned';}
+  else if(view==='chains'||!['company','detail','monitor','alerts','profile','article','device-manage','my-devices','organization','whiteboards','whiteboard-editor'].includes(view))view='company';
  }
- if(!isAdmin()&&!chainId&&view!=='chains'&&view!=='unassigned'){view='chains';notice='请先选择供应链，选择后才能进入工作台。';}
  if(view==='device-manage'&&!canManageDevices())view=isAdmin()?'platform':'company';
  if(view==='detail'&&!companyDevices().some(d=>d.id===deviceId)){view='company';notice='设备不属于当前公司，已返回公司首页。';}
  if(platformBackend&&view==='template')view='company';
@@ -476,8 +481,7 @@ function render(live=false){
  const companyNav=[['home','grid','首页'],['news','chat','新闻'],['profile','users','我的']];
  const consoleNav=[['overview','grid','概览'],['devices','device',canManageDevices()?(currentUser?.role==='developer'?'设备接入':'设备管理'):'我的设备'],['monitor','task','数据监测'],['alerts','bell','告警中心'],['showcase','eye','展示白板']];
  if(isCompanyAdmin()&&platformBackend)consoleNav.push(['organization','users','公司管理']);
- const chainLocked=!isAdmin()&&!chainId;
- const nav=chainLocked?'':isAdmin()?adminNav.map(([v,i,t])=>`<button class="nav-item ${view===v?'active':''}" data-route="${v}" aria-label="${t}" title="${t}">${icon(i)}<span>${t}</span></button>`).join(''):consoleNav.map(([section,i,t])=>{
+ const nav=isAdmin()?adminNav.map(([v,i,t])=>`<button class="nav-item ${view===v?'active':''}" data-route="${v}" aria-label="${t}" title="${t}">${icon(i)}<span>${t}</span></button>`).join(''):consoleNav.map(([section,i,t])=>{
   const route=section==='devices'&&!canManageDevices()?'my-devices':'';
   const active=((view==='company'&&companyTab==='home'&&section==='overview')||(view==='device-manage'&&section==='devices')||(view==='my-devices'&&section==='devices')||(view==='monitor'&&section==='monitor')||(view==='alerts'&&section==='alerts')||(view==='organization'&&section==='organization')||(['whiteboards','whiteboard-editor'].includes(view)&&section==='showcase'))?'active':'';
   return `<button class="nav-item ${active}" ${route?`data-route="${route}"`:`data-console-section="${section}"`} aria-label="${t}" title="${t}">${icon(i)}<span>${t}</span></button>`;
@@ -487,7 +491,7 @@ function render(live=false){
  const tabs=['company','detail','alerts','article'].includes(view)&&c?`<div class="company-topline"><div><span class="company-initial">${safe(c?.name?.slice(0,1)||'公')}</span><strong>${safe(c?.name)}</strong></div><nav aria-label="公司页面">${companyNav.map(([v,i,t])=>`<button data-tab="${v}" class="${(view==='company'&&companyTab===v)||(view==='article'&&v==='news')?'active':''}">${icon(i)}${t}</button>`).join('')}</nav></div>`:'';
  if(!['detail','alerts'].includes(view))alertDrafts.clear();
  const focusedDraft=document.activeElement?.dataset?.draftKey,caretPos=document.activeElement?.selectionStart;
- updateWorkspaceHtml(`<div class="workspace ${!isAdmin()?'customer-console':'admin-console'}"><aside class="sidebar"><a href="./" class="brand">${logo()}</a><div class="workspace-label">${isAdmin()?'平台管理':'公司工作空间'} <span>${isAdmin()?'ADMIN':'WORKSPACE'}</span></div>${isAdmin()?'':chainSwitcher()}${chainLocked?'<p class="chain-lock-note">'+icon('shield')+' 先选择一条供应链，之后才能进入工作台。</p>':''}<nav aria-label="主导航">${nav}</nav><div class="sidebar-bottom"><div class="help-card"><span class="help-icon">${icon('shield')}</span><strong>${isAdmin()?'统一管理，独立配置':'专属空间，清晰可见'}</strong><p>${isAdmin()?'管理公司与公司管理员，查看平台运行情况。':'查看本公司设备与预警，让每一项数据有迹可循。'}</p><span class="badge ${r.color}">${r.label}</span></div><div class="sidebar-user"><span class="user-avatar">${safe(currentUser.name?.slice(0,1)||'用')}</span><div><strong>${safe(currentUser.name)}</strong><small>${r.label}</small></div><button class="icon-button" id="logout" aria-label="退出登录" title="退出登录">${icon('logout')}</button></div></div></aside><div class="main-shell"><header class="topbar">${!isAdmin()&&!chainLocked?`<div class="console-header-search">${icon('eye')}<input id="console-global-search" type="search" aria-label="搜索公司设备" placeholder="搜索设备、设备 ID、位置…"></div><div class="console-header-meta"><span>仅本公司数据</span><button class="icon-button" data-console-section="alerts" aria-label="查看告警中心">${icon('bell')}${warningDevices().length?'<i></i>':''}</button><button class="console-account" data-tab="profile"><span>${safe(currentUser.name?.slice(0,1)||'用')}</span>${safe(currentUser.name)}</button></div>`:''}<div class="legacy-breadcrumb"><button class="crumb-button" data-route="${isAdmin()?'platform':'chains'}">${isAdmin()?'平台管理':safe(chainId?currentChain()?.name:'供应链')}</button><span class="slash">/</span><strong>${safe(labels[view]||'工作台')}</strong></div><div class="topbar-right"><span class="environment"><i></i> ${platformBackend?'平台服务':(['usb','mqtt'].includes(view)||companyDevices().some(d=>d.mqtt)?'MQTT / 本地接收':'演示空间')}</span><span class="badge ${r.color}">${icon('shield')}${r.label}</span></div></header><main class="main-content">${notice&&view!=='unassigned'?`<div class="notice" role="status">${safe(notice)}</div>`:''}${tabs}${body}<footer class="main-footer"><span>物联空间 · 连接供应链的每一环</span><span>${platformBackend?'设备与配置由服务器统一管理，监测值来自实际接收的上报':(['usb','mqtt'].includes(view)||companyDevices().some(d=>d.mqtt)?'MQTT 设备显示实际接收值；其他设备为演示快照':'公司设备数据为演示快照')}</span></footer></main></div></div>`,live);
+ updateWorkspaceHtml(`<div class="workspace ${!isAdmin()?'customer-console':'admin-console'}"><aside class="sidebar"><a href="./" class="brand">${logo()}</a><div class="workspace-label">${isAdmin()?'平台管理':'公司工作空间'} <span>${isAdmin()?'ADMIN':'WORKSPACE'}</span></div>${isAdmin()?'':chainSwitcher()}<nav aria-label="主导航">${nav}</nav><div class="sidebar-bottom"><div class="help-card"><span class="help-icon">${icon('shield')}</span><strong>${isAdmin()?'统一管理，独立配置':'专属空间，清晰可见'}</strong><p>${isAdmin()?'管理公司与公司管理员，查看平台运行情况。':'查看本公司设备与预警，让每一项数据有迹可循。'}</p><span class="badge ${r.color}">${r.label}</span></div><div class="sidebar-user"><span class="user-avatar">${safe(currentUser.name?.slice(0,1)||'用')}</span><div><strong>${safe(currentUser.name)}</strong><small>${r.label}</small></div><button class="icon-button" id="logout" aria-label="退出登录" title="退出登录">${icon('logout')}</button></div></div></aside><div class="main-shell"><header class="topbar">${!isAdmin()?`<div class="console-header-search">${icon('eye')}<input id="console-global-search" type="search" aria-label="搜索公司设备" placeholder="搜索设备、设备 ID、位置…"></div><div class="console-header-meta"><span>仅本公司数据</span><button class="icon-button" data-console-section="alerts" aria-label="查看告警中心">${icon('bell')}${warningDevices().length?'<i></i>':''}</button><button class="console-account" data-tab="profile"><span>${safe(currentUser.name?.slice(0,1)||'用')}</span>${safe(currentUser.name)}</button></div>`:''}<div class="legacy-breadcrumb"><button class="crumb-button" data-route="${isAdmin()?'platform':'company'}">${isAdmin()?'平台管理':safe(chainId?currentChain()?.name:'供应链')}</button><span class="slash">/</span><strong>${safe(labels[view]||'工作台')}</strong></div><div class="topbar-right"><span class="environment"><i></i> ${platformBackend?'平台服务':(['usb','mqtt'].includes(view)||companyDevices().some(d=>d.mqtt)?'MQTT / 本地接收':'演示空间')}</span><span class="badge ${r.color}">${icon('shield')}${r.label}</span></div></header><main class="main-content">${notice&&view!=='unassigned'?`<div class="notice" role="status">${safe(notice)}</div>`:''}${tabs}${body}<footer class="main-footer"><span>物联空间 · 连接供应链的每一环</span><span>${platformBackend?'设备与配置由服务器统一管理，监测值来自实际接收的上报':(['usb','mqtt'].includes(view)||companyDevices().some(d=>d.mqtt)?'MQTT 设备显示实际接收值；其他设备为演示快照':'公司设备数据为演示快照')}</span></footer></main></div></div>`,live);
  bindPortal();bindWhiteboard();bindOrganization();bindDeviceManagement();bindNews();if(typeof bindPlatformFeatures==='function')bindPlatformFeatures();if(!live)bindExperience();syncMqttPolling();syncRegistryPolling();if(['usb','mqtt'].includes(view))startSerialPolling();if(focusedDraft){const field=document.querySelector(`[data-draft-key="${CSS.escape(focusedDraft)}"]`);if(field){field.focus();if(Number.isInteger(caretPos))try{field.setSelectionRange(caretPos,caretPos);}catch(error){}}}
 }
 async function readJson(path){const response=await fetch(path,{cache:'no-store'});if(!response.ok)throw new Error(`无法读取 ${path}（${response.status}）`);return response.json();}
@@ -496,7 +500,7 @@ function enterUser(user){
  currentUser=normalizeUser(user);sessionStorage.setItem('workspace-user',currentUser.id);notice='';organizationError='';deviceSceneFilter='';companyTab='home';companyId=currentUser.companyId||null;
  categoryId=company()?.categoryId||null;
  if(isAdmin()){view='platform';chainId=null;}
- else{chainId=null;view='chains';}
+ else{chainId=companyChainId();view=chainId?'company':'unassigned';}
  render();window.scrollTo({top:0,behavior:'instant'});
 }
 async function logout(){if(platformBackend)await platformRequest('logout',{method:'POST',body:'{}'}).catch(()=>{});resetRegistry();if(typeof historyQuery!=='undefined'){historyQuery=null;historyRequest++;}stopSerialPolling();sessionStorage.removeItem('workspace-user');currentUser=null;companyId=null;chainId=null;deviceId=null;companyMembers=[];companyScenes=[];organizationError='';notice='';authMode='login';render();window.scrollTo({top:0,behavior:'instant'});}
@@ -560,7 +564,7 @@ function bindAuth(){
 function bindPortal(){
  const on=(selector,fn)=>{const el=document.querySelector(selector);if(el)el.onclick=fn;};
  document.querySelectorAll('[data-route]').forEach(b=>b.onclick=()=>{
-  const next=b.dataset.route;if(!isAdmin()&&!['chains','company','profile','whiteboards','whiteboard-editor','my-devices'].includes(next)&&!(next==='device-manage'&&canManageDevices()))return;
+  const next=b.dataset.route;if(!isAdmin()&&!['company','profile','whiteboards','whiteboard-editor','my-devices'].includes(next)&&!(next==='device-manage'&&canManageDevices()))return;
   if(next==='device-manage')pendingDeleteId=null;
   if(['usb','mqtt'].includes(next)){testMode=next;serialPaused=false;serialCursor=0;serialLines=[];serialDropped=false;serialState={source:next==='usb'?'serial':'mqtt',device:'/dev/ttyUSB0',baudrate:9600,host:'127.0.0.1',port:1883,topic:'rd-web/test/#',total:0,status:'connecting',error:''};}
   if(next==='news'){companyId=null;navigate('news');refreshNews();return;}if(next==='company')companyTab='home';navigate(next);

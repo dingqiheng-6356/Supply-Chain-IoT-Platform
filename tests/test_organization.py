@@ -109,7 +109,11 @@ class OrganizationTest(unittest.TestCase):
         status, result, _ = self.request('POST', '/api/company/invites', {'role': 'developer', 'companyId': 'company-other'}, 'owner_a')
         self.assertEqual(status, 201)
         registration = {'username': 'invited_dev', 'name': '新开发者', 'password': 'private-password-123',
-                        'inviteCode': result['inviteCode'], 'role': 'admin', 'companyId': 'company-other'}
+                        'inviteCode': result['inviteCode'], 'role': 'admin', 'companyId': 'company-other',
+                        'phone': '13800000001'}
+        status, sms, _ = self.request('POST', '/api/auth/register/code', {'phone': registration['phone']})
+        self.assertEqual(status, 200)
+        registration['code'] = sms['debugCode']
         status, result, _ = self.request('POST', '/api/register', registration)
         self.assertEqual(status, 201)
         self.assertEqual(result['user']['companyId'], 'company-c')
@@ -118,9 +122,12 @@ class OrganizationTest(unittest.TestCase):
 
     def test_platform_creates_company_and_owner_without_exposing_inventory(self):
         self.assertEqual(self.request('POST', '/api/companies', {'name': '越权公司'}, 'owner_a')[0], 403)
-        status, result, _ = self.request('POST', '/api/companies', {'name': '新公司'}, 'admin')
+        self.assertEqual(self.request('POST', '/api/companies', {'name': '缺少场景'}, 'admin')[0], 400)
+        self.assertEqual(self.request('POST', '/api/companies', {'name': '无效场景', 'categoryId': 'invalid'}, 'admin')[0], 400)
+        status, result, _ = self.request('POST', '/api/companies', {'name': '新公司', 'categoryId': 'breeding'}, 'admin')
         self.assertEqual(status, 201)
         company_id = result['company']['id']
+        self.assertEqual(result['company']['categoryId'], 'breeding')
         data = {'username': 'new_owner', 'password': 'private-password-123', 'name': '公司主管', 'companyId': company_id}
         self.assertEqual(self.request('POST', '/api/company-admins', data, 'owner_a')[0], 403)
         self.assertEqual(self.request('POST', '/api/company-admins', data, 'admin')[0], 201)
@@ -130,6 +137,15 @@ class OrganizationTest(unittest.TestCase):
         self.assertEqual(self.request('GET', '/api/workspace')[0], 401)
         self.assertEqual(self.request('GET', '/devices.json')[1]['devices'], [])
         self.assertEqual(self.request('GET', '/api/devices', actor='new_owner')[1]['devices'], [])
+
+    def test_company_roles_workspace_retains_own_chain(self):
+        for actor in ('owner_a', 'developer', 'customer'):
+            with self.subTest(actor=actor):
+                workspace = self.request('GET', '/api/workspace', actor=actor)[1]
+                company = workspace['platform']['companies'][0]
+                category = next(c for c in workspace['platform']['categories'] if c['id'] == company['categoryId'])
+                self.assertEqual(company['id'], 'company-c')
+                self.assertEqual(category['chainId'], 'livestock')
 
 
 if __name__ == '__main__':
