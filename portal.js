@@ -155,7 +155,7 @@ function accountPage(){
 <section class="login-col login-col-left">
  <div class="login-left-top">
   <a class="login-brand-top" href="./">${logo()}<span>物联空间</span></a>
-  <h1>供应链<br>物联网平台</h1>
+  <h1><span class="line-1">供应链</span><span class="line-2">物联网平台</span></h1>
   <p>Supply Chain IoT Platform · 让每一台设备，都有清晰的脉络</p>
  </div>
  <div class="login-left-deco">${decoSvg}</div>
