@@ -79,7 +79,7 @@ html:has(.portal-login){background:rgb(239,245,240)}
 .portal-login .login-left-top{position:absolute;inset:0;padding:0 48px;display:flex;flex-direction:column;justify-content:center;align-items:flex-start;z-index:2}
 .portal-login .login-left-top h1{font-size:clamp(56px,7.2vw,96px);line-height:1.05;font-weight:800;color:#1e3a50;margin:0;letter-spacing:-1px;max-width:90%;position:relative}
 .portal-login .login-left-top h1 .line-1{display:block;transform:translate(220px,-50px)}
-.portal-login .login-left-top h1 .line-2{display:block;letter-spacing:50px;white-space:nowrap}
+.portal-login .login-left-top h1 .line-2{display:block;letter-spacing:50px;white-space:nowrap;transform:translateX(30px)}
 .portal-login .login-left-top p{font-size:14px;color:#3f6652;line-height:1.8;margin-top:16px;letter-spacing:.3px;max-width:400px;transform:translateX(220px)}
 /* DECO — background layer, title sits ON TOP */
 .portal-login .login-left-deco{position:absolute;inset:0;z-index:1;pointer-events:none}
