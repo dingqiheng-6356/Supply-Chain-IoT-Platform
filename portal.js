@@ -702,8 +702,8 @@ function refreshLiveView(){
  if(view==='company'&&companyTab==='home'){
   const stats=document.querySelector('.company-stats');
   if(stats){try{const box=document.createElement('div');box.innerHTML=dashboardCards();stats.replaceWith(box.firstElementChild);const warning=document.querySelector('#warning-devices');if(warning)warning.onclick=openWarnings;}catch{}}
-  const monitor=document.querySelector('#console-monitor');
-  if(monitor){
+  const monitor=document.querySelector('#console-monitor'),selectOpen=monitor?.querySelector('select:focus');
+  if(monitor&&!selectOpen){
    if(monitor.dataset.layout==='ov'){
     monitor.innerHTML=consoleHealthPanel();
     const sampling=document.querySelector('#console-sampling');if(sampling)sampling.innerHTML=consoleSamplingPanel();
