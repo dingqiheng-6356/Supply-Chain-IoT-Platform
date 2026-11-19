@@ -817,6 +817,15 @@ button.ov-metric:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(17
 .ov-select{position:relative;display:inline-flex;align-items:center}
 .ov-select select{appearance:none;border:1px solid #e6eae7;background:#fff;color:#495057;font-size:12px;border-radius:8px;padding:7px 26px 7px 10px;max-width:170px}
 .ov-select:after{content:'';position:absolute;right:10px;top:50%;width:6px;height:6px;border-right:1.5px solid #868e96;border-bottom:1.5px solid #868e96;transform:translateY(-70%) rotate(45deg);pointer-events:none}
+.ov-device-select{z-index:30}
+.ov-device-trigger{width:170px;border:1px solid #e6eae7;background:#fff;color:#495057;font-size:12px;border-radius:8px;padding:8px 26px 8px 10px;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
+.ov-device-select.is-open{z-index:100}
+.ov-device-select.is-open .ov-device-trigger{border-color:#8fb39b;box-shadow:0 0 0 3px rgba(47,107,86,.08)}
+.ov-device-menu{position:absolute;right:0;top:calc(100% + 6px);min-width:190px;max-height:260px;overflow:auto;padding:6px;background:#fff;border:1px solid #e2e9e4;border-radius:10px;box-shadow:0 14px 34px rgba(28,68,56,.16)}
+.ov-device-menu[hidden]{display:none}
+.ov-device-option{display:block;width:100%;padding:10px 12px;border:0;border-radius:7px;background:transparent;color:#495057;text-align:left;font-size:12px;line-height:1.4;cursor:pointer}
+.ov-device-option:hover{background:#f1f6f2;color:#1c4438}
+.ov-device-option.is-selected{background:#e5f1e8;color:#1c5b43;font-weight:700}
 .ov-dash .ov-quick{display:flex;flex-direction:column}
 .ov-quick .ov-quick-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;flex:1;grid-auto-rows:1fr}
 .ov-quick-grid button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;min-height:132px;border:0;border-radius:12px;background:#f7faf8;color:var(--ov-label);font-size:13px;font-weight:600;cursor:pointer;transition:transform .18s ease,background .18s ease,box-shadow .18s ease}

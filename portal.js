@@ -219,7 +219,19 @@ const sparkChartObserver=new MutationObserver(records=>{
  if(replaced)fitLegacySparklines();
 });
 sparkChartObserver.observe(app,{childList:true,subtree:true});
-let overviewDeviceId=null;
+let overviewDeviceId=null,overviewDeviceOpen=false;
+function setOverviewDeviceOpen(open){
+ overviewDeviceOpen=open;const root=document.querySelector('#overview-device-select');if(!root)return;
+ root.classList.toggle('is-open',open);root.querySelector('#overview-device-trigger')?.setAttribute('aria-expanded',String(open));
+ const menu=root.querySelector('.ov-device-menu');if(menu)menu.hidden=!open;
+}
+function bindOverviewDeviceSelect(scope){
+ const root=(scope||document).querySelector('#overview-device-select');if(!root)return;
+ const trigger=root.querySelector('#overview-device-trigger');if(trigger)trigger.onclick=()=>setOverviewDeviceOpen(!overviewDeviceOpen);
+ root.querySelectorAll('[data-overview-device]').forEach(button=>button.onclick=()=>{overviewDeviceId=button.dataset.overviewDevice;setOverviewDeviceOpen(false);render();});
+}
+document.addEventListener('pointerdown',event=>{if(!event.target.closest?.('#overview-device-select'))setOverviewDeviceOpen(false);},true);
+document.addEventListener('keydown',event=>{if(event.key==='Escape')setOverviewDeviceOpen(false);});
 function consoleHealthPanel(){
  const list=companyDevices(),warnings=warningDevices(),offline=list.filter(d=>!d.online),total=list.length,healthy=Math.max(0,total-warnings.length-offline.length);
  const green=total?healthy/total*100:0,amber=total?(healthy+warnings.length)/total*100:0;
@@ -228,7 +240,8 @@ function consoleHealthPanel(){
 function consoleSamplingPanel(){
  const list=companyDevices();
  const raw=list.find(d=>d.id===overviewDeviceId)||list.find(d=>d.online)||list[0],d=raw?effective(raw):null,s=d?deviceScene(d):null;
- const head=`<div class="ov-card-head"><div><span class="ov-kicker">SENSOR OVERVIEW</span><h2>采样数据概览</h2></div>${d?`<label class="ov-select"><span class="sr-only">概览设备</span><select id="overview-device">${list.map(row=>`<option value="${safe(row.id)}" ${row.id===d.id?'selected':''}>${safe(effective(row).name)}</option>`).join('')}</select></label>`:''}</div>`;
+ const picker=d?`<div class="ov-select ov-device-select ${overviewDeviceOpen?'is-open':''}" id="overview-device-select"><button type="button" class="ov-device-trigger" id="overview-device-trigger" aria-haspopup="listbox" aria-expanded="${overviewDeviceOpen}" aria-label="选择概览设备">${safe(d.name)}</button><div class="ov-device-menu" role="listbox" aria-label="公司设备" ${overviewDeviceOpen?'':'hidden'}>${list.map(row=>`<button type="button" class="ov-device-option ${row.id===d.id?'is-selected':''}" data-overview-device="${safe(row.id)}" role="option" aria-selected="${row.id===d.id}">${safe(effective(row).name)}</button>`).join('')}</div></div>`:'';
+ const head=`<div class="ov-card-head"><div><span class="ov-kicker">SENSOR OVERVIEW</span><h2>采样数据概览</h2></div>${picker}</div>`;
  if(!d)return `<section class="insight-panel ov-sampling">${head}<p class="dashboard-empty">尚未配置监测设备</p></section>`;
  if(!s||!s.metrics.length)return `<section class="insight-panel ov-sampling">${head}<p class="dashboard-empty">等待设备首次上报后显示指标</p></section>`;
  return `<section class="insight-panel ov-sampling">${head}<div class="ov-sampling-grid">${s.metrics.map(m=>{const warning=d.online&&alarms(s,d).some(a=>a.key===m.key),value=d.values[m.key],count=(d.history?.[m.key]||[]).filter(Number.isFinite).length;return `<div class="sampling-metric ${warning?'is-alert':''}"><div class="ov-metric-main"><span class="ov-metric-name">${icon(m.icon)} ${safe(m.name)}</span><div class="ov-reading"><strong>${Number.isFinite(value)?safe(value):'—'}</strong><small>${safe(m.unit)}</small></div><span class="ov-sample-note">最近 ${count} 次${d.mqtt?'实际':'模拟'}采样</span></div><div class="ov-metric-chart">${workspaceSparkline(m,d)}</div></div>`;}).join('')}</div><button class="dashboard-text-link" data-device="${safe(d.id)}">查看设备详情 ${icon('arrow')}</button></section>`;
@@ -629,7 +642,7 @@ function bindPortal(){
  bindDeviceMap();
  const globalSearch=document.querySelector('#console-global-search');if(globalSearch)globalSearch.onkeydown=event=>{if(event.key!=='Enter')return;event.preventDefault();const query=globalSearch.value,needsHome=view!=='company'||companyTab!=='home';companyTab='home';if(needsHome)navigate('company');const input=document.querySelector('#console-device-search');if(input){input.value=query;searchDevices(query);input.scrollIntoView({block:'center'});input.focus();}};
  on('#logout',logout);on('#profile-logout',logout);on('#warning-devices',openWarnings);on('#back-devices',()=>{companyTab='home';navigate('company');});
- const overview=document.querySelector('#overview-device');if(overview)overview.onchange=()=>{overviewDeviceId=overview.value;render();};
+ bindOverviewDeviceSelect(document);
  on('[data-scroll-devices]',()=>document.querySelector('#dashboard-devices')?.scrollIntoView({block:'start',behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'}));
  const settings=document.querySelector('#settings-form');if(settings)settings.onsubmit=saveSettings;
  document.querySelectorAll('.alert-handle-form').forEach(form=>form.onsubmit=event=>submitAlertWorkflow(event,'handle'));
@@ -702,16 +715,16 @@ function refreshLiveView(){
  if(view==='company'&&companyTab==='home'){
   const stats=document.querySelector('.company-stats');
   if(stats){try{const box=document.createElement('div');box.innerHTML=dashboardCards();stats.replaceWith(box.firstElementChild);const warning=document.querySelector('#warning-devices');if(warning)warning.onclick=openWarnings;}catch{}}
-  const monitor=document.querySelector('#console-monitor'),selectOpen=monitor?.querySelector('select:focus');
+  const monitor=document.querySelector('#console-monitor'),selectOpen=overviewDeviceOpen||monitor?.querySelector('select:focus');
   if(monitor&&!selectOpen){
    if(monitor.dataset.layout==='ov'){
     monitor.innerHTML=consoleHealthPanel();
     const sampling=document.querySelector('#console-sampling');if(sampling)sampling.innerHTML=consoleSamplingPanel();
     bindLiveDeviceButtons(monitor);
-    const overview=document.querySelector('#overview-device');if(overview)overview.onchange=()=>{overviewDeviceId=overview.value;render();};
+    bindOverviewDeviceSelect(document);
    }else{
     monitor.innerHTML=companyInsights();bindLiveDeviceButtons(monitor);
-    const overview=monitor.querySelector('#overview-device');if(overview)overview.onchange=()=>{overviewDeviceId=overview.value;render();};
+    bindOverviewDeviceSelect(monitor);
    }
    fitLegacySparklines();
   }

@@ -111,7 +111,7 @@ function syncMqttPolling(){
    if(mqttSession===session){
     updateMqttDiscovery();
     // Preserve edits and focus while the background subscription continues.
-    if(view!=='device-manage'&&!document.activeElement?.closest('input,select,textarea'))render(true);
+    if(view!=='device-manage'&&!overviewDeviceOpen&&!document.activeElement?.closest('input,select,textarea'))render(true);
     mqttTimer=setTimeout(poll,1500);
    }
   }
