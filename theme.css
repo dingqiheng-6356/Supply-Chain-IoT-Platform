@@ -244,14 +244,14 @@ input::placeholder,textarea::placeholder{color:#9aa89b}
 .pasture-site .account-copy>div .icon{color:#668956}
 .pasture-site .account-section>.portal-login{width:100%;max-width:460px;margin:0 0 0 auto;border:1px solid #d8e1cf;border-radius:22px;background:#fffef9;box-shadow:0 25px 65px #2c4a2820;overflow:hidden}
 .pasture-site .account-section .login-panel{padding:35px 37px 29px}
-.pasture-site .account-section .auth-switch{gap:5px;margin-bottom:27px;padding:4px;border:1px solid #e1e6d9;border-radius:11px;background:#f0f2e9}
-.pasture-site .account-section .auth-switch button{border-radius:8px;color:#7b8875;font-size:11px}
+.pasture-site .account-section .auth-switch{gap:6px;margin-bottom:27px;padding:5px;border:1px solid #e1e6d9;border-radius:14px;background:#f0f2e9}
+.pasture-site .account-section .auth-switch button{border-radius:11px;color:#7b8875;font-size:14px;font-weight:500}
 .pasture-site .account-section .auth-switch .active{background:#fffef9;color:#3a6547;box-shadow:0 3px 10px #32482a0c;font-weight:600}
-.pasture-site .account-section form label{margin:19px 0 8px;color:#5f725f;font-size:10px;font-weight:550}
-.pasture-site .account-section input,.pasture-site .account-section select{height:45px;border:1px solid #dbe2d3;border-radius:9px;background:#fffefa;color:#314e39}
+.pasture-site .account-section form label{margin:18px 0 8px;color:#5f725f;font-size:13px;font-weight:550}
+.pasture-site .account-section input,.pasture-site .account-section select{height:52px;border:1.5px solid #dbe2d3;border-radius:10px;background:#fffefa;color:#314e39;font-size:14px}
 .pasture-site .account-section input:focus,.pasture-site .account-section select:focus{border-color:#7f9e69;box-shadow:0 0 0 4px #7f9e6915}
 .pasture-site .account-section .password-wrap button{color:#7e8c77}
-.pasture-site .account-section .login-submit{height:45px;border-radius:9px;background:#335e44;color:#fffdf4}
+.pasture-site .account-section .login-submit{height:56px;border-radius:14px;background:#335e44;color:#fffdf4;font-size:15px;letter-spacing:2px;font-weight:600}
 .pasture-site .account-section .login-submit:hover{background:#264c36}
 .pasture-site .account-section .login-disclaimer{color:#96a08e}
 .pasture-site .account-section .error{color:#b65d4d}
@@ -687,14 +687,14 @@ body{background:#e9f1ec;color:#20382e}
 .supply-site .account-copy>div{color:#4b6558}
 .supply-site .account-copy>div .icon{color:#3f7d66}
 .supply-site .account-section>.portal-login{border-color:#d7e5dd;background:#f9fcfa;box-shadow:0 25px 65px rgba(16,47,39,.14)}
-.supply-site .account-section .auth-switch{border-color:#dde8e1;background:#e8f0ea}
-.supply-site .account-section .auth-switch button{color:#6a8074}
-.supply-site .account-section .auth-switch .active{background:#f9fcfa;color:#1c4438}
-.supply-site .account-section form label{color:#4f6d5f}
-.supply-site .account-section input,.supply-site .account-section select{border-color:#d9e5dd;background:#f9fcfa;color:#20402f}
+.supply-site .account-section .auth-switch{gap:6px;padding:5px;border-color:#dde8e1;border-radius:14px;background:#e8f0ea}
+.supply-site .account-section .auth-switch button{border-radius:11px;color:#6a8074;font-size:14px;font-weight:500}
+.supply-site .account-section .auth-switch .active{background:#f9fcfa;color:#1c4438;box-shadow:0 2px 10px rgba(28,68,56,.1)}
+.supply-site .account-section form label{color:#4f6d5f;font-size:13px}
+.supply-site .account-section input,.supply-site .account-section select{height:52px;border:1.5px solid #d9e5dd;border-radius:10px;background:#f9fcfa;color:#20402f;font-size:14px}
 .supply-site .account-section input:focus,.supply-site .account-section select:focus{border-color:#3f7d66;box-shadow:0 0 0 4px rgba(63,125,102,.12)}
 .supply-site .account-section .password-wrap button{color:#6a8074}
-.supply-site .account-section .login-submit{background:linear-gradient(135deg,#1c4438,#2f6b56);color:#f7fcf9}
+.supply-site .account-section .login-submit{height:56px;border-radius:14px;background:linear-gradient(135deg,#1c4438,#2f6b56);color:#f7fcf9;font-size:15px;letter-spacing:2px;font-weight:600;box-shadow:0 6px 20px rgba(28,68,56,.2)}
 .supply-site .account-section .login-submit:hover{background:linear-gradient(135deg,#14352c,#275c4a)}
 .supply-site .account-section .login-disclaimer{color:#7d9186}
 .supply-site .account-section .demo-buttons button{border-color:#d9e5dd;background:#f9fcfa;color:#4f6d5f}
