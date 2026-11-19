@@ -78,8 +78,8 @@ html:has(.portal-login){background:#eef1f5}
 /* Title — ABSOLUTE, big, overlaps globe */
 .portal-login .login-left-top{position:absolute;inset:0;padding:0 48px;display:flex;flex-direction:column;justify-content:center;align-items:flex-start;z-index:2}
 .portal-login .login-left-top h1{font-size:clamp(56px,7.2vw,96px);line-height:1.05;font-weight:800;color:#1e3a50;margin:0;letter-spacing:-1px;max-width:90%;position:relative}
-.portal-login .login-left-top h1 .line-1{display:block;transform:translate(160px,-50px)}
-.portal-login .login-left-top h1 .line-2{display:block;letter-spacing:50px}
+.portal-login .login-left-top h1 .line-1{display:inline-block;transform:translateX(160px)}
+.portal-login .login-left-top h1 .line-2{display:inline-block;margin-left:50px;letter-spacing:50px}
 .portal-login .login-left-top p{font-size:14px;color:#6a859a;line-height:1.8;margin-top:16px;letter-spacing:.3px;max-width:400px;transform:translateX(160px)}
 /* DECO — background layer, title sits ON TOP */
 .portal-login .login-left-deco{position:absolute;inset:0;z-index:1;pointer-events:none}
