@@ -214,6 +214,11 @@ function fitLegacySparklines(){
 }
 function scheduleLegacySparklineFit(){requestAnimationFrame(fitLegacySparklines);}
 window.addEventListener('resize',scheduleLegacySparklineFit);
+const sparkChartObserver=new MutationObserver(records=>{
+ const replaced=records.some(record=>Array.from(record.addedNodes).some(node=>node.nodeType===1&&(node.matches?.('.spark-chart')||node.querySelector?.('.spark-chart'))));
+ if(replaced)fitLegacySparklines();
+});
+sparkChartObserver.observe(app,{childList:true,subtree:true});
 let overviewDeviceId=null;
 function consoleHealthPanel(){
  const list=companyDevices(),warnings=warningDevices(),offline=list.filter(d=>!d.online),total=list.length,healthy=Math.max(0,total-warnings.length-offline.length);
@@ -644,7 +649,7 @@ function bindPortal(){
  }
  on('#preview-template',()=>editTemplate('preview'));on('#save-template',()=>editTemplate('save'));on('#download-template',()=>editTemplate('download'));
  on('#reset-template',()=>{if(!isAdmin())return;const overrides=readStorage(templateKey,{});delete overrides[companyId];localStorage.setItem(templateKey,JSON.stringify(overrides));templateDraft=null;render();});
- scheduleLegacySparklineFit();
+ fitLegacySparklines();
 }
 /* ===== 实时刷新：只替换数据节点，保留表单输入、地图与滚动位置 ===== */
 function bindLiveDeviceButtons(scope){
@@ -708,6 +713,7 @@ function refreshLiveView(){
     monitor.innerHTML=companyInsights();bindLiveDeviceButtons(monitor);
     const overview=monitor.querySelector('#overview-device');if(overview)overview.onchange=()=>{overviewDeviceId=overview.value;render();};
    }
+   fitLegacySparklines();
   }
   const grid=document.querySelector('.device-grid');
   if(grid){const box=document.createElement('div');box.innerHTML=deviceCards(companyDevices());grid.replaceWith(box.firstElementChild);bindLiveDeviceButtons(box);}
