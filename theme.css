@@ -268,16 +268,6 @@ input::placeholder,textarea::placeholder{color:#9aa89b}
 .pasture-site .footer-bottom a:hover{color:#dce8d3}
 
 /* Standalone account surfaces keep the same visual language. */
-.portal-login{background:var(--cream)}
-.portal-login .login-story{background:radial-gradient(circle at 90% 15%,#a9c58c30,transparent 35%),linear-gradient(145deg,#13372e,#28513c);color:#f5f5e9}
-.portal-login .story-body>p,.portal-login .login-story footer{color:#bdccbc}
-.portal-login .story-body h1>span{color:#c9dfa8}
-.portal-login .supply-preview{border-color:#ffffff25;background:#ffffff10;color:#eff3e6}
-.portal-login .supply-line small,.portal-login .supply-preview-foot{color:#b5c7b5}
-.portal-login .supply-preview-foot{border-color:#ffffff20}
-.portal-login .auth-switch{background:#edf1e7}
-.portal-login .auth-switch .active{color:#3d684a}
-.portal-login .blue-text{color:#527950}
 
 /* Workspace chrome: color and depth only; existing layout dimensions stay intact. */
 .workspace{background:#f2f5ee;color:#2b4738}
@@ -699,18 +689,6 @@ body{background:#e9f1ec;color:#20382e}
 .supply-site .account-section .login-disclaimer{color:#7d9186}
 .supply-site .account-section .demo-buttons button{border-color:#d9e5dd;background:#f9fcfa;color:#4f6d5f}
 .supply-site .account-section .demo-buttons button:hover{border-color:#3f7d66;background:#eef6f1;color:#1c4438}
-.portal-login{background:#f1f7f3}
-.portal-login .login-story{background:radial-gradient(circle at 90% 15%,rgba(95,148,124,.28),transparent 35%),linear-gradient(145deg,#0c211c,#163f33);color:#eef8f2}
-.portal-login .login-story .brand{color:#f2fbf6}
-.portal-login .login-story .brand-mark{background:linear-gradient(145deg,#2f6b56,#4b9077);color:#f2fbf6;box-shadow:none}
-.portal-login .story-body .eyebrow{color:#a9d3bd}
-.portal-login .story-body h1>span{color:#c6e6d4}
-.portal-login .story-body>p,.portal-login .login-story footer{color:#a8c4b5}
-.portal-login .supply-preview{border-color:rgba(255,255,255,.16);background:rgba(255,255,255,.06);color:#eef8f2}
-.portal-login .supply-line small,.portal-login .supply-preview-foot{color:#a8c4b5}
-.portal-login .supply-preview-foot{border-color:rgba(255,255,255,.14)}
-.portal-login .supply-preview .feature-icon.green,.portal-login .supply-preview .feature-icon.blue{background:rgba(255,255,255,.12);color:#c6e6d4}
-.portal-login .supply-preview .badge.green,.portal-login .supply-preview .badge.blue{background:rgba(255,255,255,.12);color:#d8efe2}
 .portal-login .auth-switch{background:#e8f0ea}
 .portal-login .auth-switch .active{color:#1c4438}
 .portal-login .blue-text{color:#3f7d66}
@@ -757,7 +735,6 @@ body{background:#f0f6f2;color:#20382e}
 .pasture-site .whiteboard-section{background:radial-gradient(circle at 5% 90%,rgba(105,134,91,.2),transparent 32%),radial-gradient(circle at 96% 0,rgba(145,168,115,.14),transparent 30%),#12352c}
 .pasture-site .workflow-band{background:radial-gradient(circle at 90% 0,rgba(85,124,73,.24),transparent 34%),#173a30}
 .pasture-site .iot-footer{background:#102e26}
-.portal-login{background:#eef5f0}
 /* ================= 概览页视觉重构 gate24 ================= */
 .workspace.customer-console,.workspace.customer-console .main-content{background:#faf9f6}
 .ov-dash{--ov-online:#36cfc9;--ov-warn:#ff7d3b;--ov-off:#868e96;--ov-ink:#212529;--ov-label:#495057;--ov-muted:#868e96;--ov-shadow:0 2px 10px rgba(17,24,39,.05);display:flex;flex-direction:column;gap:16px;background:transparent}
