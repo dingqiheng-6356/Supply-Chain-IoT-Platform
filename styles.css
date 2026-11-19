@@ -72,22 +72,24 @@ html{scroll-behavior:auto;scroll-padding-top:85px}body{overflow-x:hidden}button,
 html:has(.portal-login){background:#eef1f5}
 .portal-login{min-height:100vh;display:grid;grid-template-columns:1fr 1fr;background:linear-gradient(135deg,#e8edf3 0%,#f2f5f9 50%,#e6ebf1 100%);font-family:system-ui,-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}
 /* LEFT column */
-.portal-login .login-col-left{position:relative;display:flex;flex-direction:column;padding:56px 48px 40px;overflow:hidden}
-.portal-login .login-left-top{flex-shrink:0;z-index:2}
-.portal-login .login-brand-top{display:inline-flex;align-items:center;gap:10px;color:#2c4e66;font-weight:700;font-size:17px;margin-bottom:44px;text-decoration:none}
+.portal-login .login-col-left{position:relative;overflow:hidden}
+.portal-login .login-brand-top{position:absolute;top:40px;left:48px;display:inline-flex;align-items:center;gap:10px;color:#2c4e66;font-weight:700;font-size:17px;text-decoration:none;z-index:3}
 .portal-login .login-brand-top .brand-mark{width:38px;height:38px;border-radius:10px;background:linear-gradient(145deg,#2c4e66,#4268b0);color:#fff}
-.portal-login .login-left-top h1{font-size:clamp(40px,4.6vw,62px);line-height:1.25;font-weight:700;color:#1e3a50;margin:0 0 14px;letter-spacing:-.5px}
-.portal-login .login-left-top p{font-size:13px;color:#6a859a;line-height:1.8;margin:0;letter-spacing:.3px}
-/* DECO bottom section — FILLS remaining space */
-.portal-login .login-left-deco{position:relative;flex:1;min-height:320px;margin-top:24px;z-index:1}
-.portal-login .login-left-deco .deco-ring{position:absolute;opacity:.7}
-.portal-login .login-left-deco .deco-ring-1{width:clamp(320px,44vw,560px);height:clamp(320px,44vw,560px);top:clamp(-40px,-6vw,-20px);left:50%;transform:translateX(-50%);animation:deco-spin 120s linear infinite}
-.portal-login .login-left-deco .deco-ring-2{width:clamp(220px,30vw,380px);height:clamp(220px,30vw,380px);bottom:-20px;left:16%;animation:deco-spin 90s linear infinite reverse}
-.portal-login .login-left-deco .deco-ring-3{width:clamp(140px,20vw,260px);height:clamp(140px,20vw,260px);top:36%;right:10%;animation:deco-spin 60s linear infinite}
+/* Title — ABSOLUTE, big, overlaps globe */
+.portal-login .login-left-top{position:absolute;inset:0;padding:0 48px;display:flex;flex-direction:column;justify-content:center;align-items:flex-start;z-index:2}
+.portal-login .login-left-top h1{font-size:clamp(56px,7.2vw,96px);line-height:1.05;font-weight:800;color:#1e3a50;margin:0;letter-spacing:-1px;max-width:90%}
+.portal-login .login-left-top h1 br{display:block;margin-bottom:6px}
+.portal-login .login-left-top p{font-size:14px;color:#6a859a;line-height:1.8;margin-top:16px;letter-spacing:.3px;max-width:400px}
+/* DECO — background layer, title sits ON TOP */
+.portal-login .login-left-deco{position:absolute;inset:0;z-index:1;pointer-events:none}
+.portal-login .login-left-deco .deco-ring{position:absolute;opacity:.65}
+.portal-login .login-left-deco .deco-ring-1{width:clamp(400px,56vw,720px);height:clamp(400px,56vw,720px);top:-20%;left:50%;transform:translateX(-50%);animation:deco-spin 120s linear infinite}
+.portal-login .login-left-deco .deco-ring-2{width:clamp(280px,40vw,520px);height:clamp(280px,40vw,520px);bottom:-16%;left:8%;animation:deco-spin 90s linear infinite reverse}
+.portal-login .login-left-deco .deco-ring-3{width:clamp(180px,26vw,320px);height:clamp(180px,26vw,320px);top:12%;right:4%;animation:deco-spin 60s linear infinite}
 @keyframes deco-spin{to{transform:rotate(360deg)}}
-.portal-login .login-left-deco .deco-gear{position:absolute;width:clamp(140px,22vw,200px);height:clamp(140px,22vw,200px);bottom:clamp(40px,7vw,90px);right:clamp(20px,3vw,60px);animation:deco-spin 80s linear infinite;opacity:.48}
-.portal-login .login-left-deco .deco-dots-grid{position:absolute;width:clamp(120px,18vw,200px);height:auto;top:28%;left:4%;opacity:.55}
-.portal-login .login-left-deco .deco-globe{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:clamp(200px,30vw,340px);filter:drop-shadow(0 18px 36px rgba(90,110,130,.22))}
+.portal-login .login-left-deco .deco-gear{position:absolute;width:clamp(160px,24vw,240px);height:clamp(160px,24vw,240px);bottom:8%;right:6%;animation:deco-spin 80s linear infinite;opacity:.42}
+.portal-login .login-left-deco .deco-dots-grid{position:absolute;width:clamp(140px,20vw,220px);height:auto;top:22%;left:3%;opacity:.5}
+.portal-login .login-left-deco .deco-globe{position:absolute;top:55%;left:50%;transform:translate(-50%,-50%);width:clamp(260px,38vw,440px);filter:drop-shadow(0 22px 44px rgba(90,110,130,.20));opacity:.92}
 .portal-login .login-left-deco .deco-globe svg{width:100%;height:auto}
 /* RIGHT column — same bg as left, form floats as subtle card */
 .portal-login .login-col-right{position:relative;display:flex;flex-direction:column;justify-content:center;padding:48px}
@@ -115,19 +117,23 @@ html:has(.portal-login){background:#eef1f5}
 /* Responsive */
 @media(max-width:980px){
  .portal-login{grid-template-columns:1fr;grid-template-rows:auto auto;min-height:auto}
- .portal-login .login-col-left{padding:40px 32px 20px}
- .portal-login .login-left-deco{min-height:260px}
+ .portal-login .login-col-left{min-height:460px}
+ .portal-login .login-brand-top{top:28px;left:28px;font-size:15px}
+ .portal-login .login-left-top{padding:0 28px}
+ .portal-login .login-left-top h1{font-size:clamp(40px,8vw,60px)}
+ .portal-login .login-left-deco .deco-globe{width:clamp(200px,30vw,300px)}
  .portal-login .login-col-right{padding:36px 32px 80px}
  .portal-login .login-form-wrap{max-width:440px;padding:32px 28px;border-radius:18px}
  .portal-login .login-foot{position:static;padding:16px 0}
 }
 @media(max-width:560px){
- .portal-login .login-col-left{padding:32px 20px 16px}
- .portal-login .login-brand-top{font-size:15px;margin-bottom:28px}
- .portal-login .login-brand-top .brand-mark{width:34px;height:34px}
- .portal-login .login-left-top h1{font-size:32px}
- .portal-login .login-left-top p{font-size:12px}
- .portal-login .login-left-deco{min-height:200px;margin-top:16px}
+ .portal-login .login-col-left{min-height:380px}
+ .portal-login .login-brand-top{font-size:14px;top:22px;left:22px}
+ .portal-login .login-brand-top .brand-mark{width:32px;height:32px}
+ .portal-login .login-left-top{padding:0 22px}
+ .portal-login .login-left-top h1{font-size:clamp(32px,10vw,44px);letter-spacing:-.5px}
+ .portal-login .login-left-top p{font-size:12px;margin-top:12px}
+ .portal-login .login-left-deco .deco-globe{width:clamp(180px,40vw,240px)}
  .portal-login .login-col-right{padding:24px 16px 80px}
  .portal-login .login-form-wrap{padding:28px 22px;border-radius:16px}
  .portal-login .login-form-wrap h2{font-size:20px}
