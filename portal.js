@@ -143,20 +143,33 @@ function accountPage(){
  const register=authMode==='register';
  const reset=authMode==='reset';
  const isAuthTab=authMode==='login'||authMode==='register';
- return `<main class="login portal-login"><div class="login-deco">
-<svg class="deco-ring deco-ring-outer" viewBox="0 0 520 520" aria-hidden="true"><circle cx="260" cy="260" r="250" fill="none" stroke="#c8d4df" stroke-width="1" stroke-dasharray="4 6"/><circle cx="260" cy="260" r="220" fill="none" stroke="#d4dee8" stroke-width="1"/></svg>
-<svg class="deco-ring deco-ring-inner" viewBox="0 0 380 380" aria-hidden="true"><circle cx="190" cy="190" r="180" fill="none" stroke="#b9c7d3" stroke-width="1.5"/><circle cx="190" cy="190" r="150" fill="none" stroke="#c8d4df" stroke-width="1" stroke-dasharray="2 4"/></svg>
-<svg class="deco-ring deco-ring-tiny" viewBox="0 0 240 240" aria-hidden="true"><circle cx="120" cy="120" r="110" fill="none" stroke="#d0d9e2" stroke-width="1"/></svg>
-<svg class="deco-gear" viewBox="0 0 200 200" aria-hidden="true"><g fill="none" stroke="#a8b8c8" stroke-width="1.2"><circle cx="100" cy="100" r="78"/><circle cx="100" cy="100" r="55"/><circle cx="100" cy="100" r="35"/><g stroke-linecap="round">${[...Array(12)].map((_,i)=>{const a=i*30*Math.PI/180,x1=100+Math.cos(a)*62,y1=100+Math.sin(a)*62,x2=100+Math.cos(a)*88,y2=100+Math.sin(a)*88;return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>`}).join('')}</g></g></svg>
-<svg class="deco-dots deco-dots-tl" viewBox="0 0 120 120" aria-hidden="true">${[...Array(24)].map((_,i)=>{const x=(i%6)*20+5,y=Math.floor(i/6)*20+5,r=1+i%3*.4;return `<circle cx="${x}" cy="${y}" r="${r}" fill="#c0cdd8"/>`}).join('')}</svg>
-<svg class="deco-dots deco-dots-br" viewBox="0 0 120 120" aria-hidden="true">${[...Array(24)].map((_,i)=>{const x=(i%6)*20+5,y=Math.floor(i/6)*20+5,r=1+i%3*.4;return `<circle cx="${x}" cy="${y}" r="${r}" fill="#c0cdd8"/>`}).join('')}</svg>
+ const decoSvg=`<svg class="deco-ring deco-ring-1" viewBox="0 0 600 600" aria-hidden="true"><circle cx="300" cy="300" r="290" fill="none" stroke="#ccd6e0" stroke-width="1" stroke-dasharray="6 8"/><circle cx="300" cy="300" r="250" fill="none" stroke="#dbe3eb" stroke-width="1"/><circle cx="300" cy="300" r="210" fill="none" stroke="#c5d0db" stroke-width="1" stroke-dasharray="3 5"/></svg>
+<svg class="deco-ring deco-ring-2" viewBox="0 0 420 420" aria-hidden="true"><circle cx="210" cy="210" r="200" fill="none" stroke="#b9c7d3" stroke-width="1.2"/><circle cx="210" cy="210" r="170" fill="none" stroke="#ccd6e0" stroke-width="1"/><circle cx="210" cy="210" r="140" fill="none" stroke="#dde4eb" stroke-width="1" stroke-dasharray="2 4"/></svg>
+<svg class="deco-ring deco-ring-3" viewBox="0 0 280 280" aria-hidden="true"><circle cx="140" cy="140" r="130" fill="none" stroke="#cdd6e0" stroke-width="1"/><circle cx="140" cy="140" r="100" fill="none" stroke="#e0e6ec" stroke-width="1"/></svg>
+<svg class="deco-gear" viewBox="0 0 220 220" aria-hidden="true"><g fill="none" stroke="#a8b8c8" stroke-width="1.2"><circle cx="110" cy="110" r="86"/><circle cx="110" cy="110" r="62"/><circle cx="110" cy="110" r="40"/><g stroke-linecap="round">${[...Array(16)].map((_,i)=>{const a=i*22.5*Math.PI/180,x1=110+Math.cos(a)*72,y1=110+Math.sin(a)*72,x2=110+Math.cos(a)*98,y2=110+Math.sin(a)*98;return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>`}).join('')}</g></g></svg>
+<svg class="deco-dots deco-dots-grid" viewBox="0 0 200 120" aria-hidden="true">${[...Array(60)].map((_,i)=>{const x=(i%10)*20+10,y=Math.floor(i/10)*20+10,r=.8+(i%4)*.3;return `<circle cx="${x}" cy="${y}" r="${r}" fill="#c8d4df"/>`}).join('')}</svg>
 <div class="deco-globe">
-<svg viewBox="0 0 220 220" aria-hidden="true"><defs><radialGradient id="globeGrad" cx="40%" cy="38%" r="60%"><stop offset="0%" stop-color="#ffffff"/><stop offset="40%" stop-color="#eaf2f8"/><stop offset="100%" stop-color="#b8c8d6"/></radialGradient><clipPath id="globeClip"><circle cx="110" cy="110" r="92"/></clipPath></defs><circle cx="110" cy="110" r="92" fill="url(#globeGrad)" stroke="#9fb3c5" stroke-width="1.5"/><g clip-path="url(#globeClip)" fill="none" stroke="#8fa3b4" stroke-width=".7" opacity=".55"><ellipse cx="110" cy="110" rx="92" ry="36"/><ellipse cx="110" cy="110" rx="92" ry="60"/><ellipse cx="110" cy="110" rx="92" ry="18"/><line x1="18" y1="110" x2="202" y2="110"/><path d="M110 18 Q150 60 110 110 Q70 160 110 202"/><path d="M110 18 Q70 60 110 110 Q150 160 110 202"/><path d="M18 70 Q110 80 202 70"/><path d="M18 150 Q110 140 202 150"/></g><circle cx="110" cy="110" r="92" fill="none" stroke="#ffffff" stroke-width="2.5" opacity=".35"/></svg>
-</div>
-</div>
-<section class="login-hero"><span class="login-brand-top">${logo()}</span><h1>供应链<br>物联网平台</h1><p class="login-hero-sub">Supply Chain IoT Platform · 让设备与决策清晰相连</p></section>
-<section class="login-card"><h2>${reset?'重置密码':register?'注册账号':'用户登录'}</h2>${reset?`<p class="muted">通过账号绑定的手机号验证身份，重新设置登录密码。</p>`:''}${isAuthTab?'<div class="auth-switch"><button data-auth="login" class="'+(!register?'active':'')+'">登录</button><button data-auth="register" class="'+(register?'active':'')+'">注册</button></div>':''}${authFormFields()}${register&&platformBackend?'<p class="settings-note">公司与身份由邀请码确定，平台管理员不开放注册。</p>':''}</section>
-<footer class="login-foot"><span>物联空间 · 供应链物联网平台</span><span>${platformBackend?'平台服务已连接':'演示模式'}</span></footer>
+<svg viewBox="0 0 260 260" aria-hidden="true"><defs><radialGradient id="globeGrad2" cx="38%" cy="35%" r="62%"><stop offset="0%" stop-color="#ffffff"/><stop offset="35%" stop-color="#eaf1f8"/><stop offset="75%" stop-color="#c4d3e0"/><stop offset="100%" stop-color="#a5b6c7"/></radialGradient><clipPath id="globeClip2"><circle cx="130" cy="130" r="108"/></clipPath></defs><circle cx="130" cy="130" r="108" fill="url(#globeGrad2)" stroke="#9fb3c5" stroke-width="1.5"/><g clip-path="url(#globeClip2)" fill="none" stroke="#8fa3b4" stroke-width=".7" opacity=".5"><ellipse cx="130" cy="130" rx="108" ry="40"/><ellipse cx="130" cy="130" rx="108" ry="70"/><ellipse cx="130" cy="130" rx="108" ry="22"/><line x1="22" y1="130" x2="238" y2="130"/><path d="M130 22 Q178 72 130 130 Q82 188 130 238"/><path d="M130 22 Q82 72 130 130 Q178 188 130 238"/><path d="M22 82 Q130 92 238 82"/><path d="M22 178 Q130 168 238 178"/></g><circle cx="130" cy="130" r="108" fill="none" stroke="#ffffff" stroke-width="3" opacity=".3"/></svg>
+</div>`;
+ return `<main class="login portal-login">
+<section class="login-col login-col-left">
+ <div class="login-left-top">
+  <a class="login-brand-top" href="./">${logo()}<span>物联空间</span></a>
+  <h1>供应链<br>物联网平台</h1>
+  <p>Supply Chain IoT Platform · 让每一台设备，都有清晰的脉络</p>
+ </div>
+ <div class="login-left-deco">${decoSvg}</div>
+</section>
+<section class="login-col login-col-right">
+ <div class="login-form-wrap">
+  <h2>${reset?'重置密码':register?'注册账号':'用户登录'}</h2>
+  ${reset?`<p class="muted">通过账号绑定的手机号验证身份，重新设置登录密码。</p>`:''}
+  ${isAuthTab?'<div class="auth-switch"><button data-auth="login" class="'+(!register?'active':'')+'">登录</button><button data-auth="register" class="'+(register?'active':'')+'">注册</button></div>':''}
+  ${authFormFields()}
+  ${register&&platformBackend?'<p class="settings-note">公司与身份由邀请码确定，平台管理员不开放注册。</p>':''}
+ </div>
+ <footer class="login-foot"><span>物联空间 · 供应链物联网平台</span><span>${platformBackend?'平台服务已连接':'演示模式'}</span></footer>
+</section>
 </main>`;
 }
 function dashboardCards(){
