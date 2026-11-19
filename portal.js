@@ -195,8 +195,25 @@ function workspaceSparkline(metric,d){
   const tipX=Math.min(184,Math.max(4,x(i)-56)),tipY=Math.max(2,y(s.value)-46);
   return `<g class="spark-point"><circle cx="${x(i)}" cy="${y(s.value)}" r="9" fill="transparent"/><circle cx="${x(i)}" cy="${y(s.value)}" r="2.6" fill="currentColor"/><g class="spark-tip" transform="translate(${tipX},${tipY})"><rect width="132" height="38" rx="7"/><text x="9" y="15">${safe(label)}</text><text x="9" y="30">${safe(time)}</text></g></g>`;
  }).join('');
- return `<svg class="spark-chart" viewBox="0 0 320 92" preserveAspectRatio="none" role="group" aria-label="${safe(metric.name)}最近 ${samples.length} 次采样趋势"><defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="currentColor" stop-opacity=".22"/><stop offset="1" stop-color="currentColor" stop-opacity="0"/></linearGradient></defs><polygon points="${samples.map((s,i)=>x(i)+','+y(s.value)).join(' ')} 310,92 10,92" fill="url(#${gid})"/><polyline points="${points}" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>${dots}</svg>`;
+ return `<svg class="spark-chart" viewBox="0 0 320 92" role="group" aria-label="${safe(metric.name)}最近 ${samples.length} 次采样趋势"><defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="currentColor" stop-opacity=".22"/><stop offset="1" stop-color="currentColor" stop-opacity="0"/></linearGradient></defs><polygon points="${samples.map((s,i)=>x(i)+','+y(s.value)).join(' ')} 310,92 10,92" fill="url(#${gid})"/><polyline points="${points}" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>${dots}</svg>`;
 }
+function fitLegacySparklines(){
+ document.querySelectorAll('.company-dashboard:not(.ov-dash) .spark-chart').forEach(svg=>{
+  const line=svg.querySelector('polyline'),area=svg.querySelector('polygon');if(!line||!area)return;
+  if(!svg.dataset.basePoints){
+   svg.dataset.basePoints=line.getAttribute('points');svg.dataset.baseArea=area.getAttribute('points');
+   svg.dataset.baseDots=JSON.stringify(Array.from(svg.querySelectorAll('circle')).map(c=>[Number(c.getAttribute('cx')),Number(c.getAttribute('cy'))]));
+   svg.dataset.baseTips=JSON.stringify(Array.from(svg.querySelectorAll('.spark-tip')).map(t=>{const match=(t.getAttribute('transform')||'').match(/translate\(([-\d.]+),([-\d.]+)\)/);return match?[Number(match[1]),Number(match[2])]:[0,0];}));
+  }
+  const width=Math.round(svg.clientWidth),height=Math.round(svg.clientHeight);if(width<1||height<1)return;
+  const sx=width/320,sy=height/92,scalePoints=value=>value.trim().split(/\s+/).map(pair=>{const [x,y]=pair.split(',').map(Number);return `${(x*sx).toFixed(2)},${(y*sy).toFixed(2)}`;}).join(' ');
+  svg.setAttribute('viewBox',`0 0 ${width} ${height}`);line.setAttribute('points',scalePoints(svg.dataset.basePoints));area.setAttribute('points',scalePoints(svg.dataset.baseArea));
+  const dots=JSON.parse(svg.dataset.baseDots);svg.querySelectorAll('circle').forEach((c,i)=>{if(!dots[i])return;c.setAttribute('cx',(dots[i][0]*sx).toFixed(2));c.setAttribute('cy',(dots[i][1]*sy).toFixed(2));});
+  const tips=JSON.parse(svg.dataset.baseTips);svg.querySelectorAll('.spark-tip').forEach((tip,i)=>{if(!tips[i])return;const x=Math.min(width-136,Math.max(4,tips[i][0]*sx)),y=Math.min(height-40,Math.max(2,tips[i][1]*sy));tip.setAttribute('transform',`translate(${x.toFixed(2)},${y.toFixed(2)})`);});
+ });
+}
+function scheduleLegacySparklineFit(){requestAnimationFrame(fitLegacySparklines);}
+window.addEventListener('resize',scheduleLegacySparklineFit);
 let overviewDeviceId=null;
 function consoleHealthPanel(){
  const list=companyDevices(),warnings=warningDevices(),offline=list.filter(d=>!d.online),total=list.length,healthy=Math.max(0,total-warnings.length-offline.length);
@@ -627,6 +644,7 @@ function bindPortal(){
  }
  on('#preview-template',()=>editTemplate('preview'));on('#save-template',()=>editTemplate('save'));on('#download-template',()=>editTemplate('download'));
  on('#reset-template',()=>{if(!isAdmin())return;const overrides=readStorage(templateKey,{});delete overrides[companyId];localStorage.setItem(templateKey,JSON.stringify(overrides));templateDraft=null;render();});
+ scheduleLegacySparklineFit();
 }
 /* ===== 实时刷新：只替换数据节点，保留表单输入、地图与滚动位置 ===== */
 function bindLiveDeviceButtons(scope){
