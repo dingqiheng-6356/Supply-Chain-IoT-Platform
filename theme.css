@@ -810,8 +810,8 @@ button.ov-metric:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(17
 .ov-dash .spark-chart{width:100%;height:auto;display:block;overflow:visible;color:inherit}
 .spark-tip{opacity:0;transition:opacity .12s ease;pointer-events:none}
 .spark-point:hover .spark-tip{opacity:1}
-.spark-tip rect{fill:#212529}
-.spark-tip text{fill:#fff;font-size:9px;font-family:inherit}
+.spark-tip rect{fill:#17211d;stroke:#ffffff26;stroke-width:1}
+.spark-tip text{fill:#fff;font-size:11px;font-weight:600;font-family:inherit}
 .spark-empty{height:72px;display:grid;place-items:center;font-size:11px;color:#a3aca6;background:#f7f9f7;border-radius:8px}
 .ov-sample-note{font-size:10px;color:var(--ov-muted)}
 .ov-select{position:relative;display:inline-flex;align-items:center}

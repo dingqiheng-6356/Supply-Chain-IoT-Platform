@@ -192,10 +192,10 @@ function workspaceSparkline(metric,d){
  const gid='spark-'+String(metric.key).replace(/[^A-Za-z0-9_-]/g,'');
  const dots=samples.map((s,i)=>{
   const label=`${metric.name}：${s.value}${metric.unit?' '+metric.unit:''}`,time=sampleTimeLabel(s.time);
-  const tipX=Math.min(184,Math.max(4,x(i)-56)),tipY=Math.max(2,y(s.value)-46);
-  return `<g class="spark-point"><circle cx="${x(i)}" cy="${y(s.value)}" r="9" fill="transparent"/><circle cx="${x(i)}" cy="${y(s.value)}" r="2.6" fill="currentColor"/><g class="spark-tip" transform="translate(${tipX},${tipY})"><rect width="132" height="38" rx="7"/><text x="9" y="15">${safe(label)}</text><text x="9" y="30">${safe(time)}</text></g></g>`;
+  const tipX=Math.min(136,Math.max(4,x(i)-90)),tipY=Math.max(2,Math.min(36,y(s.value)>60?y(s.value)-58:y(s.value)+10));
+  return `<g class="spark-point"><circle cx="${x(i)}" cy="${y(s.value)}" r="11" fill="transparent"/><circle cx="${x(i)}" cy="${y(s.value)}" r="3.5" fill="currentColor" stroke="#fff" stroke-width="1.2"/><g class="spark-tip" transform="translate(${tipX},${tipY})"><rect width="180" height="52" rx="9"/><text x="12" y="20">${safe(label)}</text><text x="12" y="39">${safe(time)}</text></g></g>`;
  }).join('');
- return `<svg class="spark-chart" viewBox="0 0 320 92" role="group" aria-label="${safe(metric.name)}最近 ${samples.length} 次采样趋势"><defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="currentColor" stop-opacity=".22"/><stop offset="1" stop-color="currentColor" stop-opacity="0"/></linearGradient></defs><polygon points="${samples.map((s,i)=>x(i)+','+y(s.value)).join(' ')} 310,92 10,92" fill="url(#${gid})"/><polyline points="${points}" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>${dots}</svg>`;
+ return `<svg class="spark-chart" viewBox="0 0 320 92" role="group" aria-label="${safe(metric.name)}最近 ${samples.length} 次采样趋势"><defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="currentColor" stop-opacity=".22"/><stop offset="1" stop-color="currentColor" stop-opacity="0"/></linearGradient></defs><polygon points="${samples.map((s,i)=>x(i)+','+y(s.value)).join(' ')} 310,92 10,92" fill="url(#${gid})"/><polyline points="${points}" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>${dots}</svg>`;
 }
 function fitLegacySparklines(){
  document.querySelectorAll('.company-dashboard:not(.ov-dash) .spark-chart').forEach(svg=>{
@@ -209,7 +209,7 @@ function fitLegacySparklines(){
   const sx=width/320,sy=height/92,scalePoints=value=>value.trim().split(/\s+/).map(pair=>{const [x,y]=pair.split(',').map(Number);return `${(x*sx).toFixed(2)},${(y*sy).toFixed(2)}`;}).join(' ');
   svg.setAttribute('viewBox',`0 0 ${width} ${height}`);line.setAttribute('points',scalePoints(svg.dataset.basePoints));area.setAttribute('points',scalePoints(svg.dataset.baseArea));
   const dots=JSON.parse(svg.dataset.baseDots);svg.querySelectorAll('circle').forEach((c,i)=>{if(!dots[i])return;c.setAttribute('cx',(dots[i][0]*sx).toFixed(2));c.setAttribute('cy',(dots[i][1]*sy).toFixed(2));});
-  const tips=JSON.parse(svg.dataset.baseTips);svg.querySelectorAll('.spark-tip').forEach((tip,i)=>{if(!tips[i])return;const x=Math.min(width-136,Math.max(4,tips[i][0]*sx)),y=Math.min(height-40,Math.max(2,tips[i][1]*sy));tip.setAttribute('transform',`translate(${x.toFixed(2)},${y.toFixed(2)})`);});
+  const tips=JSON.parse(svg.dataset.baseTips);svg.querySelectorAll('.spark-tip').forEach((tip,i)=>{if(!tips[i])return;const x=Math.min(width-184,Math.max(4,tips[i][0]*sx)),y=Math.min(height-56,Math.max(2,tips[i][1]*sy));tip.setAttribute('transform',`translate(${x.toFixed(2)},${y.toFixed(2)})`);});
  });
 }
 function scheduleLegacySparklineFit(){requestAnimationFrame(fitLegacySparklines);}
