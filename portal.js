@@ -432,7 +432,7 @@ function render(live=false){
  stopSerialPolling();
  if(!live)disposeDeviceMap();
  if(!currentUser)syncMqttPolling();
- if(!currentUser){app.innerHTML=authPage();bindAuth();bindExperience();return;}
+ if(!currentUser){app.innerHTML=accountPage();bindAuth();return;}
  if(!isAdmin()){
   companyId=currentUser.companyId;
   if(!company()){notice='账号尚未分配有效公司，请联系平台管理员分配公司。';view='unassigned';}
@@ -475,11 +475,11 @@ function enterUser(user){
 }
 async function logout(){if(platformBackend)await platformRequest('logout',{method:'POST',body:'{}'}).catch(()=>{});resetRegistry();if(typeof historyQuery!=='undefined'){historyQuery=null;historyRequest++;}stopSerialPolling();sessionStorage.removeItem('workspace-user');currentUser=null;companyId=null;chainId=null;deviceId=null;companyMembers=[];companyScenes=[];organizationError='';notice='';authMode='login';render();window.scrollTo({top:0,behavior:'instant'});}
 function bindAuth(){
- document.querySelectorAll('[data-auth]').forEach(b=>b.onclick=()=>{authMode=b.dataset.auth;notice='';render();document.querySelector('#account').scrollIntoView({block:'start'});});
+ document.querySelectorAll('[data-auth]').forEach(b=>b.onclick=()=>{authMode=b.dataset.auth;notice='';render();});
  const toggle=document.querySelector('#toggle-password');
  if(toggle)toggle.onclick=e=>{const p=document.querySelector('#password');p.type=p.type==='password'?'text':'password';e.currentTarget.setAttribute('aria-label',p.type==='password'?'显示密码':'隐藏密码');};
  const forgot=document.querySelector('#forgot-password');
- if(forgot)forgot.onclick=()=>{authMode='reset';notice='';render();document.querySelector('#account').scrollIntoView({block:'start'});};
+ if(forgot)forgot.onclick=()=>{authMode='reset';notice='';render();};
  const sendReset=document.querySelector('#send-reset-code');
  if(sendReset)sendReset.onclick=async()=>{
   const hint=document.querySelector('#auth-code-hint'),phone=document.querySelector('#username').value.trim();
@@ -509,7 +509,7 @@ function bindAuth(){
     if(!platformBackend)throw new Error('短信重置密码仅在平台服务可用时开放。');
     if(password!==document.querySelector('#confirm-password').value)throw new Error('两次输入的新密码不一致。');
     const result=await platformRequest('auth/reset/confirm',{method:'POST',body:JSON.stringify({phone:username,code:form.elements.code.value.trim(),newPassword:password})});
-    authMode='login';notice=result.message||'密码已重置，请使用新密码登录。';render();document.querySelector('#account').scrollIntoView({block:'start'});return;
+    authMode='login';notice=result.message||'密码已重置，请使用新密码登录。';render();return;
    }
    if(authMode==='login'){
     if(platformBackend){const {user}=await platformRequest('login',{method:'POST',body:JSON.stringify({username,password})});resetRegistry();await refreshBeforeEnter(user);routeArticleHash();return;}
