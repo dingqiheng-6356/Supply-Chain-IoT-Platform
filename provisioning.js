@@ -61,7 +61,7 @@ function syncRegistryPolling(){
    clearTimeout(timer);
    if(registrySession===session){
     updateProvisioningStatus();
-    if(!registryBusy&&['company','detail','alerts'].includes(view)&&!document.querySelector('#news-publish-form')&&!document.activeElement?.closest('input,select,textarea,[contenteditable="true"]'))render(true);
+    if(!registryBusy&&['company','detail','alerts'].includes(view)&&!document.querySelector('#news-publish-form')&&!document.activeElement?.closest('input,select,textarea,[contenteditable="true"]')&&![...alertDrafts.values()].some(v=>String(v).trim()))render(true);
     registryTimer=setTimeout(poll,2000);
    }
   }
