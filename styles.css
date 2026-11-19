@@ -68,76 +68,72 @@ html{scroll-behavior:auto;scroll-padding-top:85px}body{overflow-x:hidden}button,
 @media(prefers-reduced-motion:reduce){.azure-site *,.azure-site *:before,.azure-site *:after{animation:none!important;transition:none!important}.console-trend{stroke-dashoffset:0}.iot-console{transform:none}.azure-site .will-reveal{opacity:1;transform:none}}
 /* Company monitoring workspace: clear hierarchy, data-first cards and status. */
 .workspace:has(.company-dashboard){background:#f1f5fa}.workspace:has(.company-dashboard) .main-content{max-width:1440px;padding-top:0}.workspace:has(.company-dashboard) .company-topline{background:#f1f5faf2;border-bottom-color:#dce5ef}.company-dashboard{--dash-blue:#087cce;--dash-ink:#15344d;--dash-muted:#7790a5;color:var(--dash-ink)}.workspace .dashboard-welcome{display:flex;align-items:center;justify-content:space-between;gap:35px;position:relative;overflow:hidden;padding:34px 38px;border-radius:17px;background:radial-gradient(ellipse at 100% 0,#148ae0,transparent 65%),linear-gradient(110deg,#123b60,#0967b1);color:white;margin:24px 0 22px;box-shadow:0 12px 30px #15528a18}.dashboard-welcome:after{content:'';position:absolute;width:380px;height:380px;border:1px solid #9fdcff25;border-radius:50%;right:-40px;top:-170px;pointer-events:none}.welcome-copy{position:relative;z-index:1}.welcome-eyebrow{font-size:10px;color:#b7ddf5;letter-spacing:1px}.welcome-copy h1{font-size:29px;line-height:1.5;font-weight:550;letter-spacing:-.5px;margin:12px 0 10px}.welcome-copy>p{font-size:12px;line-height:1.9;color:#c0def3;margin:0;max-width:590px}.welcome-actions{display:flex;align-items:center;gap:22px;margin-top:24px;flex-wrap:wrap}.welcome-actions button{background:#e1f2ff;color:#155482;border:0;border-radius:6px;padding:10px 16px;font-size:11px;font-weight:550}.welcome-actions button:hover{background:white}.welcome-actions .icon{width:15px;height:15px}.welcome-actions>span{font-size:10px;color:#9dcae9;display:flex;align-items:center;gap:6px}.welcome-actions .welcome-outline{background:transparent;border:1px solid #8fc7ef66;color:#d6edff}.welcome-status{position:relative;z-index:1;display:flex;align-items:center;gap:20px;flex-shrink:0;padding-right:20px}.welcome-status>div:last-child>span{display:block;font-size:10px;color:#a7d8f8;margin-bottom:10px}.welcome-status strong{display:block;font-weight:500;font-size:15px;line-height:1.8}.welcome-status small{display:block;margin-top:10px;font-size:10px;color:#a7d8f8}.welcome-radar{width:76px;height:76px;border:1px solid #86c9f966;border-radius:50%;display:grid;place-items:center;position:relative;background:#ffffff09}.welcome-radar>.icon{width:32px;height:32px;color:#b6e2ff}.welcome-radar i{position:absolute;inset:-14px;border:1px solid #8acaf52b;border-radius:50%;animation:radar-ring 4s ease-out infinite}.welcome-radar i:last-child{animation-delay:-2s}.workspace .company-dashboard .company-stats{gap:20px;margin:0 0 22px;grid-template-columns:repeat(3,minmax(0,1fr))}.workspace .company-dashboard .stat-card{position:relative;border:1px solid #e0e8f1;border-radius:12px;padding:23px 25px 18px;background:#fff;box-shadow:0 4px 15px #214d7404}.workspace .company-dashboard .stat-card .feature-icon{position:absolute;right:23px;top:22px;width:39px;height:39px;border-radius:11px}.workspace .company-dashboard .stat-label{font-size:11px;color:#738ba0}.workspace .company-dashboard .stat-card>strong{font-size:35px;font-weight:550;color:#1e425e;margin:10px 0 9px}.workspace .company-dashboard .stat-card>strong small{font-size:10px;color:#91a4b5;margin-left:8px}.workspace .company-dashboard .stat-card>p{font-size:10px;color:#91a2b1;margin:0;padding-top:10px;border-top:1px solid #f1f4f7}.workspace .company-dashboard .stat-action{border-top:3px solid #e7aa4f}.workspace .company-dashboard .stat-action>strong{color:#b27a2b}.insight-grid{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(0,1fr);gap:22px;margin-bottom:30px}.insight-panel{background:white;border:1px solid #dfe8f0;border-radius:13px;padding:25px;box-shadow:0 5px 18px #214d7404;min-width:0}.insight-heading{display:flex;align-items:center;justify-content:space-between;gap:14px}.dashboard-kicker{font-size:8px;letter-spacing:1.7px;color:#8aa1b4;font-weight:550;display:block;margin-bottom:7px}.insight-heading h2,.workspace .dashboard-devices-heading h2{font-size:17px;font-weight:550;color:#254660;margin:0;line-height:1.5}.insight-heading>.icon{color:#94aec3;width:20px;height:20px}.insight-heading h2>small{display:inline-grid;place-items:center;background:#fff3e2;border-radius:5px;color:#b4863b;font-size:10px;width:22px;height:21px;margin-left:7px}.overview-select select{font:inherit;font-size:10px;padding:8px 23px 8px 10px;border:1px solid #dce6ef;border-radius:5px;max-width:180px;color:#4c6f89;background:#f8fbfd}.sampling-context{display:flex;justify-content:space-between;gap:15px;font-size:9px;color:#8ca0b1;margin-top:21px;padding-top:17px;border-top:1px solid #eff3f7}.sampling-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:19px;margin-top:22px}.sampling-metric{min-width:0;color:#2989d3}.sampling-metric:nth-child(2){color:#26a592}.sampling-metric:nth-child(3){color:#8b7bc0}.sampling-metric.is-alert{color:#c88a32}.sampling-metric>span{display:flex;align-items:center;gap:5px;color:#738b9f;font-size:10px}.sampling-metric>span .icon{height:14px;width:14px}.sampling-metric>strong{display:block;font-size:29px;font-weight:550;line-height:1.6;margin-top:7px;font-variant-numeric:tabular-nums}.sampling-metric>strong small{font-size:10px;font-weight:400;color:#95a8b7;margin-left:5px}.sampling-metric>svg{display:block;width:100%;height:auto;margin-top:8px}.sampling-metric>small{display:block;color:#9aacba;font-size:8px;margin-top:8px}.sampling-panel>.dashboard-text-link{margin-top:18px;border-top:1px solid #eff3f7;padding-top:15px;width:100%;justify-content:flex-end}.dashboard-text-link{display:inline-flex;align-items:center;gap:7px;background:none;border:0;padding:0;color:#1582cc;font-size:10px}.dashboard-text-link .icon{width:14px;height:14px}.health-content{display:flex;align-items:center;gap:28px;justify-content:center;padding:30px 0 25px}.health-ring{width:132px;height:132px;flex-shrink:0;border-radius:50%;background:conic-gradient(#2ba995 0 var(--healthy),#e4ae5e var(--healthy) var(--warning),#d7e2ec var(--warning) 100%);padding:13px;transform:rotate(-90deg)}.health-ring>div{width:100%;height:100%;border-radius:50%;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;transform:rotate(90deg)}.health-ring strong{font-size:32px;font-weight:550;color:#274a65}.health-ring span{font-size:9px;color:#8da3b4;margin-top:5px}.health-legend{min-width:105px;display:grid;gap:20px}.health-legend>div{display:flex;align-items:center;justify-content:space-between;gap:18px}.health-legend>div>span{display:flex;align-items:center;gap:6px;color:#71899f;font-size:10px;white-space:nowrap}.health-legend i{width:6px;height:6px;border-radius:2px;background:#2ba995}.health-legend .warn{background:#e4ae5e}.health-legend .off{background:#c7d6e3}.health-legend strong{color:#46667f;font-size:13px;font-weight:550;white-space:nowrap}.health-legend small{font-size:9px;font-weight:400;color:#9caebb}.health-foot{border-top:1px solid #eff3f7;padding-top:16px;margin:0;color:#91a4b4;font-size:9px;text-align:center}.workspace .dashboard-devices-heading{margin:30px 0 18px;scroll-margin-top:170px}.workspace .dashboard-devices-heading .dashboard-kicker{margin-bottom:6px}.device-count{font-size:10px;color:#8ba1b4}.workspace .company-dashboard .device-grid{gap:20px}.workspace .company-dashboard .device-card{border:1px solid #dde7f0;border-radius:13px;background:#fff;padding:23px;box-shadow:0 4px 18px #214d7405;position:relative;overflow:hidden}.workspace .company-dashboard .device-card:before{content:'';height:3px;position:absolute;top:0;left:23px;right:23px;background:#60b8aa;border-radius:0 0 4px 4px}.workspace .company-dashboard .device-card:has(.badge.orange):before{background:#e6b261}.workspace .company-dashboard .device-card:has(.badge.gray):before{background:#bdcddd}.workspace .company-dashboard .device-card:hover{border-color:#96c7ea;box-shadow:0 12px 25px #1d639e12}.workspace .company-dashboard .device-card .card-top{margin-bottom:20px}.workspace .company-dashboard .device-card .project-symbol{width:40px;height:40px;border-radius:10px}.workspace .company-dashboard .device-card .device-code{font-size:9px;color:#9bafbf;letter-spacing:1px}.workspace .company-dashboard .device-card h2{font-size:19px;font-weight:550;color:#254960;margin:10px 0}.workspace .company-dashboard .device-card>p{font-size:10px;color:#8ca0b0}.workspace .company-dashboard .device-sensors{display:none}.device-readings{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:22px 0;background:#f5f9fc;padding:15px 12px;border-radius:7px}.device-readings>div{min-width:0}.device-readings small{display:block;color:#8ca1b2;font-size:8px}.device-readings strong{display:block;color:#3b657e;font-size:20px;font-weight:550;margin-top:9px;font-variant-numeric:tabular-nums}.device-readings em{font-style:normal;font-size:8px;color:#94a8b9;margin-left:3px;font-weight:400}.device-readings .reading-alert strong{color:#c08b35}.last-reading-note{display:block;color:#9caebb;font-size:8px;margin-top:-9px;margin-bottom:15px}.workspace .company-dashboard .device-action{font-size:10px;padding-top:15px;border-color:#edf2f7}.dashboard-bottom{display:grid;grid-template-columns:1.1fr 1fr;gap:22px;margin-top:25px}.attention-row{width:100%;display:flex;align-items:center;gap:13px;text-align:left;padding:16px 0;border:0;border-bottom:1px solid #edf2f6;background:none;color:#4d7089}.attention-row:last-child{border-bottom:0;padding-bottom:0}.attention-row:hover{background:#fafcfe}.attention-row>span:nth-child(2){flex:1;min-width:0}.attention-row strong{display:block;font-weight:500;font-size:11px;line-height:1.8}.attention-row small{display:block;font-size:9px;line-height:1.8;color:#95a7b7;margin-top:3px}.attention-row>.icon{width:14px;color:#93b0c6}.attention-symbol{width:33px;height:33px;flex-shrink:0;display:grid;place-items:center;background:#fff4e4;color:#bf903e;border-radius:8px}.attention-symbol.off{background:#edf2f7;color:#8aa1b3}.attention-symbol .icon{width:16px;height:16px}.dashboard-news-item{display:grid;grid-template-columns:1fr auto;gap:9px;padding:18px 0;border-bottom:1px solid #edf2f6}.dashboard-news-item:last-child{border:0;padding-bottom:0}.dashboard-news-item time{font-size:9px;color:#9aafbe;grid-column:1/-1}.dashboard-news-item strong{font-size:12px;line-height:1.8;font-weight:500;color:#4a6b84}.dashboard-news-item:hover strong{color:#0078d4}.dashboard-news-item .icon{width:15px;color:#8db0c9;align-self:center}.dashboard-empty{font-size:12px;color:#9bafbe;padding:30px 0;line-height:1.8}.workspace .dashboard-notes{margin-top:25px;background:#e9f1f8;border-color:#dce8f2;border-radius:12px;padding:22px 26px;color:#6c879d}.workspace .dashboard-notes h2{font-size:16px;color:#446a86}.workspace .dashboard-notes h3{font-size:13px;color:#64869e}.workspace .dashboard-notes p,.workspace .dashboard-notes li{font-size:11px}.spark-empty{height:50px;display:grid;place-items:center;font-size:9px;color:#a0b0be}
-/* ================ New Unified Login Card (gate38) ================ */
-html:has(.portal-login){background:#0f2e26}
-.portal-login{min-height:100vh;display:grid;place-items:center;padding:32px 24px;background:linear-gradient(145deg,#0c211c 0%,#13372e 45%,#1a4638 100%);position:relative;overflow:hidden; isolation:isolate}
-.portal-login .login-bg{position:absolute;inset:0;pointer-events:none;z-index:0}
-.portal-login .login-ring{position:absolute;border-radius:50%;border:1px solid rgba(255,255,255,.06);pointer-events:none}
-.portal-login .login-ring-1{width:620px;height:620px;top:-180px;left:-180px;border-width:1.5px;border-color:rgba(145,186,152,.08)}
-.portal-login .login-ring-2{width:460px;height:460px;bottom:-140px;right:-120px;border-width:1px;border-color:rgba(145,186,152,.06)}
-.portal-login .login-ring-3{width:280px;height:280px;top:40%;right:18%;border-width:1px;border-style:dashed;border-color:rgba(145,186,152,.08)}
-.portal-login .login-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(145,186,152,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(145,186,152,.04) 1px,transparent 1px);background-size:48px 48px;mask-image:radial-gradient(ellipse at 50% 50%,#000 20%,transparent 75%);-webkit-mask-image:radial-gradient(ellipse at 50% 50%,#000 20%,transparent 75%)}
-.portal-login .login-pulse{position:absolute;width:380px;height:380px;top:58%;left:28%;background:radial-gradient(circle,rgba(85,195,150,.10) 0%,transparent 70%);filter:blur(40px);animation:login-pulse 6s ease-in-out infinite}
-@keyframes login-pulse{0%,100%{opacity:.7;transform:scale(1)}50%{opacity:1;transform:scale(1.15)}}
-.portal-login .login-card{position:relative;z-index:1;background:#ffffff;border-radius:22px;width:100%;max-width:980px;box-shadow:0 30px 80px rgba(0,0,0,.35),0 2px 0 rgba(255,255,255,.04) inset;overflow:hidden;animation:card-enter .5s cubic-bezier(.22,.61,.36,1) both}
-@keyframes card-enter{from{opacity:0;transform:translateY(16px) scale(.98)}to{opacity:1;transform:none}}
-.portal-login .login-card-head{padding:22px 42px 0;display:flex;align-items:center}
-.portal-login .login-card-head .login-brand{font-size:18px;font-weight:700;gap:10px;color:#1c4438}
-.portal-login .login-card-head .login-brand .brand-mark{width:36px;height:36px;border-radius:10px;background:linear-gradient(145deg,#1c4438,#2f6b56);color:#fff;box-shadow:0 6px 16px rgba(28,68,56,.28)}
-.portal-login .login-card-head .login-brand .brand-name{letter-spacing:.5px}
-.portal-login .login-card-body{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0;padding:28px 42px 24px}
-.portal-login .login-card-intro{padding-right:42px;border-right:1px solid #edf3ef}
-.portal-login .login-intro-eyebrow{font-size:10px;letter-spacing:2px;font-weight:600;color:#7fa78d;margin-bottom:16px;display:block}
-.portal-login .login-card-intro h2{font-size:clamp(26px,2.8vw,36px);line-height:1.45;font-weight:700;color:#1a3d32;margin:0 0 14px}
-.portal-login .login-intro-lead{font-size:13px;line-height:1.9;color:#5e756b;margin:0 0 28px;max-width:360px}
-.portal-login .login-intro-list{list-style:none;margin:0;padding:0;display:grid;gap:16px}
-.portal-login .login-intro-list li{display:flex;gap:12px;align-items:flex-start}
-.portal-login .login-intro-list li>span:first-child{flex-shrink:0;width:36px;height:36px;border-radius:10px;background:#eaf4ef;display:grid;place-items:center;color:#3f7d66}
-.portal-login .login-intro-list li .icon{width:18px;height:18px}
-.portal-login .login-intro-list li strong{display:block;font-size:13px;font-weight:600;color:#1c4438;margin-bottom:3px}
-.portal-login .login-intro-list li small{font-size:11px;color:#7a8c83;line-height:1.7}
-.portal-login .login-card-form{padding-left:42px;min-width:0}
-.portal-login .login-form-eyebrow{font-size:10px;letter-spacing:2px;font-weight:600;color:#7fa78d;margin-bottom:12px;display:block}
-.portal-login .login-card-form h2{font-size:22px;font-weight:600;color:#1c4438;margin:4px 0 4px}
-.portal-login .login-card-form>.muted{font-size:12px;color:#7a8c83;margin:0 0 18px;line-height:1.7}
-.portal-login .login-card-form .auth-switch{margin-bottom:22px}
-.portal-login .login-card-form form{margin-top:4px}
-.portal-login .login-card-foot{padding:16px 42px 20px;display:flex;justify-content:space-between;gap:20px;border-top:1px solid #edf3ef;font-size:10px;color:#8fa298}
-/* portal-login form input colors */
-.portal-login input,.portal-login select{background:#fbfdfc;border:1.5px solid #dbe5df;color:#1a3d32;border-radius:10px;height:52px;font-size:14px}
-.portal-login input::placeholder{color:#a0b0a7}
-.portal-login input:focus-visible{border-color:#3f7d66;box-shadow:0 0 0 4px rgba(63,125,102,.12)}
-.portal-login label{color:#3d5a48}
-.portal-login .auth-switch{display:flex;gap:6px;background:#eaf4ef;padding:5px;border-radius:14px;border:1px solid #d9e5dd}
-.portal-login .auth-switch button{flex:1;border:0;background:transparent;color:#7a8c83;padding:11px;border-radius:11px;font-size:14px;font-weight:500;letter-spacing:.5px}
-.portal-login .auth-switch .active{background:#fff;color:#1c4438;box-shadow:0 2px 10px rgba(28,68,56,.12);font-weight:600}
-.portal-login .login-submit{width:100%;height:56px;justify-content:space-between;padding:0 24px;border-radius:14px;font-size:15px;letter-spacing:1.5px;font-weight:600;margin-top:18px;background:linear-gradient(135deg,#1c4438,#2f6b56);color:#fff;border:0;box-shadow:0 6px 20px rgba(28,68,56,.22);transition:transform .18s,box-shadow .18s,background .18s}
-.portal-login .login-submit:hover{background:linear-gradient(135deg,#14352c,#275c4a);box-shadow:0 8px 26px rgba(28,68,56,.30);transform:translateY(-1px)}
-.portal-login .link-button{color:#3f7d66;background:none;border:0;font-size:13px;padding:4px 0}
-.portal-login .link-button:hover{color:#1c4438;text-decoration:underline}
+/* ================ New Unified Login (gate39) ================ */
+html:has(.portal-login){background:#eef1f5}
+.portal-login{min-height:100vh;display:grid;grid-template-columns:1fr 420px;grid-template-rows:auto 1fr auto;grid-template-areas:"hero card"". card""foot card";gap:0;background:linear-gradient(135deg,#e9edf2 0%,#f2f5f9 50%,#e6ebf1 100%);position:relative;overflow:hidden;padding:0;isolation:isolate}
+.portal-login .login-deco{position:absolute;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+.portal-login .deco-ring{position:absolute}
+.portal-login .deco-ring-outer{width:720px;height:720px;top:-280px;left:-240px;animation:deco-spin 120s linear infinite}
+.portal-login .deco-ring-inner{width:520px;height:520px;bottom:-240px;left:-140px;animation:deco-spin 90s linear infinite reverse}
+.portal-login .deco-ring-tiny{width:280px;height:280px;top:38%;left:16%;animation:deco-spin 60s linear infinite}
+@keyframes deco-spin{to{transform:rotate(360deg)}}
+.portal-login .deco-gear{position:absolute;width:200px;height:200px;top:30%;left:44%;animation:deco-spin 80s linear infinite;opacity:.45}
+.portal-login .deco-dots{position:absolute;opacity:.55}
+.portal-login .deco-dots-tl{width:120px;height:120px;top:60px;left:80px}
+.portal-login .deco-dots-br{width:120px;height:120px;bottom:80px;left:38%}
+.portal-login .deco-globe{position:absolute;left:clamp(60px,12vw,180px);top:50%;transform:translateY(-50%);width:clamp(220px,32vw,360px);opacity:.92;filter:drop-shadow(0 20px 40px rgba(90,110,130,.18))}
+.portal-login .deco-globe svg{width:100%;height:auto}
+/* hero = left side with title overlay on deco */
+.portal-login .login-hero{grid-area:hero;position:relative;z-index:2;display:flex;flex-direction:column;justify-content:flex-end;padding:56px 40px 48px;max-width:560px}
+.portal-login .login-brand-top{display:flex;align-items:center;gap:10px;color:#2c4e66;font-weight:700;font-size:17px;margin-bottom:36px}
+.portal-login .login-brand-top .brand-mark{width:38px;height:38px;border-radius:10px;background:linear-gradient(145deg,#2c4e66,#4268b0);color:#fff}
+.portal-login .login-hero h1{font-size:clamp(32px,4.2vw,54px);line-height:1.35;font-weight:700;color:#1e3a50;margin:0 0 16px;letter-spacing:-.5px;text-shadow:0 2px 0 rgba(255,255,255,.6)}
+.portal-login .login-hero h1 br{display:block;margin-bottom:8px}
+.portal-login .login-hero-sub{font-size:13px;color:#6a859a;line-height:1.8;margin:0;letter-spacing:.5px}
+/* login card */
+.portal-login .login-card{grid-area:card;position:relative;z-index:2;background:#ffffff;border-radius:20px;margin:auto 36px auto 0;padding:44px 40px;box-shadow:0 24px 60px rgba(30,58,80,.12),0 2px 6px rgba(30,58,80,.06);animation:card-enter .5s cubic-bezier(.22,.61,.36,1) both;border:1px solid rgba(210,225,238,.5)}
+@keyframes card-enter{from{opacity:0;transform:translateX(20px) scale(.98)}to{opacity:1;transform:none}}
+.portal-login .login-card h2{font-size:22px;font-weight:600;color:#1e3a50;margin:4px 0 8px}
+.portal-login .login-card>.muted{font-size:12px;color:#7a90a3;margin:0 0 18px;line-height:1.7}
+.portal-login .login-card .auth-switch{margin-bottom:22px}
+.portal-login .login-card form{margin-top:4px}
+/* form inputs */
+.portal-login input,.portal-login select{background:#f8fafd;border:1.5px solid #dbe4ed;color:#1e3a50;border-radius:10px;height:50px;font-size:14px;transition:border-color .18s,box-shadow .18s}
+.portal-login input::placeholder{color:#9fb1c2}
+.portal-login input:focus-visible{border-color:#3d6fa0;box-shadow:0 0 0 4px rgba(61,111,160,.12);background:#fff}
+.portal-login label{color:#435e75;font-weight:500}
+.portal-login .auth-switch{display:flex;gap:4px;background:#f0f4f8;padding:4px;border-radius:12px;border:1px solid #e2ebf3}
+.portal-login .auth-switch button{flex:1;border:0;background:transparent;color:#7a90a3;padding:10px;border-radius:9px;font-size:13px;font-weight:500;letter-spacing:.3px}
+.portal-login .auth-switch .active{background:#fff;color:#2c4e66;box-shadow:0 1px 4px rgba(30,58,80,.08);font-weight:600}
+.portal-login .login-submit{width:100%;height:52px;justify-content:center;gap:8px;padding:0 22px;border-radius:10px;font-size:14px;letter-spacing:2px;font-weight:600;margin-top:20px;background:linear-gradient(135deg,#2c4e66,#3d6fa0);color:#fff;border:0;box-shadow:0 6px 18px rgba(44,78,102,.18);transition:transform .18s,box-shadow .18s,background .18s}
+.portal-login .login-submit:hover{background:linear-gradient(135deg,#1e3a50,#2c5985);box-shadow:0 8px 24px rgba(44,78,102,.24);transform:translateY(-1px)}
+.portal-login .link-button{color:#3d6fa0;background:none;border:0;font-size:13px;padding:4px 0}
+.portal-login .link-button:hover{color:#1e3a50;text-decoration:underline}
 .portal-login .error{color:#b64a4a;font-size:12px;min-height:18px;margin:10px 0}
-.portal-login .password-wrap button{color:#7a8c83;background:none;border:0}
+.portal-login .password-wrap button{color:#7a90a3;background:none;border:0}
+/* footer */
+.portal-login .login-foot{grid-area:foot;z-index:2;padding:24px 40px 28px;display:flex;justify-content:space-between;gap:16px;font-size:10px;color:#8ba0b2}
 /* Responsive */
-@media(max-width:860px){
- .portal-login .login-card-body{grid-template-columns:1fr;padding:22px 28px 18px}
- .portal-login .login-card-intro{padding:0;border-right:0;border-bottom:1px solid #edf3ef;padding-bottom:22px;margin-bottom:22px}
- .portal-login .login-intro-list{display:none}
- .portal-login .login-card-form{padding:0}
- .portal-login .login-card-head{padding:20px 28px 0}
- .portal-login .login-card-foot{padding:14px 28px 18px;flex-direction:column;gap:4px;text-align:center}
+@media(max-width:960px){
+ .portal-login{grid-template-columns:1fr;grid-template-areas:"hero""card""foot";padding:0;min-height:100vh}
+ .portal-login .login-deco{opacity:.5}
+ .portal-login .deco-globe{display:none}
+ .portal-login .login-hero{padding:40px 32px 16px;justify-content:flex-start;max-width:none}
+ .portal-login .login-card{margin:8px 24px 0;padding:36px 32px}
+ .portal-login .login-foot{padding:16px 32px 24px}
 }
-@media(max-width:520px){
- .portal-login{padding:20px 12px}
- .portal-login .login-card{border-radius:18px}
- .portal-login .login-card-body{padding:18px 20px 14px}
- .portal-login .login-card-head{padding:16px 20px 0}
- .portal-login .login-card-head .login-brand{font-size:16px;gap:8px}
- .portal-login .login-card-head .login-brand .brand-mark{width:30px;height:30px}
- .portal-login .login-card-intro h2{font-size:24px}
- .portal-login .login-intro-lead{font-size:12px;margin-bottom:0}
- .portal-login .login-card-form h2{font-size:20px}
- .portal-login input{height:48px;font-size:13px}
- .portal-login .login-submit{height:52px;font-size:14px;padding:0 18px}
+@media(max-width:560px){
+ .portal-login{background:#f2f5f9}
+ .portal-login .login-deco{opacity:.35}
+ .portal-login .login-hero{padding:32px 20px 8px}
+ .portal-login .login-brand-top{font-size:15px;margin-bottom:24px}
+ .portal-login .login-hero h1{font-size:28px}
+ .portal-login .login-hero-sub{font-size:12px}
+ .portal-login .login-card{margin:12px 16px 0;padding:28px 22px;border-radius:16px}
+ .portal-login .login-card h2{font-size:20px}
+ .portal-login input{height:46px;font-size:13px}
+ .portal-login .login-submit{height:48px;font-size:13px;padding:0 18px}
+ .portal-login .login-foot{padding:14px 20px 22px;flex-direction:column;gap:4px;text-align:center}
 }
 @keyframes radar-ring{0%{transform:scale(.85);opacity:.65}100%{transform:scale(1.3);opacity:0}}
 /* Article cards: editorial copy on the left, Markdown-configured cover on the right. */
