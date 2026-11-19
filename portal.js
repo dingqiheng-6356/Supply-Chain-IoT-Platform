@@ -168,7 +168,6 @@ function accountPage(){
   ${authFormFields()}
   ${register&&platformBackend?'<p class="settings-note">公司与身份由邀请码确定，平台管理员不开放注册。</p>':''}
  </div>
- <footer class="login-foot"><span>物联空间 · 供应链物联网平台</span><span>${platformBackend?'平台服务已连接':'演示模式'}</span></footer>
 </section>
 </main>`;
 }
