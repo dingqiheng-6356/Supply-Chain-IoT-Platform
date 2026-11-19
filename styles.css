@@ -89,9 +89,9 @@ html:has(.portal-login){background:#eef1f5}
 .portal-login .login-left-deco .deco-dots-grid{position:absolute;width:clamp(120px,18vw,200px);height:auto;top:28%;left:4%;opacity:.55}
 .portal-login .login-left-deco .deco-globe{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:clamp(200px,30vw,340px);filter:drop-shadow(0 18px 36px rgba(90,110,130,.22))}
 .portal-login .login-left-deco .deco-globe svg{width:100%;height:auto}
-/* RIGHT column — solid white, FILLS everything */
-.portal-login .login-col-right{position:relative;background:#ffffff;display:flex;flex-direction:column;justify-content:center;padding:48px;box-shadow:-2px 0 0 rgba(210,225,238,.35)}
-.portal-login .login-form-wrap{width:100%;max-width:400px;margin:0 auto}
+/* RIGHT column — same bg as left, form floats as subtle card */
+.portal-login .login-col-right{position:relative;display:flex;flex-direction:column;justify-content:center;padding:48px}
+.portal-login .login-form-wrap{width:100%;max-width:400px;margin:0 auto;background:#ffffffc8;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-radius:20px;padding:40px 36px;box-shadow:0 16px 44px rgba(30,58,80,.10),0 2px 0 rgba(255,255,255,.5) inset;border:1px solid rgba(255,255,255,.6)}
 .portal-login .login-form-wrap h2{font-size:24px;font-weight:600;color:#1e3a50;margin:0 0 10px}
 .portal-login .login-form-wrap>.muted{font-size:13px;color:#7a90a3;margin:0 0 22px;line-height:1.7}
 .portal-login .login-form-wrap .auth-switch{margin-bottom:26px}
@@ -117,8 +117,8 @@ html:has(.portal-login){background:#eef1f5}
  .portal-login{grid-template-columns:1fr;grid-template-rows:auto auto;min-height:auto}
  .portal-login .login-col-left{padding:40px 32px 20px}
  .portal-login .login-left-deco{min-height:260px}
- .portal-login .login-col-right{padding:36px 32px 80px;box-shadow:0 -2px 0 rgba(210,225,238,.35)}
- .portal-login .login-form-wrap{max-width:440px}
+ .portal-login .login-col-right{padding:36px 32px 80px}
+ .portal-login .login-form-wrap{max-width:440px;padding:32px 28px;border-radius:18px}
  .portal-login .login-foot{position:static;padding:16px 0}
 }
 @media(max-width:560px){
@@ -128,7 +128,8 @@ html:has(.portal-login){background:#eef1f5}
  .portal-login .login-left-top h1{font-size:32px}
  .portal-login .login-left-top p{font-size:12px}
  .portal-login .login-left-deco{min-height:200px;margin-top:16px}
- .portal-login .login-col-right{padding:32px 22px 80px}
+ .portal-login .login-col-right{padding:24px 16px 80px}
+ .portal-login .login-form-wrap{padding:28px 22px;border-radius:16px}
  .portal-login .login-form-wrap h2{font-size:20px}
  .portal-login input{height:48px;font-size:13px}
  .portal-login .login-submit{height:50px;font-size:14px}
