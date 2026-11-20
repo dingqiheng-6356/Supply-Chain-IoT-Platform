@@ -373,10 +373,8 @@ input::placeholder,textarea::placeholder{color:#9aa89b}
 .device-readings .reading-alert strong{color:#aa7b3c}
 .workspace .dashboard-devices-heading h2,.customer-console .insight-heading h2,.customer-console .console-notes h2{color:#34543e}
 .dashboard-kicker,.console-count,.device-count{color:#8a987e}
-.sampling-metric{color:#6b925d}
-.sampling-metric:nth-child(2){color:#89a36a}
-.sampling-metric:nth-child(3){color:#a39863}
-.sampling-metric.is-alert{color:#b88743}
+.sampling-metric{color:#4e7a4c}
+.sampling-metric.is-alert{color:#e03131}
 .sampling-metric>span,.sampling-metric>small{color:#7e8e74}
 .sampling-context,.health-foot{border-color:#e5eadf;color:#89957f}
 .health-ring{background:conic-gradient(#739b62 0 var(--healthy),#d0aa66 var(--healthy) var(--warning),#d9e1d3 var(--warning) 100%)}
@@ -790,17 +788,16 @@ button.ov-metric:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(17
 .ov-dash .health-foot{margin:10px 0 0;text-align:center;font-size:12px;color:var(--ov-muted)}
 .ov-dash .ov-sampling{display:flex;flex-direction:column;min-height:0}
 .ov-sampling-grid{display:flex;flex-direction:column;gap:10px;flex:1;min-height:0}
-.sampling-metric{flex:1 1 0;display:flex;align-items:center;gap:14px;background:#fbfcfb;border-radius:12px;padding:8px 12px;min-width:0;min-height:0;color:#2fa98c}
+.sampling-metric{flex:1 1 0;display:flex;align-items:center;gap:14px;background:#fbfcfb;border-radius:12px;padding:8px 12px;min-width:0;min-height:0;color:#4e7a4c}
 .ov-metric-main{display:flex;flex-direction:column;gap:3px;flex:0 0 auto;min-width:88px}
 .ov-metric-chart{flex:1;min-width:0;display:flex;align-items:center;overflow:hidden}
 .ov-metric-chart .spark-chart{max-height:62px}
 .ov-dash .ov-sampling>.dashboard-text-link{margin-top:10px;align-self:flex-start}
-.sampling-metric:nth-child(1){color:#ff8a5b}
-.sampling-metric:nth-child(2){color:#36cfc9}
-.sampling-metric:nth-child(3){color:#4c9f70}
-.sampling-metric.is-alert{background:#fff7f1}
+.sampling-metric.is-alert{background:#fff1f0;color:#e03131}
 .ov-metric-name{display:flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:var(--ov-label)}
 .ov-dash .sampling-metric>.ov-metric-name{font-size:12px;color:var(--ov-label)}
+.sampling-metric .ov-metric-name,.sampling-metric .ov-reading strong{color:#4e7a4c}
+.sampling-metric.is-alert .ov-metric-name,.sampling-metric.is-alert .ov-reading strong{color:#e03131}
 .ov-dash .sampling-metric>.ov-metric-name .icon{display:inline-block}
 .ov-dash .sampling-metric>svg{height:auto}
 .ov-metric-name .icon{width:15px;height:15px;color:#a3aca6}
