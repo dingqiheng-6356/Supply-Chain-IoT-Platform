@@ -346,7 +346,7 @@ input::placeholder,textarea::placeholder{color:#9aa89b}
 .workspace .stat-card p{color:#8a9782}
 .workspace .stat-card .feature-icon.blue,.workspace .feature-icon.blue{background:#e7eee0;color:#50754f}
 .workspace .stat-card .feature-icon.green,.workspace .feature-icon.green{background:#e1edda;color:#4e7a4c}
-.workspace .stat-card .feature-icon.orange,.workspace .feature-icon.orange{background:#f3ead8;color:#a27a3f}
+.workspace .stat-card .feature-icon.orange,.workspace .feature-icon.orange{background:#e1edda;color:#4e7a4c}
 .workspace .stat-card .feature-icon.purple,.workspace .feature-icon.purple{background:#e9ecdf;color:#6e8055}
 .workspace .stat-action{border-top-color:#d2ad6b}
 .workspace .stat-action>strong{color:#9a743e}
@@ -390,7 +390,7 @@ input::placeholder,textarea::placeholder{color:#9aa89b}
 .overview-select select{border-color:#dce4d4;background:#f6f7ef;color:#597053}
 .workspace .badge.blue{background:#e7eee0;color:#527750}
 .workspace .badge.green{background:#e3eddc;color:#4e7a4d}
-.workspace .badge.orange{background:#f4ead7;color:#a3773c}
+.workspace .badge.orange{background:#e3eddc;color:#4e7a4d}
 .workspace .badge.purple{background:#e9edde;color:#6c8055}
 .workspace .badge.gray{background:#edf0e9;color:#83907e}
 .console-alert-row,.attention-row{border-color:#e8ece2;color:#557053}
