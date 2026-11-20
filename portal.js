@@ -198,9 +198,9 @@ function workspaceSparkline(metric,d){
  const gid='spark-'+String(metric.key).replace(/[^A-Za-z0-9_-]/g,'');
  const dots=marked.map(s=>{
   const label=`${metric.name}：${s.value}${metric.unit?' '+metric.unit:''}`,time=sampleTimeLabel(s.time);
-  const tipX=Math.min(96,Math.max(4,x(s.i)-110)),tipY=Math.max(2,Math.min(24,y(s.value)>60?y(s.value)-72:y(s.value)+10));
+  const tipX=Math.min(76,Math.max(4,x(s.i)-120)),tipY=Math.max(2,Math.min(16,y(s.value)>60?y(s.value)-80:y(s.value)+10));
   const dotFill=s.isAnomaly?'#e03131':'#547ee8';
-  return `<g class="spark-point"><circle cx="${x(s.i)}" cy="${y(s.value)}" r="11" fill="transparent"/><circle cx="${x(s.i)}" cy="${y(s.value)}" r="3.5" fill="${dotFill}" stroke="#fff" stroke-width="1.2"/><g class="spark-tip" transform="translate(${tipX},${tipY})"><rect width="220" height="64" rx="10"/><text x="14" y="24">${safe(label)}</text><text x="14" y="46">${safe(time)}</text></g></g>`;
+  return `<g class="spark-point"><circle cx="${x(s.i)}" cy="${y(s.value)}" r="11" fill="transparent"/><circle cx="${x(s.i)}" cy="${y(s.value)}" r="3.5" fill="${dotFill}" stroke="#fff" stroke-width="1.2"/><g class="spark-tip" transform="translate(${tipX},${tipY})"><rect width="240" height="72" rx="10"/><text x="15" y="26">${safe(label)}</text><text x="15" y="50">${safe(time)}</text></g></g>`;
  }).join('');
  return `<svg class="spark-chart" viewBox="0 0 320 92" role="group" aria-label="${safe(metric.name)}最近 ${samples.length} 次采样趋势"><defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#547ee8" stop-opacity=".22"/><stop offset="1" stop-color="#547ee8" stop-opacity="0"/></linearGradient></defs><polygon points="${marked.map(s=>x(s.i)+','+y(s.value)).join(' ')} 310,92 10,92" fill="url(#${gid})"/>${polylines}${dots}</svg>`;
 }
@@ -218,7 +218,7 @@ function fitLegacySparklines(){
   const basePointsArr=JSON.parse(svg.dataset.basePoints);lines.forEach((line,i)=>{if(basePointsArr[i]!=null)line.setAttribute('points',scalePoints(basePointsArr[i]));});
   area.setAttribute('points',scalePoints(svg.dataset.baseArea));
   const dots=JSON.parse(svg.dataset.baseDots);svg.querySelectorAll('circle').forEach((c,i)=>{if(!dots[i])return;c.setAttribute('cx',(dots[i][0]*sx).toFixed(2));c.setAttribute('cy',(dots[i][1]*sy).toFixed(2));});
-  const tips=JSON.parse(svg.dataset.baseTips);svg.querySelectorAll('.spark-tip').forEach((tip,i)=>{if(!tips[i])return;const x=Math.min(width-224,Math.max(4,tips[i][0]*sx)),y=Math.min(height-68,Math.max(2,tips[i][1]*sy));tip.setAttribute('transform',`translate(${x.toFixed(2)},${y.toFixed(2)})`);});
+  const tips=JSON.parse(svg.dataset.baseTips);svg.querySelectorAll('.spark-tip').forEach((tip,i)=>{if(!tips[i])return;const x=Math.min(width-244,Math.max(4,tips[i][0]*sx)),y=Math.min(height-76,Math.max(2,tips[i][1]*sy));tip.setAttribute('transform',`translate(${x.toFixed(2)},${y.toFixed(2)})`);});
  });
 }
 function scheduleLegacySparklineFit(){requestAnimationFrame(fitLegacySparklines);}
@@ -724,11 +724,11 @@ function refreshLiveView(){
  if(view==='company'&&companyTab==='home'){
   const stats=document.querySelector('.company-stats');
   if(stats){try{const box=document.createElement('div');box.innerHTML=dashboardCards();stats.replaceWith(box.firstElementChild);const warning=document.querySelector('#warning-devices');if(warning)warning.onclick=openWarnings;}catch{}}
-  const monitor=document.querySelector('#console-monitor'),selectOpen=overviewDeviceOpen||monitor?.querySelector('select:focus');
+  const monitor=document.querySelector('#console-monitor'),selectOpen=overviewDeviceOpen||monitor?.querySelector('select:focus'),tipHovering=!!monitor?.querySelector('.spark-point:hover');
   if(monitor&&!selectOpen){
    if(monitor.dataset.layout==='ov'){
     monitor.innerHTML=consoleHealthPanel();
-    const sampling=document.querySelector('#console-sampling');if(sampling)sampling.innerHTML=consoleSamplingPanel();
+    const sampling=document.querySelector('#console-sampling');if(sampling&&!tipHovering)sampling.innerHTML=consoleSamplingPanel();
     bindLiveDeviceButtons(monitor);
     bindOverviewDeviceSelect(document);
    }else{
