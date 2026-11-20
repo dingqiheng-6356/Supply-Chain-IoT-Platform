@@ -186,28 +186,37 @@ function workspaceSparkline(metric,d){
  const rawValues=d.history?.[metric.key]||[],rawTimes=d.historyTimes?.[metric.key]||[];
  const samples=rawValues.map((value,i)=>({value,time:rawTimes[i]})).filter(s=>Number.isFinite(s.value));
  if(!samples.length)return '<div class="spark-empty">暂无历史采样</div>';
+ const limit=d.thresholds?.[metric.key];
+ const effectiveMin=Number.isFinite(limit?.min)?limit.min:metric.min;
+ const effectiveMax=Number.isFinite(limit?.max)?limit.max:metric.max;
  const lo=Math.min(...samples.map(s=>s.value)),range=Math.max(...samples.map(s=>s.value))-lo||1;
  const x=i=>10+i*300/Math.max(1,samples.length-1),y=v=>82-(v-lo)/range*58;
- const points=samples.map((s,i)=>`${x(i)},${y(s.value)}`).join(' ');
+ const marked=samples.map((s,i)=>({...s,i,isAnomaly:(Number.isFinite(effectiveMin)&&s.value<effectiveMin)||(Number.isFinite(effectiveMax)&&s.value>effectiveMax)}));
+ const segments=[];let cur=null;
+ marked.forEach(s=>{if(!cur||cur.isAnomaly!==s.isAnomaly){cur={isAnomaly:s.isAnomaly,pts:[]};segments.push(cur);}cur.pts.push(`${x(s.i)},${y(s.value)}`);});
+ const polylines=segments.filter(seg=>seg.pts.length>=2).map(seg=>`<polyline points="${seg.pts.join(' ')}" fill="none" stroke="${seg.isAnomaly?'#e03131':'currentColor'}" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>`).join('');
  const gid='spark-'+String(metric.key).replace(/[^A-Za-z0-9_-]/g,'');
- const dots=samples.map((s,i)=>{
+ const dots=marked.map(s=>{
   const label=`${metric.name}：${s.value}${metric.unit?' '+metric.unit:''}`,time=sampleTimeLabel(s.time);
-  const tipX=Math.min(136,Math.max(4,x(i)-90)),tipY=Math.max(2,Math.min(36,y(s.value)>60?y(s.value)-58:y(s.value)+10));
-  return `<g class="spark-point"><circle cx="${x(i)}" cy="${y(s.value)}" r="11" fill="transparent"/><circle cx="${x(i)}" cy="${y(s.value)}" r="3.5" fill="currentColor" stroke="#fff" stroke-width="1.2"/><g class="spark-tip" transform="translate(${tipX},${tipY})"><rect width="180" height="52" rx="9"/><text x="12" y="20">${safe(label)}</text><text x="12" y="39">${safe(time)}</text></g></g>`;
+  const tipX=Math.min(136,Math.max(4,x(s.i)-90)),tipY=Math.max(2,Math.min(36,y(s.value)>60?y(s.value)-58:y(s.value)+10));
+  const dotFill=s.isAnomaly?'#e03131':'currentColor';
+  return `<g class="spark-point"><circle cx="${x(s.i)}" cy="${y(s.value)}" r="11" fill="transparent"/><circle cx="${x(s.i)}" cy="${y(s.value)}" r="3.5" fill="${dotFill}" stroke="#fff" stroke-width="1.2"/><g class="spark-tip" transform="translate(${tipX},${tipY})"><rect width="180" height="52" rx="9"/><text x="12" y="20">${safe(label)}</text><text x="12" y="39">${safe(time)}</text></g></g>`;
  }).join('');
- return `<svg class="spark-chart" viewBox="0 0 320 92" role="group" aria-label="${safe(metric.name)}最近 ${samples.length} 次采样趋势"><defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="currentColor" stop-opacity=".22"/><stop offset="1" stop-color="currentColor" stop-opacity="0"/></linearGradient></defs><polygon points="${samples.map((s,i)=>x(i)+','+y(s.value)).join(' ')} 310,92 10,92" fill="url(#${gid})"/><polyline points="${points}" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>${dots}</svg>`;
+ return `<svg class="spark-chart" viewBox="0 0 320 92" role="group" aria-label="${safe(metric.name)}最近 ${samples.length} 次采样趋势"><defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="currentColor" stop-opacity=".22"/><stop offset="1" stop-color="currentColor" stop-opacity="0"/></linearGradient></defs><polygon points="${marked.map(s=>x(s.i)+','+y(s.value)).join(' ')} 310,92 10,92" fill="url(#${gid})"/>${polylines}${dots}</svg>`;
 }
 function fitLegacySparklines(){
  document.querySelectorAll('.company-dashboard:not(.ov-dash) .spark-chart').forEach(svg=>{
-  const line=svg.querySelector('polyline'),area=svg.querySelector('polygon');if(!line||!area)return;
+  const lines=svg.querySelectorAll('polyline'),area=svg.querySelector('polygon');if(!lines.length||!area)return;
   if(!svg.dataset.basePoints){
-   svg.dataset.basePoints=line.getAttribute('points');svg.dataset.baseArea=area.getAttribute('points');
+   svg.dataset.basePoints=JSON.stringify(Array.from(lines).map(l=>l.getAttribute('points')));svg.dataset.baseArea=area.getAttribute('points');
    svg.dataset.baseDots=JSON.stringify(Array.from(svg.querySelectorAll('circle')).map(c=>[Number(c.getAttribute('cx')),Number(c.getAttribute('cy'))]));
    svg.dataset.baseTips=JSON.stringify(Array.from(svg.querySelectorAll('.spark-tip')).map(t=>{const match=(t.getAttribute('transform')||'').match(/translate\(([-\d.]+),([-\d.]+)\)/);return match?[Number(match[1]),Number(match[2])]:[0,0];}));
   }
   const width=Math.round(svg.clientWidth),height=Math.round(svg.clientHeight);if(width<1||height<1)return;
   const sx=width/320,sy=height/92,scalePoints=value=>value.trim().split(/\s+/).map(pair=>{const [x,y]=pair.split(',').map(Number);return `${(x*sx).toFixed(2)},${(y*sy).toFixed(2)}`;}).join(' ');
-  svg.setAttribute('viewBox',`0 0 ${width} ${height}`);line.setAttribute('points',scalePoints(svg.dataset.basePoints));area.setAttribute('points',scalePoints(svg.dataset.baseArea));
+  svg.setAttribute('viewBox',`0 0 ${width} ${height}`);
+  const basePointsArr=JSON.parse(svg.dataset.basePoints);lines.forEach((line,i)=>{if(basePointsArr[i]!=null)line.setAttribute('points',scalePoints(basePointsArr[i]));});
+  area.setAttribute('points',scalePoints(svg.dataset.baseArea));
   const dots=JSON.parse(svg.dataset.baseDots);svg.querySelectorAll('circle').forEach((c,i)=>{if(!dots[i])return;c.setAttribute('cx',(dots[i][0]*sx).toFixed(2));c.setAttribute('cy',(dots[i][1]*sy).toFixed(2));});
   const tips=JSON.parse(svg.dataset.baseTips);svg.querySelectorAll('.spark-tip').forEach((tip,i)=>{if(!tips[i])return;const x=Math.min(width-184,Math.max(4,tips[i][0]*sx)),y=Math.min(height-56,Math.max(2,tips[i][1]*sy));tip.setAttribute('transform',`translate(${x.toFixed(2)},${y.toFixed(2)})`);});
  });
