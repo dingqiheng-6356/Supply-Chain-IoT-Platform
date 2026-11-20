@@ -184,7 +184,7 @@ function dashboardCards(){
 function deviceCards(list){return `<div class="device-grid">${list.map(raw=>{const d=effective(raw),s=deviceScene(d),[label,color]=status(s,d);return `<button class="device-card" data-device="${safe(d.id)}"><div class="card-top"><span class="project-symbol ${s.color}">${icon('device')}</span><span class="badge ${color}"><i class="dot"></i>${label}</span></div><span class="device-code">${safe(d.id)}</span><h2>${safe(d.name)}</h2><p>${safe(d.location)}</p><div class="device-sensors">${s.metrics.map(m=>`<span class="${alarms(s,d).some(a=>a.key===m.key)&&d.online?'warning-metric':''}">${safe(m.name)}</span>`).join('')}</div><div class="device-readings">${s.metrics.map(m=>`<div class="${d.online&&alarms(s,d).some(a=>a.key===m.key)?'reading-alert':''}"><small>${safe(m.name)}</small><strong>${Number.isFinite(d.values[m.key])?safe(d.values[m.key]):'—'}<em>${safe(m.unit)}</em></strong></div>`).join('')}</div>${!d.online?`<span class="last-reading-note">${d.mqtt?'离线 / 等待新上报 · 最后接收值':'离线 · 最后一次模拟采样'}</span>`:''}<div class="device-action"><span>查看传感器数据</span>${icon('arrow')}</div></button>`;}).join('')}</div>`;}
 function workspaceSparkline(metric,d){
  const rawValues=d.history?.[metric.key]||[],rawTimes=d.historyTimes?.[metric.key]||[];
- const samples=rawValues.map((value,i)=>({value,time:rawTimes[i]})).filter(s=>Number.isFinite(s.value));
+ const samples=rawValues.map((value,i)=>({value,time:rawTimes[i]})).filter(s=>Number.isFinite(s.value)).slice(-10);
  if(!samples.length)return '<div class="spark-empty">暂无历史采样</div>';
  const limit=d.thresholds?.[metric.key];
  const effectiveMin=Number.isFinite(limit?.min)?limit.min:metric.min;
@@ -244,7 +244,11 @@ document.addEventListener('keydown',event=>{if(event.key==='Escape')setOverviewD
 function consoleHealthPanel(){
  const list=companyDevices(),warnings=warningDevices(),offline=list.filter(d=>!d.online),total=list.length,healthy=Math.max(0,total-warnings.length-offline.length);
  const green=total?healthy/total*100:0,amber=total?(healthy+warnings.length)/total*100:0;
- return `<section class="insight-panel ov-health"><div class="ov-card-head"><div><span class="ov-kicker">DEVICE STATUS</span><h2>设备状态分布</h2></div></div><div class="ov-ring-wrap"><div class="health-ring ov-ring" style="--healthy:${green}%;--warning:${amber}%" role="img" aria-label="${healthy} 台正常，${warnings.length} 台告警，${offline.length} 台离线"><div><strong>${total}</strong><span>设备总数</span></div></div></div><div class="health-legend ov-legend">${[['normal','运行正常',healthy],['warn','在线告警',warnings.length],['off','设备离线',offline.length]].map(([cls,label,n])=>`<div><span><i class="${cls}"></i>${label}</span><strong>${n}<small> 台</small></strong></div>`).join('')}</div><p class="health-foot">${total?`设备在线率：${Math.round((total-offline.length)/total*100)}%`:'暂无设备数据'}</p></section>`;
+ const head=`<div class="ov-card-head"><div><span class="ov-kicker">DEVICE STATUS</span><h2>设备状态分布</h2></div></div>`;
+ const body=`<div class="ov-ring-wrap"><div class="health-ring ov-ring" style="--healthy:${green}%;--warning:${amber}%" role="img" aria-label="${healthy} 台正常，${warnings.length} 台告警，${offline.length} 台离线"><div><strong>${total}</strong><span>设备总数</span></div></div></div>`;
+ const legend=`<div class="health-legend ov-legend">${[['normal','运行正常',healthy],['warn','在线告警',warnings.length],['off','设备离线',offline.length]].map(([cls,label,n])=>`<div><span><i class="${cls}"></i>${label}</span><strong>${n}<small> 台</small></strong></div>`).join('')}</div>`;
+ const foot=`<p class="health-foot">${total?`设备在线率：${Math.round((total-offline.length)/total*100)}%`:'暂无设备数据'}</p>`;
+ return `<section class="insight-panel ov-health" id="console-health">${head}${body}${legend}${foot}</section>`;
 }
 function consoleSamplingPanel(){
  const list=companyDevices();
@@ -731,10 +735,13 @@ function refreshLiveView(){
     bindLiveDeviceButtons(monitor);
     bindOverviewDeviceSelect(document);
    }else{
-    monitor.innerHTML=companyInsights();bindLiveDeviceButtons(monitor);
+    const oldHealth=monitor.querySelector('#console-health');
+    if(oldHealth){const box=document.createElement('div');box.innerHTML=consoleHealthPanel();oldHealth.replaceWith(box.firstElementChild);}
+    else{monitor.innerHTML=companyInsights();}
+    bindLiveDeviceButtons(monitor);
     bindOverviewDeviceSelect(monitor);
    }
-   fitLegacySparklines();
+  fitLegacySparklines();
   }
   const grid=document.querySelector('.device-grid');
   if(grid){const box=document.createElement('div');box.innerHTML=deviceCards(companyDevices());grid.replaceWith(box.firstElementChild);bindLiveDeviceButtons(box);}
