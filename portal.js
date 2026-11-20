@@ -194,15 +194,15 @@ function workspaceSparkline(metric,d){
  const marked=samples.map((s,i)=>({...s,i,isAnomaly:(Number.isFinite(effectiveMin)&&s.value<effectiveMin)||(Number.isFinite(effectiveMax)&&s.value>effectiveMax)}));
  const segments=[];let cur=null;
  marked.forEach(s=>{if(!cur||cur.isAnomaly!==s.isAnomaly){cur={isAnomaly:s.isAnomaly,pts:[]};segments.push(cur);}cur.pts.push(`${x(s.i)},${y(s.value)}`);});
- const polylines=segments.filter(seg=>seg.pts.length>=2).map(seg=>`<polyline points="${seg.pts.join(' ')}" fill="none" stroke="${seg.isAnomaly?'#e03131':'currentColor'}" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>`).join('');
+ const polylines=segments.filter(seg=>seg.pts.length>=2).map(seg=>`<polyline points="${seg.pts.join(' ')}" fill="none" stroke="${seg.isAnomaly?'#e03131':'#547ee8'}" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>`).join('');
  const gid='spark-'+String(metric.key).replace(/[^A-Za-z0-9_-]/g,'');
  const dots=marked.map(s=>{
   const label=`${metric.name}：${s.value}${metric.unit?' '+metric.unit:''}`,time=sampleTimeLabel(s.time);
   const tipX=Math.min(136,Math.max(4,x(s.i)-90)),tipY=Math.max(2,Math.min(36,y(s.value)>60?y(s.value)-58:y(s.value)+10));
-  const dotFill=s.isAnomaly?'#e03131':'currentColor';
+  const dotFill=s.isAnomaly?'#e03131':'#547ee8';
   return `<g class="spark-point"><circle cx="${x(s.i)}" cy="${y(s.value)}" r="11" fill="transparent"/><circle cx="${x(s.i)}" cy="${y(s.value)}" r="3.5" fill="${dotFill}" stroke="#fff" stroke-width="1.2"/><g class="spark-tip" transform="translate(${tipX},${tipY})"><rect width="180" height="52" rx="9"/><text x="12" y="20">${safe(label)}</text><text x="12" y="39">${safe(time)}</text></g></g>`;
  }).join('');
- return `<svg class="spark-chart" viewBox="0 0 320 92" role="group" aria-label="${safe(metric.name)}最近 ${samples.length} 次采样趋势"><defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="currentColor" stop-opacity=".22"/><stop offset="1" stop-color="currentColor" stop-opacity="0"/></linearGradient></defs><polygon points="${marked.map(s=>x(s.i)+','+y(s.value)).join(' ')} 310,92 10,92" fill="url(#${gid})"/>${polylines}${dots}</svg>`;
+ return `<svg class="spark-chart" viewBox="0 0 320 92" role="group" aria-label="${safe(metric.name)}最近 ${samples.length} 次采样趋势"><defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#547ee8" stop-opacity=".22"/><stop offset="1" stop-color="#547ee8" stop-opacity="0"/></linearGradient></defs><polygon points="${marked.map(s=>x(s.i)+','+y(s.value)).join(' ')} 310,92 10,92" fill="url(#${gid})"/>${polylines}${dots}</svg>`;
 }
 function fitLegacySparklines(){
  document.querySelectorAll('.company-dashboard:not(.ov-dash) .spark-chart').forEach(svg=>{
