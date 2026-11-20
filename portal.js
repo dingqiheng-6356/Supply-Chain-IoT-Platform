@@ -724,11 +724,10 @@ function refreshLiveView(){
  if(view==='company'&&companyTab==='home'){
   const stats=document.querySelector('.company-stats');
   if(stats){try{const box=document.createElement('div');box.innerHTML=dashboardCards();stats.replaceWith(box.firstElementChild);const warning=document.querySelector('#warning-devices');if(warning)warning.onclick=openWarnings;}catch{}}
-  const monitor=document.querySelector('#console-monitor'),selectOpen=overviewDeviceOpen||monitor?.querySelector('select:focus'),tipHovering=!!monitor?.querySelector('.spark-point:hover');
+  const monitor=document.querySelector('#console-monitor'),selectOpen=overviewDeviceOpen||monitor?.querySelector('select:focus');
   if(monitor&&!selectOpen){
    if(monitor.dataset.layout==='ov'){
     monitor.innerHTML=consoleHealthPanel();
-    const sampling=document.querySelector('#console-sampling');if(sampling&&!tipHovering)sampling.innerHTML=consoleSamplingPanel();
     bindLiveDeviceButtons(monitor);
     bindOverviewDeviceSelect(document);
    }else{
