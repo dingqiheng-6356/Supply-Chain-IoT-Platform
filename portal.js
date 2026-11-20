@@ -731,7 +731,9 @@ function refreshLiveView(){
   const monitor=document.querySelector('#console-monitor'),selectOpen=overviewDeviceOpen||monitor?.querySelector('select:focus');
   if(monitor&&!selectOpen){
    if(monitor.dataset.layout==='ov'){
-    monitor.innerHTML=consoleHealthPanel();
+    const oldHealth=monitor.querySelector('#console-health');
+    if(oldHealth){const box=document.createElement('div');box.innerHTML=consoleHealthPanel();oldHealth.replaceWith(box.firstElementChild);}
+    else{monitor.innerHTML=consoleHealthPanel();}
     bindLiveDeviceButtons(monitor);
     bindOverviewDeviceSelect(document);
    }else{
@@ -741,7 +743,6 @@ function refreshLiveView(){
     bindLiveDeviceButtons(monitor);
     bindOverviewDeviceSelect(monitor);
    }
-  fitLegacySparklines();
   }
   const grid=document.querySelector('.device-grid');
   if(grid){const box=document.createElement('div');box.innerHTML=deviceCards(companyDevices());grid.replaceWith(box.firstElementChild);bindLiveDeviceButtons(box);}
