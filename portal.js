@@ -237,7 +237,7 @@ function setOverviewDeviceOpen(open){
 function bindOverviewDeviceSelect(scope){
  const root=(scope||document).querySelector('#overview-device-select');if(!root)return;
  const trigger=root.querySelector('#overview-device-trigger');if(trigger)trigger.onclick=()=>setOverviewDeviceOpen(!overviewDeviceOpen);
- root.querySelectorAll('[data-overview-device]').forEach(button=>button.onclick=()=>{overviewDeviceId=button.dataset.overviewDevice;setOverviewDeviceOpen(false);render();});
+ root.querySelectorAll('[data-overview-device]').forEach(button=>button.onclick=()=>{overviewDeviceId=button.dataset.overviewDevice;setOverviewDeviceOpen(false);render();updateAlarmBanner();});
 }
 document.addEventListener('pointerdown',event=>{if(!event.target.closest?.('#overview-device-select'))setOverviewDeviceOpen(false);},true);
 document.addEventListener('keydown',event=>{if(event.key==='Escape')setOverviewDeviceOpen(false);});
@@ -257,7 +257,7 @@ function consoleSamplingPanel(){
  const head=`<div class="ov-card-head"><div><span class="ov-kicker">SENSOR OVERVIEW</span><h2>采样数据概览</h2></div>${picker}</div>`;
  if(!d)return `<section class="insight-panel ov-sampling">${head}<p class="dashboard-empty">尚未配置监测设备</p></section>`;
  if(!s||!s.metrics.length)return `<section class="insight-panel ov-sampling">${head}<p class="dashboard-empty">等待设备首次上报后显示指标</p></section>`;
- return `<section class="insight-panel ov-sampling">${head}${consoleAlarmBanner(s,d)}<div class="ov-sampling-grid">${s.metrics.map(m=>{const warning=d.online&&alarms(s,d).some(a=>a.key===m.key),value=d.values[m.key],count=(d.history?.[m.key]||[]).filter(Number.isFinite).length;return `<div class="sampling-metric ${warning?'is-alert':''}"><div class="ov-metric-main"><span class="ov-metric-name">${icon(m.icon)} ${safe(m.name)}</span><div class="ov-reading"><strong>${Number.isFinite(value)?safe(value):'—'}</strong><small>${safe(m.unit)}</small></div><span class="ov-sample-note">最近 ${count} 次${d.mqtt?'实际':'模拟'}采样</span></div><div class="ov-metric-chart">${workspaceSparkline(m,d)}</div></div>`;}).join('')}</div><button class="dashboard-text-link" data-device="${safe(d.id)}">查看设备详情 ${icon('arrow')}</button></section>`;
+ return `<section class="insight-panel ov-sampling">${head}<div class="ov-sampling-grid">${s.metrics.map(m=>{const warning=d.online&&alarms(s,d).some(a=>a.key===m.key),value=d.values[m.key],count=(d.history?.[m.key]||[]).filter(Number.isFinite).length;return `<div class="sampling-metric ${warning?'is-alert':''}"><div class="ov-metric-main"><span class="ov-metric-name">${icon(m.icon)} ${safe(m.name)}</span><div class="ov-reading"><strong>${Number.isFinite(value)?safe(value):'—'}</strong><small>${safe(m.unit)}</small></div><span class="ov-sample-note">最近 ${count} 次${d.mqtt?'实际':'模拟'}采样</span></div><div class="ov-metric-chart">${workspaceSparkline(m,d)}</div></div>`;}).join('')}</div><button class="dashboard-text-link" data-device="${safe(d.id)}">查看设备详情 ${icon('arrow')}</button></section>`;
 }
 function consoleAlarmBanner(s,d){
  if(!d||!s)return '';
@@ -271,15 +271,13 @@ function consoleAlarmBanner(s,d){
  return `<div class="alarm-banner" id="console-alarm-banner"><span class="alarm-banner-title">${icon('bell')} ${safe(d.name)} · 数据异常</span><div class="alarm-banner-items">${items}</div></div>`;
 }
 function updateAlarmBanner(){
- const sampling=document.querySelector('#console-sampling');
- if(!sampling)return;
+ let banner=document.querySelector('#console-alarm-banner');
  const list=companyDevices();
  const raw=list.find(d=>d.id===overviewDeviceId)||list.find(d=>d.online)||list[0],d=raw?effective(raw):null,s=d?deviceScene(d):null;
  const html=consoleAlarmBanner(s,d);
- const banner=sampling.querySelector('#console-alarm-banner');
  if(html){
-  if(banner)banner.outerHTML=html;
-  else{const head=sampling.querySelector('.ov-card-head');if(head)head.insertAdjacentHTML('afterend',html);}
+  if(banner){banner.outerHTML=html;}
+  else{const hero=document.querySelector('.ov-hero');if(hero)hero.insertAdjacentHTML('beforebegin',html);}
  }else if(banner){banner.remove();}
 }
 function companyInsights(){return `<div class="insight-grid">${consoleSamplingPanel()}${consoleHealthPanel()}</div>`;}
