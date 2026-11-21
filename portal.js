@@ -262,50 +262,64 @@ function consoleSamplingPanel(){
 function alarmItemHTML(m,d){
  const v=d.values[m.key];
  const range=[m.min,m.max].filter(Number.isFinite).map(n=>`${n}${m.unit||''}`).join(' ~ ');
- return `<span class="alarm-banner-metric">${icon(m.icon)} ${safe(m.name)}</span><strong class="alarm-banner-value">${Number.isFinite(v)?safe(v):'—'}<small>${safe(m.unit)}</small></strong>${range?`<span class="alarm-banner-range">阈值 ${range}</span>`:''}`;
+ return `<span class="alarm-banner-metric">${icon(m.icon)} ${safe(m.name)}</span><strong class="alarm-banner-value"><span class="alarm-val">${Number.isFinite(v)?safe(v):'—'}</span><small>${safe(m.unit)}</small></strong>${range?`<span class="alarm-banner-range">阈值 ${range}</span>`:''}`;
 }
 function renderAlarmBanner(s,d,list){
- return `<div class="alarm-banner" id="console-alarm-banner" data-device="${safe(d.name)}"><span class="alarm-banner-title">${icon('bell')} ${safe(d.name)} · 数据异常</span><div class="alarm-banner-items">${list.map(m=>`<div class="alarm-banner-item" data-key="${safe(m.key)}" data-value="${Number.isFinite(d.values[m.key])?safe(d.values[m.key]):''}">${alarmItemHTML(m,d)}</div>`).join('')}</div></div>`;
+ return `<div class="alarm-banner" id="console-alarm-banner" data-device="${safe(d.name)}"><span class="alarm-banner-title">${icon('bell')} <span class="alarm-device">${safe(d.name)}</span> · 数据异常</span><div class="alarm-banner-items">${list.map(m=>`<div class="alarm-banner-item" data-key="${safe(m.key)}" data-value="${Number.isFinite(d.values[m.key])?safe(d.values[m.key]):''}">${alarmItemHTML(m,d)}</div>`).join('')}</div></div>`;
 }
 function consoleAlarmBanner(s,d){
  if(!d||!s)return '';
- const list=d.online?alarms(s,d):[];
+ const list=alarms(s,d);
  if(!list.length)return '';
  return renderAlarmBanner(s,d,list);
 }
 let alarmBannerClearStreak=0;
+let alarmBannerWasVisible=false;
 function updateAlarmBanner(){
  const list0=companyDevices();
  const raw=list0.find(d=>d.id===overviewDeviceId)||list0.find(d=>d.online)||list0[0],d=raw?effective(raw):null,s=d?deviceScene(d):null;
- const list=d&&d.online&&s?alarms(s,d):[];
- const banner=document.querySelector('#console-alarm-banner');
+ // 不依赖 d.online：MQTT 设备在线状态会瞬时抖动，导致横幅反复消失重现
+ const list=s?alarms(s,d):[];
+ let banner=document.querySelector('#console-alarm-banner');
  if(!list.length){
-  // 无异常：连续确认 3 次（约 6 秒）才移除，防止数据更新中间态导致横幅一会有一会没
-  if(banner){alarmBannerClearStreak++;if(alarmBannerClearStreak>=3)banner.remove();}
+  // 无异常：连续确认 5 次（约 7.5 秒）才移除，防止数据/在线状态中间态抖动导致横幅闪烁
+  if(banner){alarmBannerClearStreak++;if(alarmBannerClearStreak>=5){banner.remove();alarmBannerWasVisible=false;}}
   return;
  }
  alarmBannerClearStreak=0;
- // 横幅不存在 → 首次创建（仅这一次）
- if(!banner){const hero=document.querySelector('.ov-hero');if(hero)hero.insertAdjacentHTML('beforebegin',renderAlarmBanner(s,d,list));return;}
- // 横幅已存在 → 只增量更新，不重建根 DOM，避免重放动画造成闪烁
+ if(!banner){
+  const hero=document.querySelector('.ov-hero');
+  if(!hero){alarmBannerWasVisible=false;return;}
+  hero.insertAdjacentHTML('beforebegin',renderAlarmBanner(s,d,list));
+  banner=document.querySelector('#console-alarm-banner');
+  // render(true) 每 2 秒会 patch 移除横幅再重建；若之前已可见，跳过进入动画，避免闪烁
+  if(banner&&alarmBannerWasVisible)banner.classList.add('no-anim');
+  alarmBannerWasVisible=true;
+  return;
+ }
+ alarmBannerWasVisible=true;
+ banner.classList.remove('no-anim');
+ // 横幅已存在 → 全程只改文本节点，绝不重建任何 DOM，确保纹丝不动
  if(banner.dataset.device!==d.name){
   banner.dataset.device=d.name;
-  const title=banner.querySelector('.alarm-banner-title');
-  if(title)title.innerHTML=`${icon('bell')} ${safe(d.name)} · 数据异常`;
+  const devEl=banner.querySelector('.alarm-device');if(devEl)devEl.textContent=d.name;
  }
  const wrap=banner.querySelector('.alarm-banner-items');if(!wrap)return;
  const want=list.map(m=>m.key);
- // 移除不再异常的项
  wrap.querySelectorAll('.alarm-banner-item').forEach(el=>{if(!want.includes(el.dataset.key))el.remove();});
- // 新增或更新仍异常的项（仅数值变化时才重写 innerHTML）
  list.forEach((m,idx)=>{
   let el=wrap.querySelector(`.alarm-banner-item[data-key="${CSS.escape(m.key)}"]`);
   if(!el){
    el=document.createElement('div');el.className='alarm-banner-item';el.dataset.key=m.key;el.dataset.value='';
    const next=wrap.children[idx];if(next)wrap.insertBefore(el,next);else wrap.appendChild(el);
+   el.innerHTML=alarmItemHTML(m,d); // 仅首次创建时填充结构
   }
   const v=d.values[m.key],valStr=Number.isFinite(v)?safe(v):'';
-  if(el.dataset.value!==valStr){el.dataset.value=valStr;el.innerHTML=alarmItemHTML(m,d);}
+  if(el.dataset.value!==valStr){
+   el.dataset.value=valStr;
+   const valEl=el.querySelector('.alarm-val');
+   if(valEl)valEl.textContent=valStr; // 只替换文本，不触碰 DOM 结构
+  }
  });
 }
 function companyInsights(){return `<div class="insight-grid">${consoleSamplingPanel()}${consoleHealthPanel()}</div>`;}
