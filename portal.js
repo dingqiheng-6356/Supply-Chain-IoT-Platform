@@ -259,26 +259,48 @@ function consoleSamplingPanel(){
  if(!s||!s.metrics.length)return `<section class="insight-panel ov-sampling">${head}<p class="dashboard-empty">等待设备首次上报后显示指标</p></section>`;
  return `<section class="insight-panel ov-sampling">${head}<div class="ov-sampling-grid">${s.metrics.map(m=>{const warning=d.online&&alarms(s,d).some(a=>a.key===m.key),value=d.values[m.key],count=(d.history?.[m.key]||[]).filter(Number.isFinite).length;return `<div class="sampling-metric ${warning?'is-alert':''}"><div class="ov-metric-main"><span class="ov-metric-name">${icon(m.icon)} ${safe(m.name)}</span><div class="ov-reading"><strong>${Number.isFinite(value)?safe(value):'—'}</strong><small>${safe(m.unit)}</small></div><span class="ov-sample-note">最近 ${count} 次${d.mqtt?'实际':'模拟'}采样</span></div><div class="ov-metric-chart">${workspaceSparkline(m,d)}</div></div>`;}).join('')}</div><button class="dashboard-text-link" data-device="${safe(d.id)}">查看设备详情 ${icon('arrow')}</button></section>`;
 }
+function alarmItemHTML(m,d){
+ const v=d.values[m.key];
+ const range=[m.min,m.max].filter(Number.isFinite).map(n=>`${n}${m.unit||''}`).join(' ~ ');
+ return `<span class="alarm-banner-metric">${icon(m.icon)} ${safe(m.name)}</span><strong class="alarm-banner-value">${Number.isFinite(v)?safe(v):'—'}<small>${safe(m.unit)}</small></strong>${range?`<span class="alarm-banner-range">阈值 ${range}</span>`:''}`;
+}
+function renderAlarmBanner(s,d,list){
+ return `<div class="alarm-banner" id="console-alarm-banner" data-device="${safe(d.name)}"><span class="alarm-banner-title">${icon('bell')} ${safe(d.name)} · 数据异常</span><div class="alarm-banner-items">${list.map(m=>`<div class="alarm-banner-item" data-key="${safe(m.key)}" data-value="${Number.isFinite(d.values[m.key])?safe(d.values[m.key]):''}">${alarmItemHTML(m,d)}</div>`).join('')}</div></div>`;
+}
 function consoleAlarmBanner(s,d){
  if(!d||!s)return '';
  const list=d.online?alarms(s,d):[];
  if(!list.length)return '';
- const items=list.map(m=>{
-  const v=d.values[m.key];
-  const range=[m.min,m.max].filter(Number.isFinite).map(n=>`${n}${m.unit||''}`).join(' ~ ');
-  return `<div class="alarm-banner-item"><span class="alarm-banner-metric">${icon(m.icon)} ${safe(m.name)}</span><strong class="alarm-banner-value">${Number.isFinite(v)?safe(v):'—'}<small>${safe(m.unit)}</small></strong>${range?`<span class="alarm-banner-range">阈值 ${range}</span>`:''}</div>`;
- }).join('');
- return `<div class="alarm-banner" id="console-alarm-banner"><span class="alarm-banner-title">${icon('bell')} ${safe(d.name)} · 数据异常</span><div class="alarm-banner-items">${items}</div></div>`;
+ return renderAlarmBanner(s,d,list);
 }
 function updateAlarmBanner(){
- let banner=document.querySelector('#console-alarm-banner');
- const list=companyDevices();
- const raw=list.find(d=>d.id===overviewDeviceId)||list.find(d=>d.online)||list[0],d=raw?effective(raw):null,s=d?deviceScene(d):null;
- const html=consoleAlarmBanner(s,d);
- if(html){
-  if(banner){banner.outerHTML=html;}
-  else{const hero=document.querySelector('.ov-hero');if(hero)hero.insertAdjacentHTML('beforebegin',html);}
- }else if(banner){banner.remove();}
+ const list0=companyDevices();
+ const raw=list0.find(d=>d.id===overviewDeviceId)||list0.find(d=>d.online)||list0[0],d=raw?effective(raw):null,s=d?deviceScene(d):null;
+ const list=d&&d.online?alarms(s,d):[];
+ const banner=document.querySelector('#console-alarm-banner');
+ if(!list.length){if(banner)banner.remove();return;}
+ // 横幅不存在 → 首次创建（仅这一次）
+ if(!banner){const hero=document.querySelector('.ov-hero');if(hero)hero.insertAdjacentHTML('beforebegin',renderAlarmBanner(s,d,list));return;}
+ // 横幅已存在 → 只增量更新，不重建根 DOM，避免重放动画造成闪烁
+ if(banner.dataset.device!==d.name){
+  banner.dataset.device=d.name;
+  const title=banner.querySelector('.alarm-banner-title');
+  if(title)title.innerHTML=`${icon('bell')} ${safe(d.name)} · 数据异常`;
+ }
+ const wrap=banner.querySelector('.alarm-banner-items');if(!wrap)return;
+ const want=list.map(m=>m.key);
+ // 移除不再异常的项
+ wrap.querySelectorAll('.alarm-banner-item').forEach(el=>{if(!want.includes(el.dataset.key))el.remove();});
+ // 新增或更新仍异常的项（仅数值变化时才重写 innerHTML）
+ list.forEach((m,idx)=>{
+  let el=wrap.querySelector(`.alarm-banner-item[data-key="${CSS.escape(m.key)}"]`);
+  if(!el){
+   el=document.createElement('div');el.className='alarm-banner-item';el.dataset.key=m.key;el.dataset.value='';
+   const next=wrap.children[idx];if(next)wrap.insertBefore(el,next);else wrap.appendChild(el);
+  }
+  const v=d.values[m.key],valStr=Number.isFinite(v)?safe(v):'';
+  if(el.dataset.value!==valStr){el.dataset.value=valStr;el.innerHTML=alarmItemHTML(m,d);}
+ });
 }
 function companyInsights(){return `<div class="insight-grid">${consoleSamplingPanel()}${consoleHealthPanel()}</div>`;}
 function companyAttention(){

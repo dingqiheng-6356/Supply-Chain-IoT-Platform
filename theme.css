@@ -787,7 +787,7 @@ button.ov-metric:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(17
 .ov-legend strong small{font-size:10px;font-weight:500;color:var(--ov-muted)}
 .ov-dash .health-foot{margin:10px 0 0;text-align:center;font-size:12px;color:var(--ov-muted)}
 .ov-dash .ov-sampling{display:flex;flex-direction:column;min-height:0}
-.alarm-banner{margin:0 0 16px;padding:16px 22px;background:linear-gradient(135deg,#fff1f0,#ffe3e1);border:1.5px solid #e03131;border-radius:12px;display:flex;align-items:center;flex-wrap:wrap;gap:14px 28px;animation:alarmPulse 2.2s ease-in-out infinite}
+.alarm-banner{margin:0 0 16px;padding:16px 22px;background:linear-gradient(135deg,#fff1f0,#ffe3e1);border:1.5px solid #e03131;border-radius:12px;display:flex;align-items:center;flex-wrap:wrap;gap:14px 28px;box-shadow:0 0 0 3px rgba(224,49,49,.15);animation:alarmIn .35s ease}
 .alarm-banner-title{display:flex;align-items:center;gap:6px;font-size:17px;font-weight:700;color:#e03131;letter-spacing:.3px;flex-shrink:0}
 .alarm-banner-items{display:flex;flex-wrap:wrap;gap:12px 32px;align-items:center}
 .alarm-banner-item{display:flex;align-items:baseline;gap:8px}
@@ -795,7 +795,7 @@ button.ov-metric:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(17
 .alarm-banner-value{font-size:32px;font-weight:800;color:#e03131;line-height:1;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
 .alarm-banner-value small{font-size:15px;font-weight:600;margin-left:2px;color:#c92a2a}
 .alarm-banner-range{font-size:12px;color:#a61e1e;opacity:.85}
-@keyframes alarmPulse{0%,100%{box-shadow:0 0 0 0 rgba(224,49,49,.4)}50%{box-shadow:0 0 0 6px rgba(224,49,49,0)}}
+@keyframes alarmIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
 .ov-sampling-grid{display:flex;flex-direction:column;gap:10px;flex:1;min-height:0}
 .sampling-metric{flex:1 1 0;display:flex;align-items:center;gap:14px;background:#fbfcfb;border-radius:12px;padding:8px 12px;min-width:0;min-height:0;color:#4e7a4c}
 .ov-metric-main{display:flex;flex-direction:column;gap:3px;flex:0 0 auto;min-width:88px}
