@@ -273,12 +273,18 @@ function consoleAlarmBanner(s,d){
  if(!list.length)return '';
  return renderAlarmBanner(s,d,list);
 }
+let alarmBannerClearStreak=0;
 function updateAlarmBanner(){
  const list0=companyDevices();
  const raw=list0.find(d=>d.id===overviewDeviceId)||list0.find(d=>d.online)||list0[0],d=raw?effective(raw):null,s=d?deviceScene(d):null;
- const list=d&&d.online?alarms(s,d):[];
+ const list=d&&d.online&&s?alarms(s,d):[];
  const banner=document.querySelector('#console-alarm-banner');
- if(!list.length){if(banner)banner.remove();return;}
+ if(!list.length){
+  // 无异常：连续确认 3 次（约 6 秒）才移除，防止数据更新中间态导致横幅一会有一会没
+  if(banner){alarmBannerClearStreak++;if(alarmBannerClearStreak>=3)banner.remove();}
+  return;
+ }
+ alarmBannerClearStreak=0;
  // 横幅不存在 → 首次创建（仅这一次）
  if(!banner){const hero=document.querySelector('.ov-hero');if(hero)hero.insertAdjacentHTML('beforebegin',renderAlarmBanner(s,d,list));return;}
  // 横幅已存在 → 只增量更新，不重建根 DOM，避免重放动画造成闪烁
@@ -583,7 +589,7 @@ function render(live=false){
  if(!['detail','alerts'].includes(view))alertDrafts.clear();
  const focusedDraft=document.activeElement?.dataset?.draftKey,caretPos=document.activeElement?.selectionStart;
  updateWorkspaceHtml(`<div class="workspace ${!isAdmin()?'customer-console':'admin-console'}"><aside class="sidebar"><a href="./" class="brand">${logo()}</a><div class="workspace-label">${isAdmin()?'平台管理':'公司工作空间'} <span>${isAdmin()?'ADMIN':'WORKSPACE'}</span></div>${isAdmin()?'':chainSwitcher()}<nav aria-label="主导航">${nav}</nav><div class="sidebar-bottom"><div class="help-card"><span class="help-icon">${icon('shield')}</span><strong>${isAdmin()?'统一管理，独立配置':'专属空间，清晰可见'}</strong><p>${isAdmin()?'管理公司与公司管理员，查看平台运行情况。':'查看本公司设备与预警，让每一项数据有迹可循。'}</p><span class="badge ${r.color}">${r.label}</span></div><div class="sidebar-user"><span class="user-avatar">${safe(currentUser.name?.slice(0,1)||'用')}</span><div><strong>${safe(currentUser.name)}</strong><small>${r.label}</small></div><button class="icon-button" id="logout" aria-label="退出登录" title="退出登录">${icon('logout')}</button></div></div></aside><div class="main-shell"><header class="topbar">${!isAdmin()?`<div class="console-header-search">${icon('eye')}<input id="console-global-search" type="search" aria-label="搜索公司设备" placeholder="搜索设备、设备 ID、位置…"></div><div class="console-header-meta"><span>仅本公司数据</span><button class="icon-button" data-console-section="alerts" aria-label="查看告警中心">${icon('bell')}${warningDevices().length?'<i></i>':''}</button><button class="console-account" data-tab="profile"><span>${safe(currentUser.name?.slice(0,1)||'用')}</span>${safe(currentUser.name)}</button></div>`:''}<div class="legacy-breadcrumb"><button class="crumb-button" data-route="${isAdmin()?'platform':'company'}">${isAdmin()?'平台管理':safe(chainId?currentChain()?.name:'供应链')}</button><span class="slash">/</span><strong>${safe(labels[view]||'工作台')}</strong></div><div class="topbar-right"><span class="environment"><i></i> ${platformBackend?'平台服务':(['usb','mqtt'].includes(view)||companyDevices().some(d=>d.mqtt)?'MQTT / 本地接收':'演示空间')}</span><span class="badge ${r.color}">${icon('shield')}${r.label}</span></div></header><main class="main-content">${notice&&view!=='unassigned'?`<div class="notice" role="status">${safe(notice)}</div>`:''}${tabs}${body}<footer class="main-footer"><span>物联空间 · 连接供应链的每一环</span><span>${platformBackend?'设备与配置由服务器统一管理，监测值来自实际接收的上报':(['usb','mqtt'].includes(view)||companyDevices().some(d=>d.mqtt)?'MQTT 设备显示实际接收值；其他设备为演示快照':'公司设备数据为演示快照')}</span></footer></main></div></div>`,live);
- bindPortal();bindWhiteboard();bindOrganization();bindDeviceManagement();bindNews();if(typeof bindPlatformFeatures==='function')bindPlatformFeatures();if(!live)bindExperience();syncMqttPolling();syncRegistryPolling();if(['usb','mqtt'].includes(view))startSerialPolling();if(focusedDraft){const field=document.querySelector(`[data-draft-key="${CSS.escape(focusedDraft)}"]`);if(field){field.focus();if(Number.isInteger(caretPos))try{field.setSelectionRange(caretPos,caretPos);}catch(error){}}}
+ bindPortal();bindWhiteboard();bindOrganization();bindDeviceManagement();bindNews();if(typeof bindPlatformFeatures==='function')bindPlatformFeatures();if(!live)bindExperience();syncMqttPolling();syncRegistryPolling();if(['usb','mqtt'].includes(view))startSerialPolling();if(focusedDraft){const field=document.querySelector(`[data-draft-key="${CSS.escape(focusedDraft)}"]`);if(field){field.focus();if(Number.isInteger(caretPos))try{field.setSelectionRange(caretPos,caretPos);}catch(error){}}}updateAlarmBanner();
 }
 async function readJson(path){const response=await fetch(path,{cache:'no-store'});if(!response.ok)throw new Error(`无法读取 ${path}（${response.status}）`);return response.json();}
 async function passwordHash(text){const bytes=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(text));return Array.from(new Uint8Array(bytes),b=>b.toString(16).padStart(2,'0')).join('');}
