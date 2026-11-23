@@ -60,6 +60,65 @@ function wbElementHtml(el,editing=false){
  return `<div class="wb-element wb-type-${el.type}${editing&&wbState.selected===el.id?' selected':''}${p.locked?' locked':''}" data-element-id="${safe(el.id)}" style="${style}">${body}${handles}</div>`;
 }
 function wbCanvasHtml(editing=false){const doc=wbState.current.document,c=doc.canvas;return `<div id="${editing?'wb-canvas':'wb-public-canvas'}" class="wb-canvas${c.grid&&editing?' show-grid':''}" style="background:linear-gradient(135deg,${safe(c.background)},${safe(c.backgroundEnd)})">${doc.elements.slice().sort((a,b)=>a.z-b.z).map(el=>wbElementHtml(el,editing)).join('')}</div>`;}
+/* ===== 数据展示大屏：ECharts 动态折线，按指标分图，每台设备一条线 ===== */
+const showcaseState={charts:[],timer:null,observer:null};
+const SHOWCASE_COLORS=['#386f52','#547ee8','#2aa198','#d98e32','#7c6bd6','#c96a8a','#4e7a4c','#e03131'];
+function showcaseMetrics(){
+ const map=new Map();
+ for(const raw of companyDevices()){
+  const d=effective(raw),s=deviceScene(d);
+  if(!s)continue;
+  for(const m of s.metrics)if(!map.has(m.key))map.set(m.key,m);
+ }
+ return [...map.values()];
+}
+function showcasePage(){
+ const metrics=showcaseMetrics(),list=companyDevices();
+ return `<div class="showcase-root" id="showcase-root"><header class="showcase-head"><div><span class="showcase-kicker">REALTIME / TELEMETRY</span><h1>数据展示</h1><p>全部设备监测指标实时折线 · 按指标分图，同图对比各设备走势</p></div><div class="showcase-meta"><span class="showcase-live"><i></i> LIVE</span><span>${list.length} 台设备 · ${metrics.length} 项指标</span></div></header>${metrics.length?`<div class="showcase-grid">${metrics.map(m=>`<section class="showcase-card"><div class="showcase-card-head"><span class="showcase-card-title">${icon(m.icon)} ${safe(m.name)}</span><span class="showcase-card-unit">${safe(m.unit||'')}</span></div><div class="showcase-chart" id="showcase-chart-${safe(m.key)}" data-metric="${safe(m.key)}"></div></section>`).join('')}</div>`:'<p class="dashboard-empty">暂无监测指标，等待设备接入后自动展示。</p>'}</div>`;
+}
+function showcaseSeries(metric){
+ return companyDevices().map((raw,idx)=>{
+  const d=effective(raw),key=metric.key,color=SHOWCASE_COLORS[idx%SHOWCASE_COLORS.length];
+  const vals=d.history?.[key]||[],times=d.historyTimes?.[key]||[],data=[];
+  vals.forEach((v,i)=>{if(!Number.isFinite(v))return;const t=times[i]?new Date(times[i]).getTime():Date.now()-(vals.length-1-i)*30000;data.push([t,v]);});
+  return {name:d.name,type:'line',smooth:true,showSymbol:false,symbol:'circle',symbolSize:7,data,
+   lineStyle:{width:2.5,color},itemStyle:{color},areaStyle:{opacity:.07,color},emphasis:{focus:'series'}};
+ });
+}
+function showcaseOption(metric){
+ return {animationDuration:400,animationDurationUpdate:400,
+  grid:{left:48,right:20,top:40,bottom:32},
+  tooltip:{trigger:'axis',axisPointer:{type:'line',lineStyle:{color:'#386f52',opacity:.4}},
+   backgroundColor:'#ffffff',borderColor:'#dfe5df',textStyle:{color:'#23332a',fontSize:12},
+   valueFormatter:v=>Number.isFinite(v)?`${v} ${metric.unit||''}`:'—'},
+  legend:{top:6,left:0,icon:'roundRect',itemWidth:14,itemHeight:4,textStyle:{color:'#5c6b60',fontSize:12}},
+  xAxis:{type:'time',axisLine:{lineStyle:{color:'#cdd6cd'}},axisLabel:{color:'#7a8a7d',fontSize:11,hideOverlap:true},splitLine:{show:false}},
+  yAxis:{type:'value',scale:true,axisLabel:{color:'#7a8a7d',fontSize:11},splitLine:{lineStyle:{color:'#eef2ee'}}},
+  series:showcaseSeries(metric)};
+}
+function disposeShowcase(){
+ clearInterval(showcaseState.timer);showcaseState.timer=null;
+ showcaseState.observer?.disconnect();showcaseState.observer=null;
+ for(const c of showcaseState.charts)try{c.dispose();}catch{}
+ showcaseState.charts=[];
+}
+function bindShowcase(){
+ const root=document.querySelector('#showcase-root');if(!root){disposeShowcase();return;}
+ const first=root.querySelector('.showcase-chart');
+ // 已初始化（render(true) patch 会保留容器）则跳过，避免每 2 秒重建图表导致闪烁
+ if(first&&window.echarts&&echarts.getInstanceByDom(first)&&showcaseState.charts.length)return;
+ disposeShowcase();
+ if(!window.echarts){root.querySelectorAll('.showcase-chart').forEach(el=>{el.innerHTML='<p class="showcase-fallback">图表库加载失败，请检查网络后刷新页面。</p>';});return;}
+ const metrics=showcaseMetrics();
+ const draw=()=>{for(const m of metrics){const el=document.querySelector(`#showcase-chart-${CSS.escape(m.key)}`);if(!el)continue;const chart=echarts.getInstanceByDom(el);if(chart)chart.setOption(showcaseOption(m),{replaceMerge:['series']});}};
+ for(const m of metrics){
+  const el=document.querySelector(`#showcase-chart-${CSS.escape(m.key)}`);if(!el)continue;
+  const chart=echarts.init(el);chart.setOption(showcaseOption(m));showcaseState.charts.push(chart);
+ }
+ showcaseState.observer=new ResizeObserver(()=>{for(const c of showcaseState.charts)try{c.resize();}catch{}});
+ showcaseState.observer.observe(root);
+ showcaseState.timer=setInterval(()=>{if(view!=='whiteboards'){disposeShowcase();return;}if(!document.hidden)draw();},2000);
+}
 function whiteboardListPage(){
  const boards=wbState.boards;
  return heading('SHOWCASE / FREEFORM WHITEBOARD','展示白板','把设备、数据与品牌内容自由编排成专属展示页，一键分享到大屏。',wbCanEdit()?'<div class="wb-create-menu"><button class="primary" id="wb-create">＋ 新建白板 ▾</button><div class="wb-create-dropdown" id="wb-create-dropdown"><button data-wb-create-template>使用牧业示例模板</button><button data-wb-create-blank>从空白画布开始</button></div></div>':'')+
@@ -213,12 +272,7 @@ function wbPreview(){const modal=document.querySelector('#wb-modal');modal.inner
 function wbUndo(){if(!wbState.history.length)return;wbState.future.push(wbClone(wbState.current.document));wbState.current.document=wbState.history.pop();wbState.selected=null;wbMarkDirty();wbRenderCanvas();wbRenderInspector();}
 function wbRedo(){if(!wbState.future.length)return;wbState.history.push(wbClone(wbState.current.document));wbState.current.document=wbState.future.pop();wbState.selected=null;wbMarkDirty();wbRenderCanvas();wbRenderInspector();}
 function bindWhiteboard(){
- wbState.observer?.disconnect();if(view==='whiteboards'){wbLoadList();document.querySelectorAll('[data-wb-open]').forEach(b=>b.onclick=()=>wbOpen(b.dataset.wbOpen));document.querySelectorAll('[data-wb-delete]').forEach(b=>b.onclick=()=>wbDelete(b.dataset.wbDelete));document.querySelectorAll('[data-wb-duplicate]').forEach(b=>b.onclick=()=>wbDuplicate(b.dataset.wbDuplicate));document.querySelectorAll('[data-wb-blank]').forEach(b=>b.onclick=()=>wbBlankBoard(b.dataset.wbBlank));
-  const createBtn=document.querySelector('#wb-create'),dropdown=document.querySelector('#wb-create-dropdown');
-  if(createBtn&&dropdown){createBtn.onclick=e=>{e.stopPropagation();dropdown.classList.toggle('show');};document.addEventListener('click',()=>dropdown.classList.remove('show'));}
-  const bindCreate=(sel,blank)=>{const el=document.querySelector(sel);if(el)el.onclick=e=>{e.stopPropagation();wbCreate(blank);};};
-  bindCreate('[data-wb-create-template]',false);bindCreate('[data-wb-create-blank]',true);bindCreate('#wb-create-empty',false);bindCreate('#wb-create-blank',true);
-  return;}
+ wbState.observer?.disconnect();if(view!=='whiteboards')disposeShowcase();if(view==='whiteboards'){bindShowcase();return;}
  if(view!=='whiteboard-editor'||!wbState.current)return;wbRenderInspector();wbFitCanvas();mountDevice3D(document.querySelector('#wb-canvas'));wbBindElements();wbState.observer=new ResizeObserver(wbFitCanvas);wbState.observer.observe(document.querySelector('#wb-viewport'));
  document.querySelectorAll('[data-wb-add]').forEach(button=>{button.onclick=()=>{if(['image','video'].includes(button.dataset.wbAdd))wbChooseFile(button.dataset.wbAdd,false);else wbAddElement(button.dataset.wbAdd);};button.ondragstart=event=>event.dataTransfer.setData('application/x-livestock-board',button.dataset.wbAdd);});
  const on=(id,fn)=>{const el=document.querySelector(id);if(el)el.onclick=fn;};on('#wb-save',()=>wbSave().catch(error=>wbToast(error.message)));on('#wb-share',wbShare);on('#wb-preview',wbPreview);on('#wb-undo',wbUndo);on('#wb-redo',wbRedo);on('#wb-clear',wbClearCanvas);on('#wb-zoom-in',()=>{wbState.zoom=Math.min(2.5,wbState.zoom+.1);wbFitCanvas();});on('#wb-zoom-out',()=>{wbState.zoom=Math.max(.25,wbState.zoom-.1);wbFitCanvas();});on('#wb-zoom-fit',()=>{wbState.zoom=1;wbFitCanvas();});on('#wb-grid',()=>wbMutate(()=>wbState.current.document.canvas.grid=!wbState.current.document.canvas.grid));

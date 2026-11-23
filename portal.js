@@ -542,6 +542,8 @@ function liveNodeKey(node){
 function patchLiveNode(current,next){
  if(current.nodeType!==1){if(current.nodeValue!==next.nodeValue)current.nodeValue=next.nodeValue;return;}
  if(current.id==='device-map')return;
+ // 展示大屏由 ECharts 自主管理 DOM 与定时刷新，live patch 不得触碰其内部 canvas
+ if(current.id==='showcase-root')return;
  // Keep field drafts and caret, but let telemetry update review gating and hints.
  if(current.matches('input,textarea,select')){
   if(next.hasAttribute('disabled'))current.setAttribute('disabled','');else current.removeAttribute('disabled');
@@ -590,11 +592,11 @@ function render(live=false){
  if(platformBackend&&view==='template')view='company';
  if(view==='organization'&&!canOrganize())view=isAdmin()?'platform':'company';
  const r=roles[currentUser.role],c=company();
- const labels={organization:'组织管理','my-devices':'我的设备','device-manage':currentUser?.role==='developer'?'设备接入':'设备管理',platform:'供应链物联网平台',chains:'选择供应链',chain:platform.chains.find(x=>x.id===chainId)?.name,companies:platform.categories.find(x=>x.id===categoryId)?.name,company:c?.name,detail:effective(device()||{}).name,monitor:'数据监测',alerts:'告警中心',profile:'我的',template:'页面配置',tests:'测试',usb:'USB 测试',mqtt:'本地联网测试',news:'新闻',article:'文章',whiteboards:'展示白板','whiteboard-editor':'白板编辑器',unassigned:'公司待分配'};
- const adminNav=[['platform','grid','平台总览'],['whiteboards','eye','展示白板'],['tests','code','测试'],['news','chat','新闻'],['profile','users','我的']];
+ const labels={organization:'组织管理','my-devices':'我的设备','device-manage':currentUser?.role==='developer'?'设备接入':'设备管理',platform:'供应链物联网平台',chains:'选择供应链',chain:platform.chains.find(x=>x.id===chainId)?.name,companies:platform.categories.find(x=>x.id===categoryId)?.name,company:c?.name,detail:effective(device()||{}).name,monitor:'数据监测',alerts:'告警中心',profile:'我的',template:'页面配置',tests:'测试',usb:'USB 测试',mqtt:'本地联网测试',news:'新闻',article:'文章',whiteboards:'数据展示','whiteboard-editor':'白板编辑器',unassigned:'公司待分配'};
+ const adminNav=[['platform','grid','平台总览'],['whiteboards','eye','数据展示'],['tests','code','测试'],['news','chat','新闻'],['profile','users','我的']];
  if(platformBackend)adminNav.splice(1,0,['organization','users','公司与管理员']);
  const companyNav=[['home','grid','首页'],['news','chat','新闻'],['profile','users','我的']];
- const consoleNav=[['overview','grid','概览'],['devices','device',canManageDevices()?(currentUser?.role==='developer'?'设备接入':'设备管理'):'我的设备'],['monitor','task','数据监测'],['alerts','bell','告警中心'],['showcase','eye','展示白板']];
+ const consoleNav=[['overview','grid','概览'],['devices','device',canManageDevices()?(currentUser?.role==='developer'?'设备接入':'设备管理'):'我的设备'],['monitor','task','数据监测'],['alerts','bell','告警中心'],['showcase','eye','数据展示']];
  if(isCompanyAdmin()&&platformBackend)consoleNav.push(['organization','users','公司管理']);
  const nav=isAdmin()?adminNav.map(([v,i,t])=>`<button class="nav-item ${view===v?'active':''}" data-route="${v}" aria-label="${t}" title="${t}">${icon(i)}<span>${t}</span></button>`).join(''):consoleNav.map(([section,i,t])=>{
   const route=section==='devices'&&!canManageDevices()?'my-devices':'';
@@ -602,7 +604,7 @@ function render(live=false){
   return `<button class="nav-item ${active}" ${route?`data-route="${route}"`:`data-console-section="${section}"`} aria-label="${t}" title="${t}">${icon(i)}<span>${t}</span></button>`;
  }).join('')+companyNav.filter(([v])=>v!=='home').map(([v,i,t])=>`<button class="nav-item ${(v==='profile'?view==='profile':view==='company'&&companyTab===v)?'active':''}" data-tab="${v}" aria-label="${t}" title="${t}">${icon(i)}<span>${t}</span></button>`).join('');
  let body;
- if(view==='chains')body=chainPickerPage();else if(view==='organization')body=organizationPage();else if(view==='whiteboards')body=whiteboardListPage();else if(view==='whiteboard-editor')body=wbEditorPage();else if(view==='device-manage')body=deviceManagementPage();else if(view==='my-devices')body=myDevicesPage();else if(view==='platform')body=platformPage();else if(view==='chain')body=chainPage();else if(view==='companies')body=companiesPage();else if(view==='tests')body=testsPage();else if(view==='news')body=newsListPage();else if(view==='article')body=articlePage();else if(view==='profile')body=profilePage();else if(view==='template')body=templatePage();else if(['usb','mqtt'].includes(view))body=renderSerialTest();else if(view==='detail')body=renderDetail();else if(view==='monitor')body=renderMonitor();else if(view==='alerts')body=renderAlerts();else if(view==='unassigned')body='<div class="offline-note">'+safe(notice)+'</div>';else body=companyTab==='news'?newsPage():companyHome();
+ if(view==='chains')body=chainPickerPage();else if(view==='organization')body=organizationPage();else if(view==='whiteboards')body=showcasePage();else if(view==='whiteboard-editor')body=wbEditorPage();else if(view==='device-manage')body=deviceManagementPage();else if(view==='my-devices')body=myDevicesPage();else if(view==='platform')body=platformPage();else if(view==='chain')body=chainPage();else if(view==='companies')body=companiesPage();else if(view==='tests')body=testsPage();else if(view==='news')body=newsListPage();else if(view==='article')body=articlePage();else if(view==='profile')body=profilePage();else if(view==='template')body=templatePage();else if(['usb','mqtt'].includes(view))body=renderSerialTest();else if(view==='detail')body=renderDetail();else if(view==='monitor')body=renderMonitor();else if(view==='alerts')body=renderAlerts();else if(view==='unassigned')body='<div class="offline-note">'+safe(notice)+'</div>';else body=companyTab==='news'?newsPage():companyHome();
  const tabs=['company','detail','alerts','article'].includes(view)&&c?`<div class="company-topline"><div><span class="company-initial">${safe(c?.name?.slice(0,1)||'公')}</span><strong>${safe(c?.name)}</strong></div><nav aria-label="公司页面">${companyNav.map(([v,i,t])=>`<button data-tab="${v}" class="${(view==='company'&&companyTab===v)||(view==='article'&&v==='news')?'active':''}">${icon(i)}${t}</button>`).join('')}</nav></div>`:'';
  if(!['detail','alerts'].includes(view))alertDrafts.clear();
  const focusedDraft=document.activeElement?.dataset?.draftKey,caretPos=document.activeElement?.selectionStart;
