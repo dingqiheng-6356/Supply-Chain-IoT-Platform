@@ -262,24 +262,30 @@ function consoleSamplingPanel(){
 function alarmItemHTML(m,d){
  const v=d.values[m.key];
  const range=[m.min,m.max].filter(Number.isFinite).map(n=>`${n}${m.unit||''}`).join(' ~ ');
- return `<span class="alarm-banner-metric">${icon(m.icon)} ${safe(m.name)}</span><strong class="alarm-banner-value"><span class="alarm-val">${Number.isFinite(v)?safe(v):'—'}</span><small>${safe(m.unit)}</small></strong>${range?`<span class="alarm-banner-range">阈值 ${range}</span>`:''}`;
+ return `<span class="alarm-banner-device">${safe(d.name)}</span><span class="alarm-banner-metric">${icon(m.icon)} ${safe(m.name)}</span><strong class="alarm-banner-value"><span class="alarm-val">${Number.isFinite(v)?safe(v):'—'}</span><small>${safe(m.unit)}</small></strong>${range?`<span class="alarm-banner-range">阈值 ${range}</span>`:''}`;
 }
-function renderAlarmBanner(s,d,list){
- return `<div class="alarm-banner" id="console-alarm-banner" data-device="${safe(d.name)}"><span class="alarm-banner-title">${icon('bell')} <span class="alarm-device">${safe(d.name)}</span> · 数据异常</span><div class="alarm-banner-items">${list.map(m=>`<div class="alarm-banner-item" data-key="${safe(m.key)}" data-value="${Number.isFinite(d.values[m.key])?safe(d.values[m.key]):''}">${alarmItemHTML(m,d)}</div>`).join('')}</div></div>`;
+// 汇总公司下所有设备的异常指标，逐条带上所属设备
+function alarmEntries(){
+ const out=[];
+ for(const raw of companyDevices()){
+  const d=effective(raw),s=deviceScene(d);
+  if(!d||!s)continue;
+  for(const m of alarms(s,d))out.push({d,m,key:`${d.id}:${m.key}`,value:d.values[m.key]});
+ }
+ return out;
 }
-function consoleAlarmBanner(s,d){
- if(!d||!s)return '';
- const list=alarms(s,d);
- if(!list.length)return '';
- return renderAlarmBanner(s,d,list);
+function alarmBannerTitle(list){
+ const names=[...new Set(list.map(e=>e.d.name))];
+ return names.length===1?names[0]:`${names.length} 台设备`;
+}
+function renderAlarmBanner(list){
+ return `<div class="alarm-banner" id="console-alarm-banner"><span class="alarm-banner-title">${icon('bell')} <span class="alarm-device">${safe(alarmBannerTitle(list))}</span> · 数据异常</span><div class="alarm-banner-items">${list.map(e=>`<div class="alarm-banner-item" data-key="${safe(e.key)}" data-value="${Number.isFinite(e.value)?safe(e.value):''}">${alarmItemHTML(e.m,e.d)}</div>`).join('')}</div></div>`;
 }
 let alarmBannerClearStreak=0;
 let alarmBannerWasVisible=false;
 function updateAlarmBanner(){
- const list0=companyDevices();
- const raw=list0.find(d=>d.id===overviewDeviceId)||list0.find(d=>d.online)||list0[0],d=raw?effective(raw):null,s=d?deviceScene(d):null;
  // 不依赖 d.online：MQTT 设备在线状态会瞬时抖动，导致横幅反复消失重现
- const list=s?alarms(s,d):[];
+ const list=alarmEntries();
  let banner=document.querySelector('#console-alarm-banner');
  if(!list.length){
   // 无异常：连续确认 5 次（约 7.5 秒）才移除，防止数据/在线状态中间态抖动导致横幅闪烁
@@ -290,7 +296,7 @@ function updateAlarmBanner(){
  if(!banner){
   const hero=document.querySelector('.ov-hero');
   if(!hero){alarmBannerWasVisible=false;return;}
-  hero.insertAdjacentHTML('beforebegin',renderAlarmBanner(s,d,list));
+  hero.insertAdjacentHTML('beforebegin',renderAlarmBanner(list));
   banner=document.querySelector('#console-alarm-banner');
   // render(true) 每 2 秒会 patch 移除横幅再重建；若之前已可见，跳过进入动画，避免闪烁
   if(banner&&alarmBannerWasVisible)banner.classList.add('no-anim');
@@ -300,21 +306,19 @@ function updateAlarmBanner(){
  alarmBannerWasVisible=true;
  banner.classList.remove('no-anim');
  // 横幅已存在 → 全程只改文本节点，绝不重建任何 DOM，确保纹丝不动
- if(banner.dataset.device!==d.name){
-  banner.dataset.device=d.name;
-  const devEl=banner.querySelector('.alarm-device');if(devEl)devEl.textContent=d.name;
- }
+ const title=alarmBannerTitle(list),devEl=banner.querySelector('.alarm-device');
+ if(devEl&&devEl.textContent!==title)devEl.textContent=title;
  const wrap=banner.querySelector('.alarm-banner-items');if(!wrap)return;
- const want=list.map(m=>m.key);
+ const want=list.map(e=>e.key);
  wrap.querySelectorAll('.alarm-banner-item').forEach(el=>{if(!want.includes(el.dataset.key))el.remove();});
- list.forEach((m,idx)=>{
-  let el=wrap.querySelector(`.alarm-banner-item[data-key="${CSS.escape(m.key)}"]`);
+ list.forEach((e,idx)=>{
+  let el=wrap.querySelector(`.alarm-banner-item[data-key="${CSS.escape(e.key)}"]`);
   if(!el){
-   el=document.createElement('div');el.className='alarm-banner-item';el.dataset.key=m.key;el.dataset.value='';
+   el=document.createElement('div');el.className='alarm-banner-item';el.dataset.key=e.key;el.dataset.value='';
    const next=wrap.children[idx];if(next)wrap.insertBefore(el,next);else wrap.appendChild(el);
-   el.innerHTML=alarmItemHTML(m,d); // 仅首次创建时填充结构
+   el.innerHTML=alarmItemHTML(e.m,e.d); // 仅首次创建时填充结构
   }
-  const v=d.values[m.key],valStr=Number.isFinite(v)?safe(v):'';
+  const valStr=Number.isFinite(e.value)?safe(e.value):'';
   if(el.dataset.value!==valStr){
    el.dataset.value=valStr;
    const valEl=el.querySelector('.alarm-val');
