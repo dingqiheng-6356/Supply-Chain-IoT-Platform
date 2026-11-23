@@ -332,10 +332,10 @@ class DeviceRegistry:
         try:
             start, end, limit = float(start), float(end), int(limit)
             before = int(before) if before is not None else None
-            if not all(map(math.isfinite,(start,end))) or start<0 or end<=start or end-start>366*86400 or not 1<=limit<=500 or (before is not None and before<1):
+            if not all(map(math.isfinite,(start,end))) or start<0 or end<=start or end-start>366*86400 or not 1<=limit<=20000 or (before is not None and before<1):
                 raise ValueError
         except (ValueError,TypeError,OverflowError):
-            raise RegistryError('请选择有效时间范围（最多 366 天），每页 1–500 条。') from None
+            raise RegistryError('请选择有效时间范围（最多 366 天），每页 1–20000 条。') from None
         with self.connect() as db:
             row = self.row(db,device_id)
             self.authorize(user,row)
