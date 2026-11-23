@@ -61,7 +61,7 @@ function wbElementHtml(el,editing=false){
 }
 function wbCanvasHtml(editing=false){const doc=wbState.current.document,c=doc.canvas;return `<div id="${editing?'wb-canvas':'wb-public-canvas'}" class="wb-canvas${c.grid&&editing?' show-grid':''}" style="background:linear-gradient(135deg,${safe(c.background)},${safe(c.backgroundEnd)})">${doc.elements.slice().sort((a,b)=>a.z-b.z).map(el=>wbElementHtml(el,editing)).join('')}</div>`;}
 /* ===== 数据展示：先选设备，再展示该设备信息与各指标折线图（不自动刷新） ===== */
-const showcaseState={charts:[],observer:null};
+const showcaseState={charts:[],observer:null,timer:null};
 let showcaseDeviceId=null;
 const SHOWCASE_COLORS=['#386f52','#547ee8','#2aa198','#d98e32','#7c6bd6','#c96a8a','#4e7a4c','#e03131'];
 function showcaseDevicePicker(){
@@ -91,9 +91,29 @@ function showcaseOption(metric,d,color){
    lineStyle:{width:2.5,color},itemStyle:{color},areaStyle:{opacity:.08,color}}]};
 }
 function disposeShowcase(){
+ clearInterval(showcaseState.timer);showcaseState.timer=null;
  showcaseState.observer?.disconnect();showcaseState.observer=null;
  for(const c of showcaseState.charts)try{c.dispose();}catch{}
  showcaseState.charts=[];
+}
+// 增量同步：仅当某指标出现新数据点时才 setOption 该序列，无动画、不重建 DOM，折线平滑延伸不闪烁
+function showcaseSync(){
+ const raw=companyDevices().find(x=>x.id===showcaseDeviceId);
+ if(!raw||!window.echarts)return;
+ const d=effective(raw),s=deviceScene(d);
+ (s?s.metrics:[]).forEach(m=>{
+  const el=document.querySelector(`#showcase-chart-${CSS.escape(m.key)}`);if(!el)return;
+  const chart=echarts.getInstanceByDom(el);if(!chart)return;
+  const vals=d.history?.[m.key]||[],times=d.historyTimes?.[m.key]||[];
+  const stamp=`${vals.length}:${times[times.length-1]||''}:${vals[vals.length-1]}`;
+  const v=d.values[m.key],card=el.closest('.showcase-card'),now=card?.querySelector('.showcase-card-now');
+  if(now&&Number.isFinite(v)&&now.childNodes[0])now.childNodes[0].nodeValue=`${safe(v)} `; // 当前值只改文本
+  if(el.dataset.stamp===stamp)return; // 无新数据，折线保持不动
+  el.dataset.stamp=stamp;
+  const data=[];
+  vals.forEach((val,i)=>{if(!Number.isFinite(val))return;const t=times[i]?new Date(times[i]).getTime():Date.now()-(vals.length-1-i)*30000;data.push([t,val]);});
+  chart.setOption({series:[{data}]}); // 初始 option 已 animation:false，此处仅替换数据
+ });
 }
 function bindShowcase(){
  const root=document.querySelector('#showcase-root');if(!root){disposeShowcase();return;}
@@ -117,6 +137,8 @@ function bindShowcase(){
  });
  showcaseState.observer=new ResizeObserver(()=>{for(const c of showcaseState.charts)try{c.resize();}catch{}});
  showcaseState.observer.observe(root);
+ clearInterval(showcaseState.timer);
+ showcaseState.timer=setInterval(()=>{if(view!=='whiteboards'){disposeShowcase();return;}showcaseSync();},1500);
 }
 function whiteboardListPage(){
  const boards=wbState.boards;
