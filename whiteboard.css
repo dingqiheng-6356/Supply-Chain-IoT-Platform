@@ -413,5 +413,24 @@ body:has(.wb-public), body:has(.wb-public-loading) { overflow: hidden; backgroun
 .showcase-card-unit{font-size:12px;color:#8a9a8d;background:#f2f6f2;padding:2px 10px;border-radius:6px}
 .showcase-chart{width:100%;height:300px}
 .showcase-fallback{display:flex;align-items:center;justify-content:center;height:100%;color:#a61e1e;font-size:13px}
+/* 设备选择页 */
+.showcase-device-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.showcase-device-card{display:flex;flex-direction:column;align-items:flex-start;gap:8px;text-align:left;background:#fff;border:1px solid #e6ece6;border-radius:14px;padding:20px;cursor:pointer;transition:border-color .2s,box-shadow .2s,transform .2s}
+.showcase-device-card:hover{border-color:#386f52;box-shadow:0 6px 20px rgba(56,111,82,.12);transform:translateY(-2px)}
+.showcase-device-top{display:flex;align-items:center;justify-content:space-between;width:100%;gap:10px}
+.showcase-device-top strong{font-size:17px;color:#23332a}
+.showcase-device-card p{margin:0;font-size:13px;color:#7a8a7d}
+.showcase-device-status{font-size:12px;font-weight:600;white-space:nowrap}
+.showcase-device-status.on{color:#386f52}
+.showcase-device-status.off{color:#9aa79c}
+.showcase-device-alarm{font-size:12px;font-weight:600;color:#e03131;background:#fff1f0;padding:2px 10px;border-radius:6px}
+.showcase-device-ok{font-size:12px;color:#4e7a4c;background:#eef5ee;padding:2px 10px;border-radius:6px}
+.showcase-device-enter{margin-top:6px;font-size:13px;font-weight:600;color:#386f52;display:inline-flex;align-items:center;gap:4px}
+/* 设备详情页 */
+.showcase-back{display:inline-flex;align-items:center;gap:5px;background:none;border:none;padding:0;margin-bottom:8px;font-size:13px;color:#5c6b60;cursor:pointer}
+.showcase-back:hover{color:#386f52}
+.showcase-card-now{font-size:22px;font-weight:800;color:#2c4234;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.showcase-card-now small{font-size:12px;font-weight:500;color:#8a9a8d;margin-left:2px}
+.showcase-updated{font-size:12px;color:#8a9a8d}
 @media (max-width:640px){.showcase-grid{grid-template-columns:1fr}.showcase-chart{height:240px}}
 

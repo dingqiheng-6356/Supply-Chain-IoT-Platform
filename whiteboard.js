@@ -60,64 +60,63 @@ function wbElementHtml(el,editing=false){
  return `<div class="wb-element wb-type-${el.type}${editing&&wbState.selected===el.id?' selected':''}${p.locked?' locked':''}" data-element-id="${safe(el.id)}" style="${style}">${body}${handles}</div>`;
 }
 function wbCanvasHtml(editing=false){const doc=wbState.current.document,c=doc.canvas;return `<div id="${editing?'wb-canvas':'wb-public-canvas'}" class="wb-canvas${c.grid&&editing?' show-grid':''}" style="background:linear-gradient(135deg,${safe(c.background)},${safe(c.backgroundEnd)})">${doc.elements.slice().sort((a,b)=>a.z-b.z).map(el=>wbElementHtml(el,editing)).join('')}</div>`;}
-/* ===== 数据展示大屏：ECharts 动态折线，按指标分图，每台设备一条线 ===== */
-const showcaseState={charts:[],timer:null,observer:null};
+/* ===== 数据展示：先选设备，再展示该设备信息与各指标折线图（不自动刷新） ===== */
+const showcaseState={charts:[],observer:null};
+let showcaseDeviceId=null;
 const SHOWCASE_COLORS=['#386f52','#547ee8','#2aa198','#d98e32','#7c6bd6','#c96a8a','#4e7a4c','#e03131'];
-function showcaseMetrics(){
- const map=new Map();
- for(const raw of companyDevices()){
-  const d=effective(raw),s=deviceScene(d);
-  if(!s)continue;
-  for(const m of s.metrics)if(!map.has(m.key))map.set(m.key,m);
- }
- return [...map.values()];
+function showcaseDevicePicker(){
+ const list=companyDevices();
+ return `<div class="showcase-root" id="showcase-root"><header class="showcase-head"><div><span class="showcase-kicker">REALTIME / TELEMETRY</span><h1>数据展示</h1><p>选择一台设备，查看它的实时监测数据与各指标走势</p></div><div class="showcase-meta"><span>${list.length} 台设备</span></div></header><div class="showcase-device-grid">${list.map(raw=>{const d=effective(raw),s=deviceScene(d),n=s?alarms(s,d).length:0;return `<button class="showcase-device-card" data-showcase-device="${safe(d.id)}"><div class="showcase-device-top"><strong>${safe(d.name)}</strong><span class="showcase-device-status ${d.online?'on':'off'}">${d.online?'● 在线':'● 离线'}</span></div><p>${safe(d.location||d.id)} · ${s?s.metrics.length:0} 项监测指标</p>${n?`<span class="showcase-device-alarm">${n} 项数据异常</span>`:'<span class="showcase-device-ok">数据正常</span>'}<span class="showcase-device-enter">查看数据 ${icon('arrow')}</span></button>`;}).join('')||'<p class="dashboard-empty">本公司暂无设备，请先接入设备。</p>'}</div></div>`;
+}
+function showcaseDevicePage(d){
+ const s=deviceScene(d),metrics=s?s.metrics:[];
+ return `<div class="showcase-root" id="showcase-root"><header class="showcase-head"><div><button class="showcase-back" id="showcase-back">${icon('arrow')} 返回设备列表</button><h1>${safe(d.name)}</h1><p>${safe(d.location||d.id)} · <span class="showcase-device-status ${d.online?'on':'off'}">${d.online?'● 在线':'● 离线'}</span> · ${metrics.length} 项监测指标</p></div><div class="showcase-meta"><button class="secondary" id="showcase-refresh">↻ 刷新数据</button><span class="showcase-updated">更新于 ${new Date().toLocaleTimeString('zh-CN',{hour12:false})}</span></div></header>${metrics.length?`<div class="showcase-grid">${metrics.map(m=>{const v=d.values[m.key];return `<section class="showcase-card"><div class="showcase-card-head"><span class="showcase-card-title">${icon(m.icon)} ${safe(m.name)}</span><span class="showcase-card-now">${Number.isFinite(v)?safe(v):'—'} <small>${safe(m.unit||'')}</small></span></div><div class="showcase-chart" id="showcase-chart-${safe(m.key)}" data-metric="${safe(m.key)}"></div></section>`;}).join('')}</div>`:'<p class="dashboard-empty">等待设备首次上报后显示指标。</p>'}</div>`;
 }
 function showcasePage(){
- const metrics=showcaseMetrics(),list=companyDevices();
- return `<div class="showcase-root" id="showcase-root"><header class="showcase-head"><div><span class="showcase-kicker">REALTIME / TELEMETRY</span><h1>数据展示</h1><p>全部设备监测指标实时折线 · 按指标分图，同图对比各设备走势</p></div><div class="showcase-meta"><span class="showcase-live"><i></i> LIVE</span><span>${list.length} 台设备 · ${metrics.length} 项指标</span></div></header>${metrics.length?`<div class="showcase-grid">${metrics.map(m=>`<section class="showcase-card"><div class="showcase-card-head"><span class="showcase-card-title">${icon(m.icon)} ${safe(m.name)}</span><span class="showcase-card-unit">${safe(m.unit||'')}</span></div><div class="showcase-chart" id="showcase-chart-${safe(m.key)}" data-metric="${safe(m.key)}"></div></section>`).join('')}</div>`:'<p class="dashboard-empty">暂无监测指标，等待设备接入后自动展示。</p>'}</div>`;
+ const raw=companyDevices().find(d=>d.id===showcaseDeviceId);
+ if(!raw){showcaseDeviceId=null;return showcaseDevicePicker();}
+ return showcaseDevicePage(effective(raw));
 }
-function showcaseSeries(metric){
- return companyDevices().map((raw,idx)=>{
-  const d=effective(raw),key=metric.key,color=SHOWCASE_COLORS[idx%SHOWCASE_COLORS.length];
-  const vals=d.history?.[key]||[],times=d.historyTimes?.[key]||[],data=[];
-  vals.forEach((v,i)=>{if(!Number.isFinite(v))return;const t=times[i]?new Date(times[i]).getTime():Date.now()-(vals.length-1-i)*30000;data.push([t,v]);});
-  return {name:d.name,type:'line',smooth:true,showSymbol:false,symbol:'circle',symbolSize:7,data,
-   lineStyle:{width:2.5,color},itemStyle:{color},areaStyle:{opacity:.07,color},emphasis:{focus:'series'}};
- });
-}
-function showcaseOption(metric){
- return {animationDuration:400,animationDurationUpdate:400,
-  grid:{left:48,right:20,top:40,bottom:32},
+function showcaseOption(metric,d,color){
+ const vals=d.history?.[metric.key]||[],times=d.historyTimes?.[metric.key]||[],data=[];
+ vals.forEach((v,i)=>{if(!Number.isFinite(v))return;const t=times[i]?new Date(times[i]).getTime():Date.now()-(vals.length-1-i)*30000;data.push([t,v]);});
+ return {animation:false,
+  grid:{left:52,right:20,top:20,bottom:32},
   tooltip:{trigger:'axis',axisPointer:{type:'line',lineStyle:{color:'#386f52',opacity:.4}},
    backgroundColor:'#ffffff',borderColor:'#dfe5df',textStyle:{color:'#23332a',fontSize:12},
    valueFormatter:v=>Number.isFinite(v)?`${v} ${metric.unit||''}`:'—'},
-  legend:{top:6,left:0,icon:'roundRect',itemWidth:14,itemHeight:4,textStyle:{color:'#5c6b60',fontSize:12}},
   xAxis:{type:'time',axisLine:{lineStyle:{color:'#cdd6cd'}},axisLabel:{color:'#7a8a7d',fontSize:11,hideOverlap:true},splitLine:{show:false}},
   yAxis:{type:'value',scale:true,axisLabel:{color:'#7a8a7d',fontSize:11},splitLine:{lineStyle:{color:'#eef2ee'}}},
-  series:showcaseSeries(metric)};
+  series:[{name:metric.name,type:'line',smooth:true,showSymbol:false,symbol:'circle',symbolSize:7,data,
+   lineStyle:{width:2.5,color},itemStyle:{color},areaStyle:{opacity:.08,color}}]};
 }
 function disposeShowcase(){
- clearInterval(showcaseState.timer);showcaseState.timer=null;
  showcaseState.observer?.disconnect();showcaseState.observer=null;
  for(const c of showcaseState.charts)try{c.dispose();}catch{}
  showcaseState.charts=[];
 }
 function bindShowcase(){
  const root=document.querySelector('#showcase-root');if(!root){disposeShowcase();return;}
+ const raw=companyDevices().find(x=>x.id===showcaseDeviceId);
+ if(!raw){ // 设备选择页
+  disposeShowcase();
+  root.querySelectorAll('[data-showcase-device]').forEach(b=>b.onclick=()=>{showcaseDeviceId=b.dataset.showcaseDevice;render();});
+  return;
+ }
+ const back=document.querySelector('#showcase-back');if(back)back.onclick=()=>{showcaseDeviceId=null;disposeShowcase();render();};
+ const refresh=document.querySelector('#showcase-refresh');if(refresh)refresh.onclick=()=>{disposeShowcase();render();};
  const first=root.querySelector('.showcase-chart');
- // 已初始化（render(true) patch 会保留容器）则跳过，避免每 2 秒重建图表导致闪烁
+ // 已初始化（render(true) patch 保留容器）则跳过，绝不自动重绘
  if(first&&window.echarts&&echarts.getInstanceByDom(first)&&showcaseState.charts.length)return;
  disposeShowcase();
  if(!window.echarts){root.querySelectorAll('.showcase-chart').forEach(el=>{el.innerHTML='<p class="showcase-fallback">图表库加载失败，请检查网络后刷新页面。</p>';});return;}
- const metrics=showcaseMetrics();
- const draw=()=>{for(const m of metrics){const el=document.querySelector(`#showcase-chart-${CSS.escape(m.key)}`);if(!el)continue;const chart=echarts.getInstanceByDom(el);if(chart)chart.setOption(showcaseOption(m),{replaceMerge:['series']});}};
- for(const m of metrics){
-  const el=document.querySelector(`#showcase-chart-${CSS.escape(m.key)}`);if(!el)continue;
-  const chart=echarts.init(el);chart.setOption(showcaseOption(m));showcaseState.charts.push(chart);
- }
+ const d=effective(raw),s=deviceScene(d);
+ (s?s.metrics:[]).forEach((m,idx)=>{
+  const el=document.querySelector(`#showcase-chart-${CSS.escape(m.key)}`);if(!el)return;
+  const chart=echarts.init(el);chart.setOption(showcaseOption(m,d,SHOWCASE_COLORS[idx%SHOWCASE_COLORS.length]));showcaseState.charts.push(chart);
+ });
  showcaseState.observer=new ResizeObserver(()=>{for(const c of showcaseState.charts)try{c.resize();}catch{}});
  showcaseState.observer.observe(root);
- showcaseState.timer=setInterval(()=>{if(view!=='whiteboards'){disposeShowcase();return;}if(!document.hidden)draw();},2000);
 }
 function whiteboardListPage(){
  const boards=wbState.boards;

@@ -97,7 +97,7 @@ function allUsers(){return [...users,...registeredUsers()];}
 function normalizeUser(u){return {...u,role:validRole(u.role)};}
 function logo(){return `<span class="brand-mark">${icon('environment')}</span><span class="brand-name">供应链物联网平台</span>`;}
 function heading(kicker,title,description,extra=''){return `<div class="page-heading"><div><div class="eyebrow">${kicker}</div><h1 tabindex="-1">${title}</h1><p>${description}</p></div>${extra}</div>`;}
-function navigate(next){view=next;notice='';templateDraft=null;render();window.scrollTo(0,0);if(next==='organization'&&canOrganize())refreshOrganizationView();}
+function navigate(next){if(next==='whiteboards')showcaseDeviceId=null;view=next;notice='';templateDraft=null;render();window.scrollTo(0,0);if(next==='organization'&&canOrganize())refreshOrganizationView();}
 function openCompany(id){
  const c=platform.companies.find(c=>c.id===id);
  if(!c||(!isAdmin()&&id!==currentUser?.companyId))return;
