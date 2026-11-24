@@ -64,12 +64,15 @@ function wbCanvasHtml(editing=false){const doc=wbState.current.document,c=doc.ca
 const showcaseState={charts:[],observer:null,timer:null,baseByKey:new Map(),loadingKey:''};
 let showcaseDeviceId=null;
 const SHOWCASE_COLORS=['#386f52','#547ee8','#2aa198','#d98e32','#7c6bd6','#c96a8a','#4e7a4c','#e03131'];
-const SHOWCASE_HISTORY_MS=2*24*3600*1000;
+const SHOWCASE_SLOTS=48;
+// 固定 2 天窗口：昨天 00 点 → 今天 23 点，共 48 个整点横坐标
+function showcaseWindowStart(){const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()-1);return d.getTime();}
+function showcaseSlotLabels(start){const labels=[];for(let i=0;i<SHOWCASE_SLOTS;i++)labels.push(showcaseAxisLabel(start+i*3600000));return labels;}
 // 横坐标格式：日-两位小时，例如 24-07 表示 24 日 7 时
 function showcaseAxisLabel(value){const d=new Date(value);return `${d.getDate()}-${String(d.getHours()).padStart(2,'0')}`;}
-// 从后端拉取该设备近 2 天的历史读数（接口单页最多 20000 条，自动翻页，最多 60000 点）
+// 从后端拉取该设备 2 天窗口（昨天 00 点至今）的历史读数（接口单页最多 20000 条，自动翻页）
 async function showcaseFetchHistory(deviceId){
- const end=Math.floor(Date.now()/1000),start=end-Math.floor(SHOWCASE_HISTORY_MS/1000);
+ const end=Math.floor(Date.now()/1000),start=Math.floor(showcaseWindowStart()/1000);
  let before=null,all=[];
  for(let page=0;page<20;page++){
   const q=`./api/devices/${encodeURIComponent(deviceId)}/history?start=${start}&end=${end}&limit=8000${before?`&before=${before}`:''}`;
@@ -128,7 +131,7 @@ function showcaseOption(metric,color){
   tooltip:{trigger:'axis',axisPointer:{type:'line',lineStyle:{color:'#386f52',opacity:.4}},
    backgroundColor:'#ffffff',borderColor:'#dfe5df',textStyle:{color:'#23332a',fontSize:12},
    valueFormatter:v=>Number.isFinite(v)?`${v} ${metric.unit||''}`:'—'},
-  xAxis:{type:'category',boundaryGap:false,data:[],axisLine:{lineStyle:{color:'#cdd6cd'}},axisLabel:{color:'#7a8a7d',fontSize:11,hideOverlap:true},splitLine:{show:false}},
+  xAxis:{type:'category',boundaryGap:false,data:showcaseSlotLabels(showcaseWindowStart()),axisLine:{lineStyle:{color:'#cdd6cd'}},axisLabel:{color:'#7a8a7d',fontSize:11,hideOverlap:true},splitLine:{show:false}},
   yAxis:{type:'value',scale:true,axisLabel:{color:'#7a8a7d',fontSize:11},splitLine:{lineStyle:{color:'#eef2ee'}}},
   series:[{name:metric.name,type:'line',smooth:true,showSymbol:false,symbol:'circle',symbolSize:7,data:[],
    lineStyle:{width:2.5,color},itemStyle:{color},areaStyle:{opacity:.08,color}}]};
@@ -145,22 +148,23 @@ function showcaseSync(){
  if(!raw||!window.echarts)return;
  const d=effective(raw),s=deviceScene(d),metrics=s?s.metrics:[];
  const base=showcaseState.baseByKey.get(raw.id);
- const cutoff=Math.floor((Date.now()-SHOWCASE_HISTORY_MS)/3600000)*3600000; // 按整点取整，避免边界抖动
+ const start=showcaseWindowStart(),labels=showcaseSlotLabels(start);
  metrics.forEach(m=>{
   const el=document.querySelector(`#showcase-chart-${CSS.escape(m.key)}`);if(!el)return;
   const chart=echarts.getInstanceByDom(el);if(!chart)return;
-  // 历史已是整点均值；实时点按整点聚合后，仅补充历史尚未覆盖的新小时
-  const baseArr=(base&&base[m.key])?base[m.key]:[];
-  const lastHour=baseArr.length?baseArr[baseArr.length-1][0]:-Infinity;
-  let pts=baseArr.concat(showcaseHourly(showcaseLivePoints(d,m)).filter(([h])=>h>lastHour));
-  pts=pts.filter(([t])=>t>=cutoff).sort((a,b)=>a[0]-b[0]);
+  // 历史已是整点均值；实时点按整点聚合后补充历史尚未覆盖的小时
+  const byHour=new Map();
+  for(const [h,val] of ((base&&base[m.key])||[]))byHour.set(h,val);
+  for(const [h,val] of showcaseHourly(showcaseLivePoints(d,m)))if(!byHour.has(h))byHour.set(h,val);
+  // 映射到固定 48 个槽位，缺失的小时留 null（折线断开，不伪造数据）
+  const values=new Array(SHOWCASE_SLOTS).fill(null);
+  for(let i=0;i<SHOWCASE_SLOTS;i++){const val=byHour.get(start+i*3600000);if(Number.isFinite(val))values[i]=val;}
   const v=d.values[m.key],card=el.closest('.showcase-card'),now=card?.querySelector('.showcase-card-now');
   if(now&&Number.isFinite(v)&&now.childNodes[0])now.childNodes[0].nodeValue=`${safe(v)} `; // 当前值只改文本
-  const stamp=`${pts.length}:${pts.length?pts[pts.length-1][0]:''}`;
+  const stamp=`${start}|${values.join(',')}`;
   if(el.dataset.stamp===stamp)return; // 无新数据，折线保持不动
   el.dataset.stamp=stamp;
-  // 类目轴：标签与数据点一一对应、按录入顺序排列，不出现无数据的空整点
-  chart.setOption({xAxis:{data:pts.map(([t])=>showcaseAxisLabel(t))},series:[{data:pts.map(([,val])=>val)}]});
+  chart.setOption({xAxis:{data:labels},series:[{data:values}]});
  });
 }
 function bindShowcase(){
