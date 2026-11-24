@@ -908,6 +908,11 @@ button.ov-metric:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(17
 .ov-map-pop p{display:flex;gap:12px;flex-wrap:wrap;margin:8px 0 10px;font-size:11px;color:var(--ov-label)}
 .ov-map-pop b{color:var(--ov-ink);font-size:13px}
 .ov-map-pop button{border:0;border-radius:8px;background:#e9f6f1;color:#2fa98c;font-size:12px;font-weight:600;padding:6px 12px;cursor:pointer}
+.ov-map-pop-actions{display:flex;gap:8px}
+.ov-map-pop button.ghost{background:#f1f4f2;color:#5c6b60}
+.device-map.is-picking{cursor:crosshair}
+.device-map-pick-hint{position:absolute;left:50%;top:12px;transform:translateX(-50%);z-index:20;display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.97);border:1px solid rgba(47,169,140,.35);box-shadow:0 8px 24px rgba(17,24,39,.14);border-radius:999px;padding:8px 10px 8px 16px;font-size:12px;color:#1f2937;white-space:nowrap}
+.device-map-pick-hint button{border:0;border-radius:999px;background:#e9f6f1;color:#2fa98c;font-size:12px;font-weight:600;padding:5px 12px;cursor:pointer}
 /* 平台管理员的公司工作台沿用旧容器，采样组件需独立撑开，禁止纵向压缩。 */
 .company-dashboard:not(.ov-dash) .ov-sampling{display:flex;flex-direction:column}
 .company-dashboard:not(.ov-dash) .ov-sampling .ov-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px}

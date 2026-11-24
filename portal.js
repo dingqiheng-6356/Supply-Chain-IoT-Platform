@@ -336,7 +336,7 @@ function consoleDeviceRows(query=''){
  const rows=companyDevices().filter(raw=>{const d=effective(raw);return (!platformBackend||!deviceSceneFilter||d.workspaceSceneId===deviceSceneFilter)&&[d.name,d.id,d.location].join(' ').toLowerCase().includes(query.trim().toLowerCase());});
  return rows.map(raw=>{const d=effective(raw),s=deviceScene(d),[label,color]=status(s,d);return `<tr><td><button class="ov-device-name" data-device="${safe(d.id)}">${icon('device')} ${safe(d.name)}</button></td><td><code>${safe(d.id)}</code></td><td><span class="badge ${color}"><i></i>${label}</span></td><td>${safe(d.location)}${platformBackend?`<small>${safe(companyScenes.find(s=>s.id===d.workspaceSceneId)?.name||'未分组')}</small>`:''}</td><td><button class="ov-view-link" data-device="${safe(d.id)}">查看 ${icon('arrow')}</button></td></tr>`;}).join('')||'<tr><td colspan="5" class="console-no-results">未找到匹配设备</td></tr>';
 }
-let amapLoader=null,amapConfigCache=null,deviceMapInstance=null,deviceMapContainer=null,deviceMapMarkers=[],deviceMapInfo=null,deviceMapCenter=null;
+let amapLoader=null,amapConfigCache=null,deviceMapInstance=null,deviceMapContainer=null,deviceMapMarkers=[],deviceMapInfo=null,deviceMapCenter=null,deviceMapPickId=null,deviceMapPickHint=null,deviceMapPickHandler=null;
 function resolveAmapConfig(){
  if(amapConfigCache)return Promise.resolve(amapConfigCache);
  const merge=extra=>{amapConfigCache={...((platform&&platform.map)||{}),...(extra||{})};return amapConfigCache;};
@@ -376,9 +376,9 @@ function deviceMapMarkerList(list,center,infoWindow){
   const position=deviceMapPoint(d,index,center);
   pin.addEventListener('click',()=>{
    const readings=(d.metrics||[]).slice(0,2).map(m=>`<span>${safe(m.name)} <b>${Number.isFinite(d.values?.[m.key])?safe(d.values[m.key]):'—'}</b> ${safe(m.unit)}</span>`).join('');
-   infoWindow.setContent(`<div class="ov-map-pop"><strong>${safe(d.name)}</strong><small>${safe(d.location)}</small><p>${readings||'<span>暂无实时读数</span>'}</p><button type="button" data-map-device="${safe(d.id)}">查看设备</button></div>`);
+   infoWindow.setContent(`<div class="ov-map-pop"><strong>${safe(d.name)}</strong><small>${safe(d.location)}</small><p>${readings||'<span>暂无实时读数</span>'}</p><div class="ov-map-pop-actions">${canManageDevices()?`<button type="button" class="ghost" data-map-locate="${safe(d.id)}">设置坐标</button>`:''}<button type="button" data-map-device="${safe(d.id)}">查看设备</button></div></div>`);
    infoWindow.open(deviceMapInstance,position);
-   setTimeout(()=>{const action=document.querySelector('.ov-map-pop [data-map-device]');if(action)action.onclick=()=>openDevice(d.id);},0);
+   setTimeout(()=>{const action=document.querySelector('.ov-map-pop [data-map-device]');if(action)action.onclick=()=>openDevice(d.id);const locate=document.querySelector('.ov-map-pop [data-map-locate]');if(locate)locate.onclick=()=>startDeviceMapPick(d.id,d.name);},0);
   });
   return new AMap.Marker({position,content:pin,anchor:'center'});
  });
@@ -389,6 +389,41 @@ function syncDeviceMapMarkers(){
  deviceMapMarkers=deviceMapMarkerList(companyDevices(),deviceMapCenter,deviceMapInfo);
  deviceMapContainer.dataset.mapState=deviceMapMarkers.length?'ready':'empty';
  if(deviceMapMarkers.length)deviceMapInstance.add(deviceMapMarkers);
+}
+function cancelDeviceMapPick(){
+ if(deviceMapInstance&&deviceMapPickHandler){try{deviceMapInstance.off('click',deviceMapPickHandler);}catch(error){}}
+ deviceMapPickHandler=null;deviceMapPickId=null;
+ if(deviceMapPickHint){deviceMapPickHint.remove();deviceMapPickHint=null;}
+ if(deviceMapContainer)deviceMapContainer.classList.remove('is-picking');
+}
+function startDeviceMapPick(id,name){
+ if(!deviceMapInstance||!deviceMapContainer||!canManageDevices())return;
+ cancelDeviceMapPick();
+ deviceMapPickId=id;
+ try{deviceMapInfo.close();}catch(error){}
+ const hint=document.createElement('div');
+ hint.className='device-map-pick-hint';
+ hint.innerHTML=`<span>点击地图选择「${safe(name)}」的实际位置</span><button type="button">取消</button>`;
+ hint.querySelector('button').onclick=cancelDeviceMapPick;
+ deviceMapContainer.appendChild(hint);
+ deviceMapContainer.classList.add('is-picking');
+ deviceMapPickHint=hint;
+ deviceMapPickHandler=event=>{saveDeviceCoordinates(id,name,event.lnglat.getLng(),event.lnglat.getLat());};
+ deviceMapInstance.on('click',deviceMapPickHandler);
+}
+async function saveDeviceCoordinates(id,name,lng,lat){
+ cancelDeviceMapPick();
+ const coords=[Number(lng.toFixed(6)),Number(lat.toFixed(6))];
+ try{
+  const response=await fetch(`./api/devices/${encodeURIComponent(id)}/settings`,{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({lng:coords[0],lat:coords[1]})});
+  const data=await response.json().catch(()=>({}));
+  if(!response.ok)throw new Error(data.error||'坐标保存失败，请重试。');
+  const target=devices.find(d=>d.id===id);
+  if(target){target.lng=coords[0];target.lat=coords[1];}
+  if(typeof refreshRegistry==='function')refreshRegistry().catch(()=>{});
+  notice=`已更新「${name}」的地图坐标：${coords[0]}, ${coords[1]}`;
+ }catch(error){notice=error.message;}
+ render();
 }
 function bindDeviceMap(){
  const container=document.querySelector('#device-map');
@@ -415,7 +450,7 @@ function bindDeviceMap(){
 }
 function consoleDeviceArea(){
  const list=companyDevices();
- return `<div class="ov-lower-grid" id="dashboard-devices"><section class="insight-panel ov-map-panel"><div class="ov-card-head"><div><span class="ov-kicker">SITE MAP</span><h2>采集点分布</h2></div><span class="ov-count">${list.length} 个设备</span></div><div class="device-map ov-device-map" id="device-map" data-map-state="loading"><span class="device-map-status">正在加载高德地图…</span></div><div class="site-legend ov-site-legend"><span><i class="normal"></i>正常</span><span><i class="warn"></i>告警</span><span><i class="off"></i>离线</span></div><p class="device-map-note">地图数据 © 高德地图 · 缺少坐标时在公司中心周边示意</p></section><section class="insight-panel ov-table-panel"><div class="ov-card-head"><div><span class="ov-kicker">DEVICE LIST</span><h2>设备列表</h2></div><div class="ov-table-tools">${platformBackend?`<label class="ov-select ov-scene"><span class="sr-only">场景筛选</span><select id="console-scene-filter"><option value="">全部场景</option>${companyScenes.filter(s=>s.company===companyId).map(s=>`<option value="${safe(s.id)}" ${s.id===deviceSceneFilter?'selected':''}>${safe(s.name)}</option>`).join('')}</select></label>`:''}<label class="table-search">${icon('eye')}<input type="search" id="console-device-search" aria-label="搜索设备" placeholder="搜索名称 / ID / 位置"></label></div></div><div class="table-wrap ov-table-wrap"><table class="ov-table"><thead><tr><th>设备名称</th><th>设备 ID</th><th>状态</th><th>位置</th><th>操作</th></tr></thead><tbody id="console-device-rows">${consoleDeviceRows()}</tbody></table></div><div class="console-table-footer"><span>仅显示 ${safe(company()?.name)} 的设备</span><span>共 ${list.length} 台</span></div></section></div>`;
+ return `<div class="ov-lower-grid" id="dashboard-devices"><section class="insight-panel ov-map-panel"><div class="ov-card-head"><div><span class="ov-kicker">SITE MAP</span><h2>采集点分布</h2></div><span class="ov-count">${list.length} 个设备</span></div><div class="device-map ov-device-map" id="device-map" data-map-state="loading"><span class="device-map-status">正在加载高德地图…</span></div><div class="site-legend ov-site-legend"><span><i class="normal"></i>正常</span><span><i class="warn"></i>告警</span><span><i class="off"></i>离线</span></div><p class="device-map-note">地图数据 © 高德地图 · 缺少坐标时在公司中心周边示意${canManageDevices()?' · 点击设备标注可设置真实坐标':''}</p></section><section class="insight-panel ov-table-panel"><div class="ov-card-head"><div><span class="ov-kicker">DEVICE LIST</span><h2>设备列表</h2></div><div class="ov-table-tools">${platformBackend?`<label class="ov-select ov-scene"><span class="sr-only">场景筛选</span><select id="console-scene-filter"><option value="">全部场景</option>${companyScenes.filter(s=>s.company===companyId).map(s=>`<option value="${safe(s.id)}" ${s.id===deviceSceneFilter?'selected':''}>${safe(s.name)}</option>`).join('')}</select></label>`:''}<label class="table-search">${icon('eye')}<input type="search" id="console-device-search" aria-label="搜索设备" placeholder="搜索名称 / ID / 位置"></label></div></div><div class="table-wrap ov-table-wrap"><table class="ov-table"><thead><tr><th>设备名称</th><th>设备 ID</th><th>状态</th><th>位置</th><th>操作</th></tr></thead><tbody id="console-device-rows">${consoleDeviceRows()}</tbody></table></div><div class="console-table-footer"><span>仅显示 ${safe(company()?.name)} 的设备</span><span>共 ${list.length} 台</span></div></section></div>`;
 }
 function consoleQuickActions(){return `<section class="insight-panel ov-quick"><div class="ov-card-head"><div><span class="ov-kicker">SHORTCUTS</span><h2>快捷操作</h2></div></div><div class="ov-quick-grid">${[['devices','device','查看设备'],['monitor','grid','数据监测'],['alerts','bell','查看告警']].map(([section,i,text])=>`<button type="button" data-console-section="${section}"><span>${icon(i)}</span>${text}</button>`).join('')}<button type="button" data-tab="news"><span>${icon('chat')}</span>公告新闻</button></div></section>`;}
 function myDevicesPage(){const none=companyDevices().length===0?'<p class="settings-note">当前没有分配给你的设备，请联系公司管理员分配。</p>':'';return heading('MY DEVICES','我的设备',`${safe(company()?.name)} · 仅显示你有权访问的设备。`,'<button class="secondary" data-tab="home">返回工作台</button>')+none+`<div class="company-dashboard cockpit-dashboard ov-dash">${consoleDeviceArea()}</div>`;}
