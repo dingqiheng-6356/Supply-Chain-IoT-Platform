@@ -405,7 +405,7 @@ body:has(.wb-public), body:has(.wb-public-loading) { overflow: hidden; backgroun
 .showcase-live{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;background:#eaf3ec;color:#386f52;font-size:12px;font-weight:700;letter-spacing:1px}
 .showcase-live i{width:7px;height:7px;border-radius:50%;background:#386f52;animation:showcasePulse 1.6s ease-in-out infinite}
 @keyframes showcasePulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(56,111,82,.35)}50%{opacity:.55;box-shadow:0 0 0 5px rgba(56,111,82,0)}}
-.showcase-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(460px,1fr));gap:18px}
+.showcase-grid{display:grid;grid-template-columns:1fr;gap:18px}
 .showcase-card{background:#fff;border:1px solid #e6ece6;border-radius:14px;padding:16px 18px 8px;box-shadow:0 2px 10px rgba(35,51,42,.04);transition:box-shadow .25s}
 .showcase-card:hover{box-shadow:0 6px 22px rgba(35,51,42,.09)}
 .showcase-card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}

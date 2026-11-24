@@ -128,7 +128,7 @@ function showcaseOption(metric,color){
   tooltip:{trigger:'axis',axisPointer:{type:'line',lineStyle:{color:'#386f52',opacity:.4}},
    backgroundColor:'#ffffff',borderColor:'#dfe5df',textStyle:{color:'#23332a',fontSize:12},
    valueFormatter:v=>Number.isFinite(v)?`${v} ${metric.unit||''}`:'—'},
-  xAxis:{type:'time',minInterval:3600000,axisLine:{lineStyle:{color:'#cdd6cd'}},axisLabel:{color:'#7a8a7d',fontSize:11,hideOverlap:true,formatter:showcaseAxisLabel},splitLine:{show:false}},
+  xAxis:{type:'category',boundaryGap:false,data:[],axisLine:{lineStyle:{color:'#cdd6cd'}},axisLabel:{color:'#7a8a7d',fontSize:11,hideOverlap:true},splitLine:{show:false}},
   yAxis:{type:'value',scale:true,axisLabel:{color:'#7a8a7d',fontSize:11},splitLine:{lineStyle:{color:'#eef2ee'}}},
   series:[{name:metric.name,type:'line',smooth:true,showSymbol:false,symbol:'circle',symbolSize:7,data:[],
    lineStyle:{width:2.5,color},itemStyle:{color},areaStyle:{opacity:.08,color}}]};
@@ -159,7 +159,8 @@ function showcaseSync(){
   const stamp=`${pts.length}:${pts.length?pts[pts.length-1][0]:''}`;
   if(el.dataset.stamp===stamp)return; // 无新数据，折线保持不动
   el.dataset.stamp=stamp;
-  chart.setOption({series:[{data:pts}]});
+  // 类目轴：标签与数据点一一对应、按录入顺序排列，不出现无数据的空整点
+  chart.setOption({xAxis:{data:pts.map(([t])=>showcaseAxisLabel(t))},series:[{data:pts.map(([,val])=>val)}]});
  });
 }
 function bindShowcase(){
@@ -186,6 +187,7 @@ function bindShowcase(){
  showcaseState.observer.observe(root);
  clearInterval(showcaseState.timer);
  showcaseState.timer=setInterval(()=>{if(view!=='whiteboards'){disposeShowcase();return;}showcaseSync();},1500);
+ showcaseSync(); // 先用内存实时点立即出图
  // 异步加载近 2 天历史；未加载完成前先用内存中的实时点画图，加载完再补齐
  if(showcaseState.loadingKey!==raw.id&&!showcaseState.baseByKey.has(raw.id)){
   showcaseState.loadingKey=raw.id;
