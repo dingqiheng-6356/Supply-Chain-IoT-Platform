@@ -65,12 +65,12 @@ const showcaseState={charts:[],observer:null,timer:null,baseByKey:new Map(),load
 let showcaseDeviceId=null;
 const SHOWCASE_COLORS=['#386f52','#547ee8','#2aa198','#d98e32','#7c6bd6','#c96a8a','#4e7a4c','#e03131'];
 const SHOWCASE_SLOTS=48;
-// 固定 2 天窗口：昨天 00 点 → 今天 23 点，共 48 个整点横坐标
-function showcaseWindowStart(){const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()-1);return d.getTime();}
+// 固定 48 个整点：当前小时作为最后一个横坐标，往前推 48 小时
+function showcaseWindowStart(){const d=new Date();d.setMinutes(0,0,0);return d.getTime()-(SHOWCASE_SLOTS-1)*3600000;}
 function showcaseSlotLabels(start){const labels=[];for(let i=0;i<SHOWCASE_SLOTS;i++)labels.push(showcaseAxisLabel(start+i*3600000));return labels;}
 // 横坐标格式：日-两位小时，例如 24-07 表示 24 日 7 时
 function showcaseAxisLabel(value){const d=new Date(value);return `${d.getDate()}-${String(d.getHours()).padStart(2,'0')}`;}
-// 从后端拉取该设备 2 天窗口（昨天 00 点至今）的历史读数（接口单页最多 20000 条，自动翻页）
+// 从后端拉取该设备 48 小时窗口（当前小时往前推 2 天）的历史读数（接口单页最多 20000 条，自动翻页）
 async function showcaseFetchHistory(deviceId){
  const end=Math.floor(Date.now()/1000),start=Math.floor(showcaseWindowStart()/1000);
  let before=null,all=[];
@@ -129,7 +129,7 @@ function showcaseDevicePicker(){
 }
 function showcaseDevicePage(d){
  const s=deviceScene(d),metrics=s?s.metrics:[];
- return `<div class="showcase-root" id="showcase-root"><header class="showcase-head"><div><button class="showcase-back" id="showcase-back">${icon('arrow')} 返回设备列表</button><h1>${safe(d.name)}</h1><p>${safe(d.location||d.id)} · <span class="showcase-device-status ${d.online?'on':'off'}">${d.online?'● 在线':'● 离线'}</span> · ${metrics.length} 项监测指标 · 近 2 天 · 昨日缺失时段为模拟数据</p></div><div class="showcase-meta"><button class="secondary" id="showcase-refresh">↻ 刷新数据</button><span class="showcase-updated">更新于 ${new Date().toLocaleTimeString('zh-CN',{hour12:false})}</span></div></header>${metrics.length?`<div class="showcase-grid">${metrics.map(m=>{const v=d.values[m.key];return `<section class="showcase-card"><div class="showcase-card-head"><span class="showcase-card-title">${icon(m.icon)} ${safe(m.name)}</span><span class="showcase-card-now">${Number.isFinite(v)?safe(v):'—'} <small>${safe(m.unit||'')}</small></span></div><div class="showcase-chart" id="showcase-chart-${safe(m.key)}" data-metric="${safe(m.key)}"></div></section>`;}).join('')}</div>`:'<p class="dashboard-empty">等待设备首次上报后显示指标。</p>'}</div>`;
+ return `<div class="showcase-root" id="showcase-root"><header class="showcase-head"><div><button class="showcase-back" id="showcase-back">${icon('arrow')} 返回设备列表</button><h1>${safe(d.name)}</h1><p>${safe(d.location||d.id)} · <span class="showcase-device-status ${d.online?'on':'off'}">${d.online?'● 在线':'● 离线'}</span> · ${metrics.length} 项监测指标 · 近 48 小时 · 前 24 小时缺失时段为模拟数据</p></div><div class="showcase-meta"><button class="secondary" id="showcase-refresh">↻ 刷新数据</button><span class="showcase-updated">更新于 ${new Date().toLocaleTimeString('zh-CN',{hour12:false})}</span></div></header>${metrics.length?`<div class="showcase-grid">${metrics.map(m=>{const v=d.values[m.key];return `<section class="showcase-card"><div class="showcase-card-head"><span class="showcase-card-title">${icon(m.icon)} ${safe(m.name)}</span><span class="showcase-card-now">${Number.isFinite(v)?safe(v):'—'} <small>${safe(m.unit||'')}</small></span></div><div class="showcase-chart" id="showcase-chart-${safe(m.key)}" data-metric="${safe(m.key)}"></div></section>`;}).join('')}</div>`:'<p class="dashboard-empty">等待设备首次上报后显示指标。</p>'}</div>`;
 }
 function showcasePage(){
  const raw=companyDevices().find(d=>d.id===showcaseDeviceId);
@@ -170,7 +170,7 @@ function showcaseSync(){
   // 映射到固定 48 个槽位，缺失的小时留空（折线断开，不伪造数据）
   const values=new Array(SHOWCASE_SLOTS).fill(null);
   for(let i=0;i<SHOWCASE_SLOTS;i++){const val=byHour.get(start+i*3600000);if(Number.isFinite(val))values[i]=val;}
-  // 昨日（前 24 个整点）缺失时段暂用虚拟数据填充，仅用于展示
+  // 前 24 个整点（较早的一天）缺失时段暂用虚拟数据填充，仅用于展示
   const cfg=typeof metricConfig==='function'?metricConfig(s,d,m):m;
   for(let i=0;i<24;i++)if(values[i]===null)values[i]=showcaseMockValue(cfg,raw.id,i);
   const v=d.values[m.key],card=el.closest('.showcase-card'),now=card?.querySelector('.showcase-card-now');
