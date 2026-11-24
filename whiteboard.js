@@ -107,6 +107,17 @@ function showcaseBuildBase(readings,metrics){
  for(const m of metrics)base[m.key]=showcaseHourly(base[m.key]);
  return base;
 }
+// 虚拟数据：昨日缺失时段暂用平滑模拟值填充（按 设备+指标+小时 确定性生成，刷新不跳变）
+function showcaseHash(str){let h=2166136261;for(let i=0;i<str.length;i++){h^=str.charCodeAt(i);h=Math.imul(h,16777619);}return (h>>>0)/4294967295;}
+function showcaseMockValue(metric,deviceId,hourIndex){
+ const hasRange=Number.isFinite(metric.min)&&Number.isFinite(metric.max)&&metric.max>metric.min;
+ const lo=hasRange?metric.min:0,hi=hasRange?metric.max:100;
+ const mid=(lo+hi)/2,amp=(hi-lo)*0.3;
+ const wave=Math.sin((hourIndex+1)/4.2)*0.65+Math.sin((hourIndex+1)/1.7)*0.2;
+ const noise=(showcaseHash(`${deviceId}:${metric.key}:${hourIndex}`)*2-1)*0.35;
+ const v=Math.max(lo,Math.min(hi,mid+amp*(wave+noise*0.5)));
+ return Math.round(v*10)/10;
+}
 function showcaseLivePoints(d,metric){
  const vals=d.history?.[metric.key]||[],times=d.historyTimes?.[metric.key]||[],out=[];
  vals.forEach((v,i)=>{if(!Number.isFinite(v))return;const t=times[i]?new Date(times[i]).getTime():Date.now()-(vals.length-1-i)*30000;out.push([t,v]);});
@@ -118,7 +129,7 @@ function showcaseDevicePicker(){
 }
 function showcaseDevicePage(d){
  const s=deviceScene(d),metrics=s?s.metrics:[];
- return `<div class="showcase-root" id="showcase-root"><header class="showcase-head"><div><button class="showcase-back" id="showcase-back">${icon('arrow')} 返回设备列表</button><h1>${safe(d.name)}</h1><p>${safe(d.location||d.id)} · <span class="showcase-device-status ${d.online?'on':'off'}">${d.online?'● 在线':'● 离线'}</span> · ${metrics.length} 项监测指标 · 近 2 天</p></div><div class="showcase-meta"><button class="secondary" id="showcase-refresh">↻ 刷新数据</button><span class="showcase-updated">更新于 ${new Date().toLocaleTimeString('zh-CN',{hour12:false})}</span></div></header>${metrics.length?`<div class="showcase-grid">${metrics.map(m=>{const v=d.values[m.key];return `<section class="showcase-card"><div class="showcase-card-head"><span class="showcase-card-title">${icon(m.icon)} ${safe(m.name)}</span><span class="showcase-card-now">${Number.isFinite(v)?safe(v):'—'} <small>${safe(m.unit||'')}</small></span></div><div class="showcase-chart" id="showcase-chart-${safe(m.key)}" data-metric="${safe(m.key)}"></div></section>`;}).join('')}</div>`:'<p class="dashboard-empty">等待设备首次上报后显示指标。</p>'}</div>`;
+ return `<div class="showcase-root" id="showcase-root"><header class="showcase-head"><div><button class="showcase-back" id="showcase-back">${icon('arrow')} 返回设备列表</button><h1>${safe(d.name)}</h1><p>${safe(d.location||d.id)} · <span class="showcase-device-status ${d.online?'on':'off'}">${d.online?'● 在线':'● 离线'}</span> · ${metrics.length} 项监测指标 · 近 2 天 · 昨日缺失时段为模拟数据</p></div><div class="showcase-meta"><button class="secondary" id="showcase-refresh">↻ 刷新数据</button><span class="showcase-updated">更新于 ${new Date().toLocaleTimeString('zh-CN',{hour12:false})}</span></div></header>${metrics.length?`<div class="showcase-grid">${metrics.map(m=>{const v=d.values[m.key];return `<section class="showcase-card"><div class="showcase-card-head"><span class="showcase-card-title">${icon(m.icon)} ${safe(m.name)}</span><span class="showcase-card-now">${Number.isFinite(v)?safe(v):'—'} <small>${safe(m.unit||'')}</small></span></div><div class="showcase-chart" id="showcase-chart-${safe(m.key)}" data-metric="${safe(m.key)}"></div></section>`;}).join('')}</div>`:'<p class="dashboard-empty">等待设备首次上报后显示指标。</p>'}</div>`;
 }
 function showcasePage(){
  const raw=companyDevices().find(d=>d.id===showcaseDeviceId);
@@ -156,9 +167,12 @@ function showcaseSync(){
   const byHour=new Map();
   for(const [h,val] of ((base&&base[m.key])||[]))byHour.set(h,val);
   for(const [h,val] of showcaseHourly(showcaseLivePoints(d,m)))if(!byHour.has(h))byHour.set(h,val);
-  // 映射到固定 48 个槽位，缺失的小时留 null（折线断开，不伪造数据）
+  // 映射到固定 48 个槽位，缺失的小时留空（折线断开，不伪造数据）
   const values=new Array(SHOWCASE_SLOTS).fill(null);
   for(let i=0;i<SHOWCASE_SLOTS;i++){const val=byHour.get(start+i*3600000);if(Number.isFinite(val))values[i]=val;}
+  // 昨日（前 24 个整点）缺失时段暂用虚拟数据填充，仅用于展示
+  const cfg=typeof metricConfig==='function'?metricConfig(s,d,m):m;
+  for(let i=0;i<24;i++)if(values[i]===null)values[i]=showcaseMockValue(cfg,raw.id,i);
   const v=d.values[m.key],card=el.closest('.showcase-card'),now=card?.querySelector('.showcase-card-now');
   if(now&&Number.isFinite(v)&&now.childNodes[0])now.childNodes[0].nodeValue=`${safe(v)} `; // 当前值只改文本
   const stamp=`${start}|${values.join(',')}`;
