@@ -139,11 +139,11 @@ function showcasePage(){
 }
 function showcaseOption(metric,color){
  return {animation:false,
-  grid:{left:52,right:48,top:20,bottom:32},
+  grid:{left:52,right:48,top:20,bottom:56},
   tooltip:{trigger:'axis',axisPointer:{type:'line',lineStyle:{color:'#386f52',opacity:.4}},
    backgroundColor:'#ffffff',borderColor:'#dfe5df',textStyle:{color:'#23332a',fontSize:12},
    valueFormatter:v=>Number.isFinite(v)?`${v} ${metric.unit||''}`:'—'},
-  xAxis:{type:'category',boundaryGap:false,data:showcaseSlotLabels(showcaseWindowStart()),axisLine:{lineStyle:{color:'#cdd6cd'}},axisLabel:{color:'#7a8a7d',fontSize:11,hideOverlap:true,showMinLabel:true,showMaxLabel:true},splitLine:{show:false}},
+  xAxis:{type:'category',boundaryGap:false,data:showcaseSlotLabels(showcaseWindowStart()),axisLine:{lineStyle:{color:'#cdd6cd'}},axisLabel:{color:'#7a8a7d',fontSize:10,rotate:45,interval:0,hideOverlap:false,showMinLabel:true,showMaxLabel:true},splitLine:{show:false}},
   yAxis:{type:'value',scale:true,axisLabel:{color:'#7a8a7d',fontSize:11},splitLine:{lineStyle:{color:'#eef2ee'}}},
   series:[{name:metric.name,type:'line',smooth:true,showSymbol:false,symbol:'circle',symbolSize:7,data:[],
    lineStyle:{width:2.5,color},itemStyle:{color},areaStyle:{opacity:.08,color}}]};
