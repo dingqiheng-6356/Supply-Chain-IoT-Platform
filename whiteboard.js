@@ -65,8 +65,8 @@ const showcaseState={charts:[],observer:null,timer:null,baseByKey:new Map(),load
 let showcaseDeviceId=null;
 const SHOWCASE_COLORS=['#386f52','#547ee8','#2aa198','#d98e32','#7c6bd6','#c96a8a','#4e7a4c','#e03131'];
 const SHOWCASE_HISTORY_MS=2*24*3600*1000;
-// 横坐标格式：日-时，例如 11-6 表示 11 日 6 时
-function showcaseAxisLabel(value){const d=new Date(value);return `${d.getDate()}-${d.getHours()}`;}
+// 横坐标格式：日-两位小时，例如 24-07 表示 24 日 7 时
+function showcaseAxisLabel(value){const d=new Date(value);return `${d.getDate()}-${String(d.getHours()).padStart(2,'0')}`;}
 // 从后端拉取该设备近 2 天的历史读数（接口单页最多 20000 条，自动翻页，最多 60000 点）
 async function showcaseFetchHistory(deviceId){
  const end=Math.floor(Date.now()/1000),start=end-Math.floor(SHOWCASE_HISTORY_MS/1000);
@@ -86,24 +86,11 @@ async function showcaseFetchHistory(deviceId){
  }
  return all.sort((a,b)=>a.received-b.received);
 }
-// 降采样：2 天原始点可能上万，按桶取 min/max 压到 ≤1440 点，保留波峰波谷走势
-function showcaseDownsample(points,maxLen=1440){
- if(!points||points.length<=maxLen)return points?points.slice():[];
- const buckets=Math.max(2,Math.floor(maxLen/2));
- const mn=new Array(buckets).fill(null),mx=new Array(buckets).fill(null);
- const first=points[0][0],span=(points[points.length-1][0]-first)||1;
- for(const [t,v] of points){
-  let b=Math.floor((t-first)/span*buckets);if(b>=buckets)b=buckets-1;if(b<0)b=0;
-  if(mn[b]===null||v<mn[b])mn[b]=v;
-  if(mx[b]===null||v>mx[b])mx[b]=v;
- }
- const out=[];
- for(let b=0;b<buckets;b++){
-  const t=first+span*(b+0.5)/buckets;
-  if(mn[b]!==null)out.push([t,mn[b]]);
-  if(mx[b]!==null&&mx[b]!==mn[b])out.push([t,mx[b]]);
- }
- return out;
+// 整点聚合：同一小时内的采样取平均，收敛为「该小时」一个点，横坐标只落在整点
+function showcaseHourly(points){
+ const buckets=new Map();
+ for(const [t,v] of points){const h=Math.floor(t/3600000)*3600000;const arr=buckets.get(h);if(arr)arr.push(v);else buckets.set(h,[v]);}
+ return [...buckets.entries()].map(([h,arr])=>[h,Math.round(arr.reduce((a,b)=>a+b,0)/arr.length*10)/10]).sort((a,b)=>a[0]-b[0]);
 }
 // 用 parseTelemetry 归一化原始报文别名（温度→temperature 等），按指标构建时间序列
 function showcaseBuildBase(readings,metrics){
@@ -114,7 +101,7 @@ function showcaseBuildBase(readings,metrics){
   const t=r.received*1000;
   for(const m of metrics){const v=p[m.key];if(Number.isFinite(v))base[m.key].push([t,v]);}
  }
- for(const m of metrics)base[m.key]=showcaseDownsample(base[m.key]);
+ for(const m of metrics)base[m.key]=showcaseHourly(base[m.key]);
  return base;
 }
 function showcaseLivePoints(d,metric){
@@ -141,7 +128,7 @@ function showcaseOption(metric,color){
   tooltip:{trigger:'axis',axisPointer:{type:'line',lineStyle:{color:'#386f52',opacity:.4}},
    backgroundColor:'#ffffff',borderColor:'#dfe5df',textStyle:{color:'#23332a',fontSize:12},
    valueFormatter:v=>Number.isFinite(v)?`${v} ${metric.unit||''}`:'—'},
-  xAxis:{type:'time',axisLine:{lineStyle:{color:'#cdd6cd'}},axisLabel:{color:'#7a8a7d',fontSize:11,hideOverlap:true,formatter:showcaseAxisLabel},splitLine:{show:false}},
+  xAxis:{type:'time',minInterval:3600000,axisLine:{lineStyle:{color:'#cdd6cd'}},axisLabel:{color:'#7a8a7d',fontSize:11,hideOverlap:true,formatter:showcaseAxisLabel},splitLine:{show:false}},
   yAxis:{type:'value',scale:true,axisLabel:{color:'#7a8a7d',fontSize:11},splitLine:{lineStyle:{color:'#eef2ee'}}},
   series:[{name:metric.name,type:'line',smooth:true,showSymbol:false,symbol:'circle',symbolSize:7,data:[],
    lineStyle:{width:2.5,color},itemStyle:{color},areaStyle:{opacity:.08,color}}]};
@@ -158,14 +145,15 @@ function showcaseSync(){
  if(!raw||!window.echarts)return;
  const d=effective(raw),s=deviceScene(d),metrics=s?s.metrics:[];
  const base=showcaseState.baseByKey.get(raw.id);
- const cutoff=Math.floor(Date.now()/60000)*60000-SHOWCASE_HISTORY_MS; // 按分钟取整，避免边界抖动
+ const cutoff=Math.floor((Date.now()-SHOWCASE_HISTORY_MS)/3600000)*3600000; // 按整点取整，避免边界抖动
  metrics.forEach(m=>{
   const el=document.querySelector(`#showcase-chart-${CSS.escape(m.key)}`);if(!el)return;
   const chart=echarts.getInstanceByDom(el);if(!chart)return;
-  let pts=(base&&base[m.key])?base[m.key].slice():[];
-  pts=pts.concat(showcaseLivePoints(d,m));
-  const seen=new Map();for(const [t,v] of pts)seen.set(t,v); // 同时间戳去重，保留最新值
-  pts=[...seen.entries()].filter(([t])=>t>=cutoff).sort((a,b)=>a[0]-b[0]);
+  // 历史已是整点均值；实时点按整点聚合后，仅补充历史尚未覆盖的新小时
+  const baseArr=(base&&base[m.key])?base[m.key]:[];
+  const lastHour=baseArr.length?baseArr[baseArr.length-1][0]:-Infinity;
+  let pts=baseArr.concat(showcaseHourly(showcaseLivePoints(d,m)).filter(([h])=>h>lastHour));
+  pts=pts.filter(([t])=>t>=cutoff).sort((a,b)=>a[0]-b[0]);
   const v=d.values[m.key],card=el.closest('.showcase-card'),now=card?.querySelector('.showcase-card-now');
   if(now&&Number.isFinite(v)&&now.childNodes[0])now.childNodes[0].nodeValue=`${safe(v)} `; // 当前值只改文本
   const stamp=`${pts.length}:${pts.length?pts[pts.length-1][0]:''}`;
