@@ -135,7 +135,7 @@ function showcaseDevicePicker(){
 }
 function showcaseDevicePage(d){
  const s=deviceScene(d),metrics=s?s.metrics:[];
- return `<div class="showcase-root" id="showcase-root"><header class="showcase-head"><div><button class="showcase-back" id="showcase-back">${icon('arrow')} 返回设备列表</button><h1>${safe(d.name)}</h1><p>${safe(d.location||d.id)} · <span class="showcase-device-status ${d.online?'on':'off'}">${d.online?'● 在线':'● 离线'}</span> · ${metrics.length} 项监测指标 · 近 48 小时 · 缺失整点暂用模拟数据（真实数据到达后自动替换）</p></div><div class="showcase-meta"><button class="secondary" id="showcase-refresh">↻ 刷新数据</button><span class="showcase-updated">更新于 ${new Date().toLocaleTimeString('zh-CN',{hour12:false})}</span></div></header>${metrics.length?`<div class="showcase-grid">${metrics.map(m=>{const v=d.values[m.key],type=showcaseChartType(d.id,m.key);return `<section class="showcase-card"><div class="showcase-card-head"><div class="showcase-card-label"><span class="showcase-card-title">${icon(m.icon)} ${safe(m.name)}</span><button type="button" class="showcase-card-switch" data-showcase-switch="${safe(m.key)}" title="切换图表类型">${SHOWCASE_TYPES[type]}</button></div><span class="showcase-card-now">${Number.isFinite(v)?safe(v):'—'} <small>${safe(m.unit||'')}</small></span></div><div class="showcase-chart" id="showcase-chart-${safe(m.key)}" data-metric="${safe(m.key)}" data-chart-type="${type}"></div></section>`;}).join('')}</div>`:'<p class="dashboard-empty">等待设备首次上报后显示指标。</p>'}</div>`;
+ return `<div class="showcase-root" id="showcase-root"><header class="showcase-head"><div><button class="showcase-back" id="showcase-back">${icon('arrow')} 返回设备列表</button><h1>${safe(d.name)}</h1><p>${safe(d.location||d.id)} · <span class="showcase-device-status ${d.online?'on':'off'}">${d.online?'● 在线':'● 离线'}</span> · ${metrics.length} 项监测指标 · 近 48 小时 · 缺失整点暂用模拟数据（真实数据到达后自动替换）</p></div><div class="showcase-meta"><button class="secondary" id="showcase-present">⛶ 全屏演示</button><button class="secondary" id="showcase-refresh">↻ 刷新数据</button><span class="showcase-updated">更新于 ${new Date().toLocaleTimeString('zh-CN',{hour12:false})}</span></div></header>${metrics.length?`<div class="showcase-grid">${metrics.map(m=>{const v=d.values[m.key],type=showcaseChartType(d.id,m.key);return `<section class="showcase-card"><div class="showcase-card-head"><div class="showcase-card-label"><span class="showcase-card-title">${icon(m.icon)} ${safe(m.name)}</span><button type="button" class="showcase-card-switch" data-showcase-switch="${safe(m.key)}" title="切换图表类型">${SHOWCASE_TYPES[type]}</button></div><span class="showcase-card-now">${Number.isFinite(v)?safe(v):'—'} <small>${safe(m.unit||'')}</small></span></div><div class="showcase-chart" id="showcase-chart-${safe(m.key)}" data-metric="${safe(m.key)}" data-chart-type="${type}"></div></section>`;}).join('')}</div>`:'<p class="dashboard-empty">等待设备首次上报后显示指标。</p>'}</div>`;
 }
 function showcasePage(){
  const raw=companyDevices().find(d=>d.id===showcaseDeviceId);
@@ -170,7 +170,24 @@ function disposeShowcase(){
  showcaseState.observer?.disconnect();showcaseState.observer=null;
  for(const c of showcaseState.charts)try{c.dispose();}catch{}
  showcaseState.charts=[];showcaseState.loadingKey='';
+ if(document.body.classList.contains('showcase-presenting'))setShowcasePresent(false);
 }
+// 全屏演示：铺满整个屏幕，类似 PPT 放映
+function setShowcasePresent(on){
+ document.body.classList.toggle('showcase-presenting',on);
+ const btn=document.querySelector('#showcase-present');
+ if(btn)btn.textContent=on?'✕ 退出演示':'⛶ 全屏演示';
+ if(on){
+  const el=document.documentElement;
+  if(el.requestFullscreen)el.requestFullscreen().catch(()=>{});
+ }else if(document.fullscreenElement){
+  document.exitFullscreen().catch(()=>{});
+ }
+ setTimeout(()=>{for(const c of showcaseState.charts)try{c.resize();}catch{}},80);
+}
+document.addEventListener('fullscreenchange',()=>{
+ if(!document.fullscreenElement&&document.body.classList.contains('showcase-presenting'))setShowcasePresent(false);
+});
 // 合并「近 2 天历史 + 内存中最新实时点」，仅在有新点时才 setOption，无动画不闪烁
 function showcaseSync(){
  const raw=companyDevices().find(x=>x.id===showcaseDeviceId);
@@ -221,6 +238,8 @@ function bindShowcase(){
   return;
  }
  const back=document.querySelector('#showcase-back');if(back)back.onclick=()=>{showcaseDeviceId=null;disposeShowcase();render();};
+ const present=document.querySelector('#showcase-present');
+ if(present){present.textContent=document.body.classList.contains('showcase-presenting')?'✕ 退出演示':'⛶ 全屏演示';present.onclick=()=>setShowcasePresent(!document.body.classList.contains('showcase-presenting'));}
  const refresh=document.querySelector('#showcase-refresh');if(refresh)refresh.onclick=()=>{showcaseState.baseByKey.delete(raw.id);disposeShowcase();render();};
  const first=root.querySelector('.showcase-chart');
  // 已初始化（render(true) patch 保留容器）则跳过，绝不自动重绘
