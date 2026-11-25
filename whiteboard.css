@@ -436,4 +436,17 @@ body:has(.wb-public), body:has(.wb-public-loading) { overflow: hidden; backgroun
 .showcase-card-now small{font-size:12px;font-weight:500;color:#8a9a8d;margin-left:2px}
 .showcase-updated{font-size:12px;color:#8a9a8d}
 @media (max-width:640px){.showcase-grid{grid-template-columns:1fr}.showcase-chart{height:280px}}
+/* 数据展示页：占满整个屏幕，随视口高度自适应 */
+.workspace:has(.showcase-root) .main-content{max-width:none;width:100%;padding:0 20px 14px}
+.showcase-root:has(.showcase-grid){height:calc(100vh - 158px);min-height:520px;display:flex;flex-direction:column;overflow:auto;padding-bottom:0}
+.showcase-root:has(.showcase-grid) .showcase-head{flex-shrink:0}
+.showcase-root:has(.showcase-grid) .showcase-grid{flex:1;grid-auto-rows:minmax(200px,1fr);align-content:stretch;min-height:0}
+.showcase-root:has(.showcase-grid) .showcase-card{display:flex;flex-direction:column;min-height:0}
+.showcase-root:has(.showcase-grid) .showcase-chart{flex:1;height:auto;min-height:170px}
+@media (max-width:900px){
+ .workspace:has(.showcase-root) .main-content{padding:0 14px 12px}
+ .showcase-root:has(.showcase-grid){height:auto;min-height:0;overflow:visible}
+ .showcase-root:has(.showcase-grid) .showcase-grid{grid-auto-rows:auto}
+ .showcase-root:has(.showcase-grid) .showcase-chart{flex:none;height:300px}
+}
 
