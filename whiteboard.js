@@ -148,7 +148,7 @@ function showcaseOption(metric,color,type){
   return {animation:false,
    tooltip:{trigger:'item',backgroundColor:'#ffffff',borderColor:'#dfe5df',textStyle:{color:'#23332a',fontSize:12},
     formatter:p=>`${p.name}<br/>均值 ${p.value} ${metric.unit||''}（${p.percent}%）`},
-   series:[{name:metric.name,type:'pie',radius:['38%','70%'],center:['50%','52%'],
+   series:[{name:metric.name,type:'pie',roseType:'radius',radius:['14%','72%'],center:['50%','52%'],
     itemStyle:{borderColor:'#ffffff',borderWidth:2},avoidLabelOverlap:true,
     label:{show:true,color:'#5c6b60',fontSize:10,formatter:p=>p.value!=null?`${p.name} ${p.value}`:''},
     labelLine:{length:6,length2:8,lineStyle:{color:'#cdd6cd'}},
