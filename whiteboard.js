@@ -162,13 +162,13 @@ function showcaseOption(metric,color,type){
   grid:{left:52,right:48,top:20,bottom:56},
   tooltip:{trigger:'axis',axisPointer:{type:type==='bar'?'shadow':'line',lineStyle:{color:'#386f52',opacity:.4}},
    backgroundColor:'#ffffff',borderColor:'#dfe5df',textStyle:{color:'#23332a',fontSize:12},
-   formatter:params=>{const list=(Array.isArray(params)?params:[params]).filter(p=>Number.isFinite(p.value));if(!list.length)return '';const hit=list[list.length-1];return `${hit.axisValue}<br/>${hit.marker||''}${metric.name}：${hit.value} ${metric.unit||''}`;}},
+   formatter:params=>{const list=(Array.isArray(params)?params:[params]).filter(p=>Number.isFinite(p.value));if(!list.length)return '';const hit=list[0];return `${hit.axisValue}<br/>${hit.marker||''}${metric.name}：${hit.value} ${metric.unit||''}`;}},
   xAxis:{type:'category',boundaryGap:type==='bar',data:showcaseSlotLabels(showcaseWindowStart()),axisLine:{lineStyle:{color:'#cdd6cd'}},axisLabel:{color:'#7a8a7d',fontSize:10,rotate:45,interval:0,hideOverlap:false,showMinLabel:true,showMaxLabel:true},splitLine:{show:false}},
   yAxis:{type:'value',scale:true,axisLabel:{color:'#7a8a7d',fontSize:11},splitLine:{lineStyle:{color:'#eef2ee'}}},
   series:[type==='bar'
    ?{name:metric.name,type:'bar',barMaxWidth:14,itemStyle:{color,borderRadius:[4,4,0,0]},data:[]}
    :{name:metric.name,type:'line',smooth:true,showSymbol:false,symbol:'circle',symbolSize:7,data:[],lineStyle:{width:2.5,color},itemStyle:{color},areaStyle:{opacity:.08,color}},
-   type==='bar'?null:{name:`${metric.name}异常`,type:'line',smooth:true,showSymbol:false,data:[],lineStyle:{width:3,color:'#e03131'},itemStyle:{color:'#e03131'},areaStyle:{opacity:.1,color:'#e03131'},z:5}].filter(Boolean)};
+   type==='bar'?null:{name:`${metric.name}异常`,type:'line',smooth:true,showSymbol:false,data:[],lineStyle:{width:0,opacity:0},itemStyle:{color:'#e03131'},areaStyle:{opacity:.22,color:'#e03131'},z:3}].filter(Boolean)};
 }
 function disposeShowcase(){
  clearInterval(showcaseState.timer);showcaseState.timer=null;
