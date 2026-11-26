@@ -62,7 +62,7 @@ function wbElementHtml(el,editing=false){
 function wbCanvasHtml(editing=false){const doc=wbState.current.document,c=doc.canvas;return `<div id="${editing?'wb-canvas':'wb-public-canvas'}" class="wb-canvas${c.grid&&editing?' show-grid':''}" style="background:linear-gradient(135deg,${safe(c.background)},${safe(c.backgroundEnd)})">${doc.elements.slice().sort((a,b)=>a.z-b.z).map(el=>wbElementHtml(el,editing)).join('')}</div>`;}
 /* ===== 数据展示：先选设备，再展示该设备信息与各指标折线图（近 2 天 + 实时增量） ===== */
 const showcaseState={charts:[],observer:null,timer:null,baseByKey:new Map(),loadingKey:''};
-let showcaseDeviceId=null,showcaseMetricKey='',showcaseMetricOwner='';
+let showcaseDeviceId=null,showcaseMetricKeys=[],showcaseMetricOwner='',showcaseNewKey='';
 const SHOWCASE_COLORS=['#386f52','#547ee8','#2aa198','#d98e32','#7c6bd6','#c96a8a','#4e7a4c','#e03131'];
 const SHOWCASE_PIE_COLORS=['#386f52','#547ee8','#2aa198','#d98e32','#7c6bd6','#c96a8a','#4e7a4c','#e03131','#3f8fa8','#b5651d','#6b7280','#a3559a'];
 const SHOWCASE_TYPES={line:'折线',bar:'柱状',pie:'饼图'};
@@ -135,14 +135,15 @@ function showcaseDevicePicker(){
 }
 function showcaseDevicePage(d){
  const s=deviceScene(d),metrics=s?s.metrics:[];
- const active=metrics.find(m=>m.key===showcaseMetricKey)||metrics[0];
- const v=active?d.values[active.key]:null,type=active?showcaseChartType(d.id,active.key):'line';
- return `<div class="showcase-root" id="showcase-root"><header class="showcase-head"><div><button class="showcase-back" id="showcase-back">${icon('arrow')} 返回设备列表</button><h1>${safe(d.name)}</h1><p>${safe(d.location||d.id)} · <span class="showcase-device-status ${d.online?'on':'off'}">${d.online?'● 在线':'● 离线'}</span> · ${metrics.length} 项监测指标 · 近 48 小时 · 缺失整点暂用模拟数据（真实数据到达后自动替换）</p></div><div class="showcase-meta"><button class="secondary" id="showcase-present">⛶ 全屏演示</button><button class="secondary" id="showcase-refresh">↻ 刷新数据</button><span class="showcase-updated">更新于 ${new Date().toLocaleTimeString('zh-CN',{hour12:false})}</span></div></header>${metrics.length?`<div class="showcase-metric-tabs" role="tablist" aria-label="选择展示的数据">${metrics.map(m=>{const cur=d.values[m.key];return `<button type="button" role="tab" class="showcase-metric-tab${m===active?' active':''}" data-showcase-metric="${safe(m.key)}" aria-selected="${m===active}">${icon(m.icon)}<span>${safe(m.name)}</span><b>${Number.isFinite(cur)?safe(cur):'—'}<small>${safe(m.unit||'')}</small></b></button>`;}).join('')}</div><div class="showcase-grid">${active?`<section class="showcase-card showcase-card-single"><div class="showcase-card-head"><div class="showcase-card-label"><span class="showcase-card-title">${icon(active.icon)} ${safe(active.name)}</span><button type="button" class="showcase-card-switch" data-showcase-switch="${safe(active.key)}" title="切换图表类型">${SHOWCASE_TYPES[type]}</button></div><span class="showcase-card-now">${Number.isFinite(v)?safe(v):'—'} <small>${safe(active.unit||'')}</small></span></div><div class="showcase-chart" id="showcase-chart-${safe(active.key)}" data-metric="${safe(active.key)}" data-chart-type="${type}"></div></section>`:''}</div>`:'<p class="dashboard-empty">等待设备首次上报后显示指标。</p>'}</div>`;
+ const selected=showcaseMetricKeys.map(key=>metrics.find(m=>m.key===key)).filter(Boolean);
+ return `<div class="showcase-root" id="showcase-root"><header class="showcase-head"><div><button class="showcase-back" id="showcase-back">${icon('arrow')} 返回设备列表</button><h1>${safe(d.name)}</h1><p>${safe(d.location||d.id)} · <span class="showcase-device-status ${d.online?'on':'off'}">${d.online?'● 在线':'● 离线'}</span> · ${metrics.length} 项监测指标 · 近 48 小时 · 缺失整点暂用模拟数据（真实数据到达后自动替换）</p></div><div class="showcase-meta"><button class="secondary" id="showcase-present">⛶ 全屏演示</button><button class="secondary" id="showcase-refresh">↻ 刷新数据</button><span class="showcase-updated">更新于 ${new Date().toLocaleTimeString('zh-CN',{hour12:false})}</span></div></header>${metrics.length?`<div class="showcase-metric-tabs" role="group" aria-label="选择要展示的数据">${metrics.map(m=>{const cur=d.values[m.key],on=showcaseMetricKeys.includes(m.key);return `<button type="button" class="showcase-metric-tab${on?' active':''}" data-showcase-metric="${safe(m.key)}" aria-pressed="${on}">${icon(m.icon)}<span>${safe(m.name)}</span><b>${Number.isFinite(cur)?safe(cur):'—'}<small>${safe(m.unit||'')}</small></b>${on?'<i class="showcase-metric-check">✓</i>':''}</button>`;}).join('')}</div>${selected.length?`<div class="showcase-grid">${selected.map(m=>{const v=d.values[m.key],type=showcaseChartType(d.id,m.key),fresh=m.key===showcaseNewKey;return `<section class="showcase-card"><div class="showcase-card-head"><div class="showcase-card-label"><span class="showcase-card-title">${icon(m.icon)} ${safe(m.name)}</span><button type="button" class="showcase-card-switch" data-showcase-switch="${safe(m.key)}" title="切换图表类型">${SHOWCASE_TYPES[type]}</button></div><span class="showcase-card-now">${Number.isFinite(v)?safe(v):'—'} <small>${safe(m.unit||'')}</small></span></div><div class="showcase-chart${fresh?' is-new':''}" id="showcase-chart-${safe(m.key)}" data-metric="${safe(m.key)}" data-chart-type="${type}"></div></section>`;}).join('')}</div>`:'<p class="dashboard-empty">请点击上方指标，选择要展示的数据。</p>'}`:'<p class="dashboard-empty">等待设备首次上报后显示指标。</p>'}</div>`;
 }
 function showcasePage(){
  const raw=companyDevices().find(d=>d.id===showcaseDeviceId);
  if(!raw){showcaseDeviceId=null;return showcaseDevicePicker();}
- if(showcaseMetricOwner!==raw.id){showcaseMetricOwner=raw.id;showcaseMetricKey='';}
+ if(showcaseMetricOwner!==raw.id){showcaseMetricOwner=raw.id;showcaseMetricKeys=[];showcaseNewKey='';}
+ const scene=deviceScene(raw);
+ if(!showcaseMetricKeys.length&&scene?.metrics?.length){showcaseMetricKeys=[scene.metrics[0].key];showcaseNewKey=scene.metrics[0].key;}
  return showcaseDevicePage(effective(raw));
 }
 function showcaseOption(metric,color,type){
@@ -246,10 +247,11 @@ function bindShowcase(){
  const present=document.querySelector('#showcase-present');
  if(present){present.textContent=document.body.classList.contains('showcase-presenting')?'✕ 退出演示':'⛶ 全屏演示';present.onclick=()=>setShowcasePresent(!document.body.classList.contains('showcase-presenting'));}
  const refresh=document.querySelector('#showcase-refresh');if(refresh)refresh.onclick=()=>{showcaseState.baseByKey.delete(raw.id);disposeShowcase();render();};
- // 切换展示的数据指标：重建图表并播放 1 秒正向展开动画
+ // 点击指标：已选则移除，未选则追加到下方并播放 1 秒正向展开动画
  root.querySelectorAll('[data-showcase-metric]').forEach(tab=>tab.onclick=()=>{
-  if(tab.dataset.showcaseMetric===showcaseMetricKey)return;
-  showcaseMetricKey=tab.dataset.showcaseMetric;showcaseMetricOwner=raw.id;
+  const key=tab.dataset.showcaseMetric,index=showcaseMetricKeys.indexOf(key);
+  if(index>=0){showcaseMetricKeys.splice(index,1);showcaseNewKey='';}
+  else{showcaseMetricKeys.push(key);showcaseNewKey=key;}
   const presenting=document.body.classList.contains('showcase-presenting');
   disposeShowcase();render();if(presenting)setShowcasePresent(true);
  });
@@ -273,6 +275,9 @@ function bindShowcase(){
    showcaseSync();
   };
  });
+ // 展开动画只播放一次，避免后续重绘重播
+ const freshChart=root.querySelector('.showcase-chart.is-new');
+ if(freshChart)setTimeout(()=>freshChart.classList.remove('is-new'),1100);
  showcaseState.observer=new ResizeObserver(()=>{for(const c of showcaseState.charts)try{c.resize();}catch{}});
  showcaseState.observer.observe(root);
  clearInterval(showcaseState.timer);
