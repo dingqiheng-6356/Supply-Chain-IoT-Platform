@@ -225,6 +225,11 @@ class DeviceRegistry:
                 scene_id = data['workspaceSceneId'] or None
                 self.organization.validate_scene(db, row['company'], scene_id)
                 config['workspaceSceneId'] = scene_id
+            if 'cameraUrl' in data:
+                camera_url = data['cameraUrl'] or ''
+                if not isinstance(camera_url, str) or len(camera_url.strip()) > 500 or (camera_url.strip() and not re.match(r'^https?://\S+$', camera_url.strip(), re.I)):
+                    raise RegistryError('摄像头画面地址需为 http(s) 开头的有效链接，且不超过 500 字符。')
+                config['cameraUrl'] = camera_url.strip() or None
             db.execute('UPDATE devices SET config=? WHERE id=?', (json.dumps(config, ensure_ascii=False), row['id']))
         return config
 
