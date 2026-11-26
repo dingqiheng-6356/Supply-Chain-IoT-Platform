@@ -162,12 +162,13 @@ function showcaseOption(metric,color,type){
   grid:{left:52,right:48,top:20,bottom:56},
   tooltip:{trigger:'axis',axisPointer:{type:type==='bar'?'shadow':'line',lineStyle:{color:'#386f52',opacity:.4}},
    backgroundColor:'#ffffff',borderColor:'#dfe5df',textStyle:{color:'#23332a',fontSize:12},
-   valueFormatter:v=>Number.isFinite(v)?`${v} ${metric.unit||''}`:'—'},
+   formatter:params=>{const list=Array.isArray(params)?params:[params],hit=list.find(p=>Number.isFinite(p.value));if(!hit)return '';return `${hit.axisValue}<br/>${hit.marker||''}${metric.name}：${hit.value} ${metric.unit||''}`;}},
   xAxis:{type:'category',boundaryGap:type==='bar',data:showcaseSlotLabels(showcaseWindowStart()),axisLine:{lineStyle:{color:'#cdd6cd'}},axisLabel:{color:'#7a8a7d',fontSize:10,rotate:45,interval:0,hideOverlap:false,showMinLabel:true,showMaxLabel:true},splitLine:{show:false}},
   yAxis:{type:'value',scale:true,axisLabel:{color:'#7a8a7d',fontSize:11},splitLine:{lineStyle:{color:'#eef2ee'}}},
   series:[type==='bar'
    ?{name:metric.name,type:'bar',barMaxWidth:14,itemStyle:{color,borderRadius:[4,4,0,0]},data:[]}
-   :{name:metric.name,type:'line',smooth:true,showSymbol:false,symbol:'circle',symbolSize:7,data:[],lineStyle:{width:2.5,color},itemStyle:{color},areaStyle:{opacity:.08,color}}]};
+   :{name:metric.name,type:'line',smooth:true,showSymbol:false,symbol:'circle',symbolSize:7,data:[],lineStyle:{width:2.5,color},itemStyle:{color},areaStyle:{opacity:.08,color}},
+   type==='bar'?null:{name:`${metric.name}异常`,type:'line',smooth:true,showSymbol:false,symbol:'circle',symbolSize:8,data:[],lineStyle:{width:3,color:'#e03131'},itemStyle:{color:'#e03131'},areaStyle:{opacity:.1,color:'#e03131'},z:5}].filter(Boolean)};
 }
 function disposeShowcase(){
  clearInterval(showcaseState.timer);showcaseState.timer=null;
@@ -221,18 +222,32 @@ function showcaseSync(){
   if(el.dataset.stamp===stamp)return; // 无新数据或未切换类型，图表保持不动
   el.dataset.stamp=stamp;
   if(type==='pie'){
-   // 饼图：48 个整点按 4 小时一段聚合为 12 个扇区，显示各时段均值占比
+   // 饼图：48 个整点按 4 小时一段聚合为 12 个扇区，显示各时段均值占比；超出阈值的时段标红
    const slices=[];
    for(let b=0;b<12;b++){
     const seg=values.slice(b*4,b*4+4).filter(Number.isFinite);
     if(!seg.length)continue;
     const ts=start+b*4*3600000,avg=Math.round(seg.reduce((a,c)=>a+c,0)/seg.length*10)/10;
-    slices.push({name:`${showcaseAxisLabel(ts)}~${String((new Date(ts).getHours()+3)%24).padStart(2,'0')}`,value:avg});
+    const bad=Number.isFinite(cfg.min)&&Number.isFinite(cfg.max)&&(avg<cfg.min||avg>cfg.max);
+    slices.push({name:`${showcaseAxisLabel(ts)}~${String((new Date(ts).getHours()+3)%24).padStart(2,'0')}`,value:avg,bad});
    }
-   chart.setOption({series:[{data:slices.map((s,i)=>({...s,itemStyle:{color:SHOWCASE_PIE_COLORS[i%SHOWCASE_PIE_COLORS.length]}}))}]});
+   chart.setOption({series:[{data:slices.map((s,i)=>({name:s.name,value:s.value,itemStyle:{color:s.bad?'#e03131':SHOWCASE_PIE_COLORS[i%SHOWCASE_PIE_COLORS.length]}}))}]});
    return;
   }
-  chart.setOption({xAxis:{boundaryGap:type==='bar',data:labels},series:[{data:values}]});
+  const hasRange=Number.isFinite(cfg.min)&&Number.isFinite(cfg.max);
+  const isOut=val=>hasRange&&Number.isFinite(val)&&(val<cfg.min||val>cfg.max);
+  if(type==='bar'){
+   const base=chart.getOption()?.series?.[0]?.itemStyle?.color||'#386f52';
+   chart.setOption({xAxis:{boundaryGap:true,data:labels},series:[{data:values.map(val=>({value:val,itemStyle:{color:isOut(val)?'#e03131':base}}))}]});
+   return;
+  }
+  // 折线：把异常点及其相邻线段拆到红色系列，其余保持主题色
+  const normal=new Array(SHOWCASE_SLOTS).fill(null),alert=new Array(SHOWCASE_SLOTS).fill(null);
+  for(let i=0;i<SHOWCASE_SLOTS;i++){
+   const val=values[i];if(!Number.isFinite(val))continue;
+   if(isOut(val)||isOut(values[i-1])||isOut(values[i+1]))alert[i]=val;else normal[i]=val;
+  }
+  chart.setOption({xAxis:{boundaryGap:false,data:labels},series:[{data:normal},{data:alert}]});
  });
 }
 function bindShowcase(){
