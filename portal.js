@@ -529,6 +529,7 @@ function updateMonitorHistory(query){
 }
 function monitorCameraMedia(url){
  const clean=String(url||'').trim();
+ if(clean==='mock')return '<div class="monitor-camera-mock"><span class="cam-mock-rec">● REC</span><span class="cam-mock-tag">模拟信号 · DEMO</span><div class="cam-mock-caption"><strong>东侧猪舍 · 通道 01</strong><small>模拟监视画面，未接入真实摄像头</small></div></div>';
  if(!/^https?:\/\//i.test(clean))return '<p class="monitor-camera-empty">画面地址无效，请在设备配置中填写 http(s) 视频流地址。</p>';
  const insecure=location.protocol==='https:'&&/^http:\/\//i.test(clean);
  const warn=insecure?'<p class="monitor-camera-warn">当前页面为 HTTPS，浏览器可能拦截 HTTP 画面，建议使用 HTTPS 地址或反向代理。</p>':'';
@@ -537,7 +538,7 @@ function monitorCameraMedia(url){
  return `<iframe src="${safe(clean)}" title="设备监视画面" allow="autoplay; fullscreen" allowfullscreen loading="lazy"></iframe>${warn}`;
 }
 function monitorCameraPanel(d){
- return `<section class="panel monitor-camera"><div class="section-heading"><div><h2>${icon('eye')} 监视画面</h2><p>${safe(d.name)} · 实时视频</p></div><span class="badge ${d.online?'green':'gray'}">${d.online?'LIVE':'设备离线'}</span></div><div class="monitor-camera-frame">${monitorCameraMedia(d.cameraUrl)}</div><p class="settings-note">画面来自设备配置中的摄像头地址，如需更换请在设备配置里修改。</p></section>`;
+ return `<section class="panel monitor-camera"><div class="section-heading"><div><h2>${icon('eye')} 监视画面</h2><p>${safe(d.name)} · 实时视频</p></div><span class="badge ${d.online?'green':'gray'}">${d.online?'LIVE':'设备离线'}</span></div><div class="monitor-camera-frame">${monitorCameraMedia(d.cameraUrl)}</div><p class="settings-note">${d.cameraUrl==='mock'?'当前为模拟画面，可在设备配置中填写真实摄像头地址替换。':'画面来自设备配置中的摄像头地址，如需更换请在设备配置里修改。'}</p></section>`;
 }
 function renderMonitor(){
  const raw=selectedMonitorDevice();monitorDeviceId=raw?.id||null;
