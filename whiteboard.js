@@ -70,6 +70,8 @@ const SHOWCASE_TYPE_ORDER=['line','bar','pie'];
 const showcaseChartTypes=new Map();
 function showcaseChartType(deviceId,metricKey){return showcaseChartTypes.get(`${deviceId}|${metricKey}`)||'line';}
 const SHOWCASE_SLOTS=48;
+// 模拟数据中故意设置的异常整点位置（窗口中部），用于查看异常标注效果
+const SHOWCASE_MOCK_HIGH_SLOTS=[18,19,20],SHOWCASE_MOCK_LOW_SLOTS=[33];
 // 固定 48 个整点：当前小时作为最后一个横坐标，往前推 48 小时
 function showcaseWindowStart(){const d=new Date();d.setMinutes(0,0,0);return d.getTime()-(SHOWCASE_SLOTS-1)*3600000;}
 function showcaseSlotLabels(start){const labels=[];for(let i=0;i<SHOWCASE_SLOTS;i++)labels.push(showcaseAxisLabel(start+i*3600000));return labels;}
@@ -136,7 +138,7 @@ function showcaseDevicePicker(){
 function showcaseDevicePage(d){
  const s=deviceScene(d),metrics=s?s.metrics:[];
  const selected=showcaseMetricKeys.map(key=>metrics.find(m=>m.key===key)).filter(Boolean);
- return `<div class="showcase-root" id="showcase-root"><header class="showcase-head"><div><button class="showcase-back" id="showcase-back">${icon('arrow')} 返回设备列表</button><h1>${safe(d.name)}</h1><p>${safe(d.location||d.id)} · <span class="showcase-device-status ${d.online?'on':'off'}">${d.online?'● 在线':'● 离线'}</span> · ${metrics.length} 项监测指标 · 近 48 小时 · 缺失整点暂用模拟数据（真实数据到达后自动替换）</p></div><div class="showcase-meta"><button class="secondary" id="showcase-present">⛶ 全屏演示</button><button class="secondary" id="showcase-refresh">↻ 刷新数据</button><span class="showcase-updated">更新于 ${new Date().toLocaleTimeString('zh-CN',{hour12:false})}</span></div></header>${metrics.length?`<div class="showcase-metric-tabs" role="group" aria-label="选择要展示的数据">${metrics.map(m=>{const cur=d.values[m.key],on=showcaseMetricKeys.includes(m.key);return `<button type="button" class="showcase-metric-tab${on?' active':''}" data-showcase-metric="${safe(m.key)}" aria-pressed="${on}">${icon(m.icon)}<span>${safe(m.name)}</span><b>${Number.isFinite(cur)?safe(cur):'—'}<small>${safe(m.unit||'')}</small></b>${on?'<i class="showcase-metric-check">✓</i>':''}</button>`;}).join('')}</div>${selected.length?`<div class="showcase-grid">${selected.map(m=>{const v=d.values[m.key],type=showcaseChartType(d.id,m.key),fresh=m.key===showcaseNewKey;return `<section class="showcase-card"><div class="showcase-card-head"><div class="showcase-card-label"><span class="showcase-card-title">${icon(m.icon)} ${safe(m.name)}</span><button type="button" class="showcase-card-switch" data-showcase-switch="${safe(m.key)}" title="切换图表类型">${SHOWCASE_TYPES[type]}</button></div><span class="showcase-card-now">${Number.isFinite(v)?safe(v):'—'} <small>${safe(m.unit||'')}</small></span></div><div class="showcase-chart${fresh?' is-new':''}" id="showcase-chart-${safe(m.key)}" data-metric="${safe(m.key)}" data-chart-type="${type}"></div></section>`;}).join('')}</div>`:'<p class="dashboard-empty">请点击上方指标，选择要展示的数据。</p>'}`:'<p class="dashboard-empty">等待设备首次上报后显示指标。</p>'}</div>`;
+ return `<div class="showcase-root" id="showcase-root"><header class="showcase-head"><div><button class="showcase-back" id="showcase-back">${icon('arrow')} 返回设备列表</button><h1>${safe(d.name)}</h1><p>${safe(d.location||d.id)} · <span class="showcase-device-status ${d.online?'on':'off'}">${d.online?'● 在线':'● 离线'}</span> · ${metrics.length} 项监测指标 · 近 48 小时 · 缺失整点暂用模拟数据（含少量模拟异常点，真实数据到达后自动替换）</p></div><div class="showcase-meta"><button class="secondary" id="showcase-present">⛶ 全屏演示</button><button class="secondary" id="showcase-refresh">↻ 刷新数据</button><span class="showcase-updated">更新于 ${new Date().toLocaleTimeString('zh-CN',{hour12:false})}</span></div></header>${metrics.length?`<div class="showcase-metric-tabs" role="group" aria-label="选择要展示的数据">${metrics.map(m=>{const cur=d.values[m.key],on=showcaseMetricKeys.includes(m.key);return `<button type="button" class="showcase-metric-tab${on?' active':''}" data-showcase-metric="${safe(m.key)}" aria-pressed="${on}">${icon(m.icon)}<span>${safe(m.name)}</span><b>${Number.isFinite(cur)?safe(cur):'—'}<small>${safe(m.unit||'')}</small></b>${on?'<i class="showcase-metric-check">✓</i>':''}</button>`;}).join('')}</div>${selected.length?`<div class="showcase-grid">${selected.map(m=>{const v=d.values[m.key],type=showcaseChartType(d.id,m.key),fresh=m.key===showcaseNewKey;return `<section class="showcase-card"><div class="showcase-card-head"><div class="showcase-card-label"><span class="showcase-card-title">${icon(m.icon)} ${safe(m.name)}</span><button type="button" class="showcase-card-switch" data-showcase-switch="${safe(m.key)}" title="切换图表类型">${SHOWCASE_TYPES[type]}</button></div><span class="showcase-card-now">${Number.isFinite(v)?safe(v):'—'} <small>${safe(m.unit||'')}</small></span></div><div class="showcase-chart${fresh?' is-new':''}" id="showcase-chart-${safe(m.key)}" data-metric="${safe(m.key)}" data-chart-type="${type}"></div></section>`;}).join('')}</div>`:'<p class="dashboard-empty">请点击上方指标，选择要展示的数据。</p>'}`:'<p class="dashboard-empty">等待设备首次上报后显示指标。</p>'}</div>`;
 }
 function showcasePage(){
  const raw=companyDevices().find(d=>d.id===showcaseDeviceId);
@@ -213,7 +215,16 @@ function showcaseSync(){
   for(let i=0;i<SHOWCASE_SLOTS;i++){const val=byHour.get(start+i*3600000);if(Number.isFinite(val))values[i]=val;}
   // 整个 48 小时窗口的缺失整点都用虚拟数据补齐；后续真实整点数据到达后自动覆盖
   const cfg=typeof metricConfig==='function'?metricConfig(s,d,m):m;
-  for(let i=0;i<SHOWCASE_SLOTS;i++)if(values[i]===null)values[i]=showcaseMockValue(cfg,raw.id,start+i*3600000);
+  const mockRange=Number.isFinite(cfg.min)&&Number.isFinite(cfg.max)&&cfg.max>cfg.min;
+  for(let i=0;i<SHOWCASE_SLOTS;i++)if(values[i]===null){
+   values[i]=showcaseMockValue(cfg,raw.id,start+i*3600000);
+   // 模拟数据中预留几个异常点，便于查看异常标注效果（真实数据到达后自动覆盖）
+   if(mockRange){
+    const span=cfg.max-cfg.min;
+    if(SHOWCASE_MOCK_HIGH_SLOTS.includes(i))values[i]=Math.round((cfg.max+span*0.12)*10)/10;
+    else if(SHOWCASE_MOCK_LOW_SLOTS.includes(i))values[i]=Math.round((cfg.min-span*0.1)*10)/10;
+   }
+  }
   const v=d.values[m.key],card=el.closest('.showcase-card'),now=card?.querySelector('.showcase-card-now');
   if(now&&Number.isFinite(v)&&now.childNodes[0])now.childNodes[0].nodeValue=`${safe(v)} `; // 当前值只改文本
   const tabVal=document.querySelector(`[data-showcase-metric="${CSS.escape(m.key)}"] b`);
