@@ -162,13 +162,13 @@ function showcaseOption(metric,color,type){
   grid:{left:52,right:48,top:20,bottom:56},
   tooltip:{trigger:'axis',axisPointer:{type:type==='bar'?'shadow':'line',lineStyle:{color:'#386f52',opacity:.4}},
    backgroundColor:'#ffffff',borderColor:'#dfe5df',textStyle:{color:'#23332a',fontSize:12},
-   formatter:params=>{const list=Array.isArray(params)?params:[params],hit=list.find(p=>Number.isFinite(p.value));if(!hit)return '';return `${hit.axisValue}<br/>${hit.marker||''}${metric.name}：${hit.value} ${metric.unit||''}`;}},
+   formatter:params=>{const list=(Array.isArray(params)?params:[params]).filter(p=>Number.isFinite(p.value));if(!list.length)return '';const hit=list[list.length-1];return `${hit.axisValue}<br/>${hit.marker||''}${metric.name}：${hit.value} ${metric.unit||''}`;}},
   xAxis:{type:'category',boundaryGap:type==='bar',data:showcaseSlotLabels(showcaseWindowStart()),axisLine:{lineStyle:{color:'#cdd6cd'}},axisLabel:{color:'#7a8a7d',fontSize:10,rotate:45,interval:0,hideOverlap:false,showMinLabel:true,showMaxLabel:true},splitLine:{show:false}},
   yAxis:{type:'value',scale:true,axisLabel:{color:'#7a8a7d',fontSize:11},splitLine:{lineStyle:{color:'#eef2ee'}}},
   series:[type==='bar'
    ?{name:metric.name,type:'bar',barMaxWidth:14,itemStyle:{color,borderRadius:[4,4,0,0]},data:[]}
    :{name:metric.name,type:'line',smooth:true,showSymbol:false,symbol:'circle',symbolSize:7,data:[],lineStyle:{width:2.5,color},itemStyle:{color},areaStyle:{opacity:.08,color}},
-   type==='bar'?null:{name:`${metric.name}异常`,type:'line',smooth:true,showSymbol:false,symbol:'circle',symbolSize:8,data:[],lineStyle:{width:3,color:'#e03131'},itemStyle:{color:'#e03131'},areaStyle:{opacity:.1,color:'#e03131'},z:5}].filter(Boolean)};
+   type==='bar'?null:{name:`${metric.name}异常`,type:'line',smooth:true,showSymbol:false,data:[],lineStyle:{width:3,color:'#e03131'},itemStyle:{color:'#e03131'},areaStyle:{opacity:.1,color:'#e03131'},z:5}].filter(Boolean)};
 }
 function disposeShowcase(){
  clearInterval(showcaseState.timer);showcaseState.timer=null;
@@ -241,11 +241,11 @@ function showcaseSync(){
    chart.setOption({xAxis:{boundaryGap:true,data:labels},series:[{data:values.map(val=>({value:val,itemStyle:{color:isOut(val)?'#e03131':base}}))}]});
    return;
   }
-  // 折线：把异常点及其相邻线段拆到红色系列，其余保持主题色
-  const normal=new Array(SHOWCASE_SLOTS).fill(null),alert=new Array(SHOWCASE_SLOTS).fill(null);
+  // 折线：底层保持完整连续折线（避免断线），异常点及相邻线段用红色系列覆盖
+  const normal=values.map(val=>Number.isFinite(val)?val:null),alert=new Array(SHOWCASE_SLOTS).fill(null);
   for(let i=0;i<SHOWCASE_SLOTS;i++){
    const val=values[i];if(!Number.isFinite(val))continue;
-   if(isOut(val)||isOut(values[i-1])||isOut(values[i+1]))alert[i]=val;else normal[i]=val;
+   if(isOut(val)||isOut(values[i-1])||isOut(values[i+1]))alert[i]=val;
   }
   chart.setOption({xAxis:{boundaryGap:false,data:labels},series:[{data:normal},{data:alert}]});
  });
