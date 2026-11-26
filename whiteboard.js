@@ -146,8 +146,9 @@ function showcasePage(){
  if(!showcaseMetricKeys.length&&scene?.metrics?.length){showcaseMetricKeys=[scene.metrics[0].key];showcaseNewKey=scene.metrics[0].key;}
  return showcaseDevicePage(effective(raw));
 }
-function showcaseOption(metric,color,type){
+function showcaseOption(metric,color,type,min,max){
  type=type||'line';
+ const hasRange=Number.isFinite(min)&&Number.isFinite(max);
  if(type==='pie'){
   return {animation:false,
    tooltip:{trigger:'item',backgroundColor:'#ffffff',borderColor:'#dfe5df',textStyle:{color:'#23332a',fontSize:12},
@@ -162,13 +163,13 @@ function showcaseOption(metric,color,type){
   grid:{left:52,right:48,top:20,bottom:56},
   tooltip:{trigger:'axis',axisPointer:{type:type==='bar'?'shadow':'line',lineStyle:{color:'#386f52',opacity:.4}},
    backgroundColor:'#ffffff',borderColor:'#dfe5df',textStyle:{color:'#23332a',fontSize:12},
-   formatter:params=>{const list=(Array.isArray(params)?params:[params]).filter(p=>Number.isFinite(p.value));if(!list.length)return '';const hit=list[0];return `${hit.axisValue}<br/>${hit.marker||''}${metric.name}：${hit.value} ${metric.unit||''}`;}},
+   formatter:params=>{const list=(Array.isArray(params)?params:[params]).filter(p=>Number.isFinite(p.value));if(!list.length)return '';const hit=list[0],bad=hasRange&&(hit.value<min||hit.value>max),tone=bad?'#e03131':'#23332a';const dot=`<span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${bad?'#e03131':color};margin-right:6px"></span>`;return `<div style="color:${tone}">${hit.axisValue}<br/>${dot}${metric.name}：${hit.value} ${metric.unit||''}${bad?' <b>（超出范围）</b>':''}</div>`;}},
   xAxis:{type:'category',boundaryGap:type==='bar',data:showcaseSlotLabels(showcaseWindowStart()),axisLine:{lineStyle:{color:'#cdd6cd'}},axisLabel:{color:'#7a8a7d',fontSize:10,rotate:45,interval:0,hideOverlap:false,showMinLabel:true,showMaxLabel:true},splitLine:{show:false}},
   yAxis:{type:'value',scale:true,axisLabel:{color:'#7a8a7d',fontSize:11},splitLine:{lineStyle:{color:'#eef2ee'}}},
   series:[type==='bar'
    ?{name:metric.name,type:'bar',barMaxWidth:14,itemStyle:{color,borderRadius:[4,4,0,0]},data:[]}
-   :{name:metric.name,type:'line',smooth:true,showSymbol:false,symbol:'circle',symbolSize:7,data:[],lineStyle:{width:2.5,color},itemStyle:{color},areaStyle:{opacity:.08,color}},
-   type==='bar'?null:{name:`${metric.name}异常`,type:'line',smooth:true,showSymbol:false,data:[],lineStyle:{width:0,opacity:0},itemStyle:{color:'#e03131'},areaStyle:{opacity:.22,color:'#e03131'},z:3}].filter(Boolean)};
+   :{name:metric.name,type:'line',smooth:true,smoothMonotone:'x',showSymbol:false,symbol:'circle',symbolSize:7,data:[],lineStyle:{width:2.5,color},itemStyle:{color},areaStyle:{opacity:.08,color}},
+   type==='bar'?null:{name:`${metric.name}异常`,type:'line',smooth:true,smoothMonotone:'x',showSymbol:false,data:[],lineStyle:{width:0,opacity:0},itemStyle:{color:'#e03131'},areaStyle:{opacity:.22,color:'#e03131'},z:3}].filter(Boolean)};
 }
 function disposeShowcase(){
  clearInterval(showcaseState.timer);showcaseState.timer=null;
@@ -279,14 +280,15 @@ function bindShowcase(){
  metrics.forEach((m,idx)=>{
   const el=document.querySelector(`#showcase-chart-${CSS.escape(m.key)}`);if(!el)return;
   const color=SHOWCASE_COLORS[idx%SHOWCASE_COLORS.length];
-  const chart=echarts.init(el);chart.setOption(showcaseOption(m,color,showcaseChartType(raw.id,m.key)));showcaseState.charts.push(chart);
+  const cfg=typeof metricConfig==='function'?metricConfig(s,d,m):m;
+  const chart=echarts.init(el);chart.setOption(showcaseOption(m,color,showcaseChartType(raw.id,m.key),cfg.min,cfg.max));showcaseState.charts.push(chart);
   const sw=root.querySelector(`[data-showcase-switch="${CSS.escape(m.key)}"]`);
   if(sw)sw.onclick=()=>{
    const key=`${raw.id}|${m.key}`,cur=showcaseChartType(raw.id,m.key),next=SHOWCASE_TYPE_ORDER[(SHOWCASE_TYPE_ORDER.indexOf(cur)+1)%SHOWCASE_TYPE_ORDER.length];
    showcaseChartTypes.set(key,next);
    el.dataset.chartType=next;el.dataset.stamp='';
    sw.textContent=SHOWCASE_TYPES[next];
-   chart.setOption(showcaseOption(m,color,next),true);
+   chart.setOption(showcaseOption(m,color,next,cfg.min,cfg.max),true);
    showcaseSync();
   };
  });
