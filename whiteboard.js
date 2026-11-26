@@ -169,7 +169,7 @@ function showcaseOption(metric,color,type,min,max){
   series:[type==='bar'
    ?{name:metric.name,type:'bar',barMaxWidth:14,itemStyle:{color,borderRadius:[4,4,0,0]},data:[]}
    :{name:metric.name,type:'line',smooth:true,smoothMonotone:'x',showSymbol:false,symbol:'circle',symbolSize:7,data:[],lineStyle:{width:2.5,color},itemStyle:{color},areaStyle:{opacity:.08,color}},
-   type==='bar'?null:{name:`${metric.name}异常`,type:'line',smooth:true,smoothMonotone:'x',showSymbol:false,data:[],lineStyle:{width:0,opacity:0},itemStyle:{color:'#e03131'},areaStyle:{opacity:.22,color:'#e03131'},z:3}].filter(Boolean)};
+   type==='bar'?null:{name:`${metric.name}异常`,type:'line',showSymbol:true,symbol:'circle',symbolSize:9,data:[],lineStyle:{width:0,opacity:0},itemStyle:{color:'#e03131',borderColor:'#ffffff',borderWidth:1.5},z:5}].filter(Boolean)};
 }
 function disposeShowcase(){
  clearInterval(showcaseState.timer);showcaseState.timer=null;
@@ -242,11 +242,11 @@ function showcaseSync(){
    chart.setOption({xAxis:{boundaryGap:true,data:labels},series:[{data:values.map(val=>({value:val,itemStyle:{color:isOut(val)?'#e03131':base}}))}]});
    return;
   }
-  // 折线：底层保持完整连续折线（避免断线），异常点及相邻线段用红色系列覆盖
+  // 折线：底层保持完整连续折线，异常数据点单独用红色圆点标出
   const normal=values.map(val=>Number.isFinite(val)?val:null),alert=new Array(SHOWCASE_SLOTS).fill(null);
   for(let i=0;i<SHOWCASE_SLOTS;i++){
-   const val=values[i];if(!Number.isFinite(val))continue;
-   if(isOut(val)||isOut(values[i-1])||isOut(values[i+1]))alert[i]=val;
+   const val=values[i];
+   if(Number.isFinite(val)&&isOut(val))alert[i]=val;
   }
   chart.setOption({xAxis:{boundaryGap:false,data:labels},series:[{data:normal},{data:alert}]});
  });
