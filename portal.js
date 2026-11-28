@@ -549,15 +549,20 @@ function renderMonitor(){
  const query=historyQuery?.deviceId===d.id&&historyQuery?.userId===currentUser.id&&historyQuery?.range===monitorRange?historyQuery:null;
  return `<div class="monitor-page">${top}<section class="panel monitor-controls"><label for="monitor-device">监测设备<select id="monitor-device">${companyDevices().map(row=>`<option value="${safe(row.id)}" ${row.id===d.id?'selected':''}>${safe(effective(row).name)} · ${safe(row.id)}</option>`).join('')}</select></label>${d.cameraUrl?`<button class="secondary monitor-camera-toggle${monitorCameraOpen?' active':''}" data-monitor-camera aria-pressed="${monitorCameraOpen}">${icon('eye')} ${monitorCameraOpen?'隐藏监视画面':'显示监视画面'}</button>`:''}<div class="monitor-range" role="group" aria-label="历史时间范围">${monitorRanges.map(([seconds,text])=>`<button class="secondary ${seconds===monitorRange?'active':''}" data-monitor-range="${seconds}" aria-pressed="${seconds===monitorRange}">${text}</button>`).join('')}</div></section><div class="monitor-summary"><div><span>设备状态</span><strong><span class="badge ${color}">${label}</span></strong></div><div><span>安装位置</span><strong>${safe(d.location)}</strong></div><div><span>采样周期</span><strong>${safe(d.sampleInterval)} 秒 / 次</strong></div><div><span>异常指标</span><strong class="${warnings.length?'alert-text':''}">${d.online?warnings.length+' 项':'设备离线'}</strong></div></div>${d.cameraUrl&&monitorCameraOpen?monitorCameraPanel(d):''}<section class="panel monitor-live-panel"><div class="section-heading"><div><h2>实时采样曲线</h2><p>${safe(d.name)} · ${monitorRanges.find(([seconds])=>seconds===monitorRange)?.[1]}</p></div><span class="muted small">${d.online?'随设备上报持续更新':'设备离线 · 显示已有采样'}</span></div><div class="monitor-chart-grid">${s.metrics.map(m=>{const c=metricConfig(s,d,m),value=d.values[m.key],warning=d.online&&warnings.some(row=>row.key===m.key),count=(snapshot.history[m.key]||[]).length;return `<article class="monitor-chart-card ${warning?'is-alert':''}"><div class="monitor-chart-title"><span>${icon(m.icon)} ${safe(m.name)}</span><span class="badge ${warning?'orange':d.online?'green':'gray'}">${warning?'超出范围':d.online?'正常':'历史值'}</span></div><strong class="monitor-current ${warning?'alert-text':''}">${Number.isFinite(value)?safe(value):'—'}<small>${safe(m.unit)}</small></strong><p>${Number.isFinite(c.min)&&Number.isFinite(c.max)?`正常范围 ${safe(c.min)}–${safe(c.max)} ${safe(m.unit)}`:'尚未配置告警阈值'} · ${count} 个采样点</p>${trend(m,snapshot)}</article>`;}).join('')}</div></section>${platformBackend&&d.provisioned?`<section class="panel history-panel monitor-history"><div class="section-heading"><div><h2>历史数据</h2><p>服务器接收时间 · ${monitorRanges.find(([seconds])=>seconds===monitorRange)?.[1]}</p></div><span class="muted small">每页 200 条</span></div><div id="monitor-history-results" aria-live="polite">${query?historyResults(query):'<p class="muted">正在读取历史数据…</p>'}</div></section>`:'<p class="settings-note">静态演示显示设备已有的最近采样；启动平台服务后可查询服务器历史记录。</p>'}</div>`;
 }
-/* ===== 监测画面：按场景汇总本公司全部摄像头画面 ===== */
+/* ===== 监测画面：按安装位置汇总本公司全部摄像头画面 ===== */
 let cameraSceneKey='',cameraFocusId=null;
+function cameraLocationName(d){
+ const location=String(d.location||'').trim();
+ if(!location)return '未填写安装位置';
+ return location.split(/[·•|/]/)[0].trim()||location;
+}
 function cameraSceneGroups(){
  const groups=new Map();
  for(const raw of companyDevices()){
   const d=effective(raw);if(!d.cameraUrl)continue;
-  const key=d.workspaceSceneId||`type:${d.sceneId||'none'}`;
-  if(!groups.has(key))groups.set(key,{key,name:companyScenes.find(s=>s.id===d.workspaceSceneId)?.name||deviceScene(d)?.name||'未分组场景',devices:[]});
-  groups.get(key).devices.push(d);
+  const name=cameraLocationName(d);
+  if(!groups.has(name))groups.set(name,{key:name,name,devices:[]});
+  groups.get(name).devices.push(d);
  }
  return [...groups.values()];
 }
@@ -566,13 +571,13 @@ function cameraTile(d){
 }
 function renderCamera(){
  const groups=cameraSceneGroups();
- const top=heading('COMPANY / CAMERA MONITOR','监测画面',`${safe(company()?.name)} · 按场景查看全部摄像头画面`,'<button class="secondary" data-route="company">返回概览</button>');
- if(!groups.length)return `<div class="camera-page">${top}<section class="panel read-only-panel"><span class="feature-icon blue">${icon('camera')}</span><h2>暂无摄像头画面</h2><p>在设备配置中填写摄像头画面地址后，这里会按场景汇总显示全部画面。</p></section></div>`;
+ const top=heading('COMPANY / CAMERA MONITOR','监测画面',`${safe(company()?.name)} · 按安装位置查看全部摄像头画面`,'<button class="secondary" data-route="company">返回概览</button>');
+ if(!groups.length)return `<div class="camera-page">${top}<section class="panel read-only-panel"><span class="feature-icon blue">${icon('camera')}</span><h2>暂无摄像头画面</h2><p>在设备配置中填写摄像头画面地址后，这里会按安装位置汇总显示全部画面。</p></section></div>`;
  const current=groups.find(g=>g.key===cameraSceneKey)||groups[0];cameraSceneKey=current.key;
  const focus=current.devices.find(d=>d.id===cameraFocusId)||null;if(!focus)cameraFocusId=null;
- const tabs=`<div class="camera-scene-tabs" role="tablist" aria-label="选择场景">${groups.map(g=>`<button type="button" class="camera-scene-tab ${g.key===current.key?'active':''}" data-camera-scene="${safe(g.key)}" role="tab" aria-selected="${g.key===current.key}">${icon('environment')}${safe(g.name)}<small>${g.devices.length} 路</small></button>`).join('')}</div>`;
- const sceneBar=`<section class="panel camera-scene-panel"><span class="camera-scene-label">选择场景</span>${tabs}</section>`;
- if(focus)return `<div class="camera-page">${top}${sceneBar}<section class="panel camera-focus"><div class="camera-focus-head"><button type="button" class="secondary" data-camera-back>${icon('arrow')} 返回全部画面</button><div><strong>${safe(focus.name)}</strong><small>${safe(focus.location)}</small></div><span class="badge ${focus.online?'green':'gray'}">${focus.online?'LIVE':'设备离线'}</span></div><div class="camera-focus-frame">${monitorCameraMedia(focus.cameraUrl,focus)}</div><p class="settings-note">${focus.cameraUrl==='mock'?'当前为模拟画面，可在设备配置中填写真实摄像头地址替换。':'画面来自设备配置中的摄像头地址。'} 按 Esc 或点击上方按钮返回场景全部画面。</p></section></div>`;
+ const tabs=`<div class="camera-scene-tabs" role="tablist" aria-label="选择安装位置">${groups.map(g=>`<button type="button" class="camera-scene-tab ${g.key===current.key?'active':''}" data-camera-scene="${safe(g.key)}" role="tab" aria-selected="${g.key===current.key}">${icon('environment')}${safe(g.name)}<small>${g.devices.length} 路</small></button>`).join('')}</div>`;
+ const sceneBar=`<section class="panel camera-scene-panel"><span class="camera-scene-label">选择安装位置</span>${tabs}</section>`;
+ if(focus)return `<div class="camera-page">${top}${sceneBar}<section class="panel camera-focus"><div class="camera-focus-head"><button type="button" class="secondary" data-camera-back>${icon('arrow')} 返回全部画面</button><div><strong>${safe(focus.name)}</strong><small>${safe(focus.location)}</small></div><span class="badge ${focus.online?'green':'gray'}">${focus.online?'LIVE':'设备离线'}</span></div><div class="camera-focus-frame">${monitorCameraMedia(focus.cameraUrl,focus)}</div><p class="settings-note">${focus.cameraUrl==='mock'?'当前为模拟画面，可在设备配置中填写真实摄像头地址替换。':'画面来自设备配置中的摄像头地址。'} 按 Esc 或点击上方按钮返回该位置全部画面。</p></section></div>`;
  return `<div class="camera-page">${top}${sceneBar}<section class="panel camera-wall-panel"><div class="section-heading"><div><h2>${safe(current.name)} · 全部画面</h2><p>共 ${current.devices.length} 路摄像头，单击任一画面放大查看</p></div><span class="badge blue">${current.devices.filter(d=>d.online).length}/${current.devices.length} 路在线</span></div><div class="camera-wall">${current.devices.map(cameraTile).join('')}</div></section></div>`;
 }
 function bindCameraWall(){

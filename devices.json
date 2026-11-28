@@ -41,7 +41,7 @@
       "companyId": "company-c"
     },
     {
-      "id": "ENV-003", "sceneId": "pig-house", "name": "中部环境监测站", "location": "2 号猪舍 · 中部",
+      "id": "ENV-003", "sceneId": "pig-house", "name": "中部环境监测站", "location": "1 号猪舍 · 中部",
       "lng": 119.2114, "lat": 36.7704,
       "online": false, "sampleInterval": 60, "cameraUrl": "mock",
       "values": {"temperature": 24.3, "humidity": 60.1, "ammonia": 7.5},
@@ -78,7 +78,7 @@
       "diagnostics": [], "companyId": "company-c"
     },
     {
-      "id": "ENV-006", "sceneId": "pig-house", "name": "通风口监测站", "location": "2 号猪舍 · 通风口",
+      "id": "ENV-006", "sceneId": "pig-house", "name": "通风口监测站", "location": "1 号猪舍 · 通风口",
       "lng": 119.2142, "lat": 36.7712,
       "online": true, "sampleInterval": 60, "cameraUrl": "mock",
       "values": {"temperature": 24.0, "humidity": 54.7, "ammonia": 5.6},
@@ -90,7 +90,7 @@
       "diagnostics": [], "companyId": "company-c"
     },
     {
-      "id": "ENV-007", "sceneId": "pig-house", "name": "饲料区监测站", "location": "2 号猪舍 · 饲料区",
+      "id": "ENV-007", "sceneId": "pig-house", "name": "饲料区监测站", "location": "1 号猪舍 · 饲料区",
       "lng": 119.2085, "lat": 36.7738,
       "online": true, "sampleInterval": 60, "cameraUrl": "mock",
       "values": {"temperature": 25.7, "humidity": 61.6, "ammonia": 8.4},
@@ -102,7 +102,7 @@
       "diagnostics": [], "companyId": "company-c"
     },
     {
-      "id": "ENV-008", "sceneId": "pig-house", "name": "饮水区监测站", "location": "3 号猪舍 · 饮水区",
+      "id": "ENV-008", "sceneId": "pig-house", "name": "饮水区监测站", "location": "1 号猪舍 · 饮水区",
       "lng": 119.2121, "lat": 36.7682,
       "online": true, "sampleInterval": 60, "cameraUrl": "mock",
       "values": {"temperature": 25.1, "humidity": 58.4, "ammonia": 7.7},
@@ -114,7 +114,7 @@
       "diagnostics": [], "companyId": "company-c"
     },
     {
-      "id": "ENV-009", "sceneId": "pig-house", "name": "出入口监测站", "location": "3 号猪舍 · 出入口",
+      "id": "ENV-009", "sceneId": "pig-house", "name": "出入口监测站", "location": "1 号猪舍 · 出入口",
       "lng": 119.2153, "lat": 36.7726,
       "online": true, "sampleInterval": 60, "cameraUrl": "mock",
       "values": {"temperature": 26.5, "humidity": 63.1, "ammonia": 9.1},
