@@ -1037,3 +1037,7 @@ button.ov-metric:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(17
 .camera-wall-bar .secondary{display:inline-flex;align-items:center;gap:6px;margin:0}
 .camera-wall-crumb{color:#8ba0b5;font-size:11px}
 @media(max-width:620px){.camera-location-card{grid-template-columns:96px minmax(0,1fr) auto;gap:10px}.camera-location-grid{grid-template-columns:minmax(0,1fr)}}
+
+/* 公司管理：邀请成员与成员设备权限单列堆叠 */
+.organization-panels{display:grid;gap:14px;align-items:start}
+.organization-panels>.panel{min-width:0}
