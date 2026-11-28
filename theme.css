@@ -753,14 +753,14 @@ body{background:#f0f6f2;color:#20382e}
 .ov-metric-alerts .ov-metric-icon{background:#fff1e8;color:var(--ov-warn)}
 button.ov-metric{cursor:pointer}
 button.ov-metric:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(17,24,39,.08)}
-.ov-dash .ov-main{display:grid;grid-template-columns:repeat(24,minmax(0,1fr));gap:16px;align-items:stretch}
-.ov-left{grid-column:span 8;display:flex;flex-direction:column;gap:16px;min-width:0}
-.ov-center{grid-column:span 8;display:flex;flex-direction:column;min-width:0}
-.ov-right{grid-column:span 8;display:flex;flex-direction:column;min-width:0}
+.ov-dash .ov-main{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:stretch}
+.ov-left{grid-column:span 1;display:flex;flex-direction:column;gap:16px;min-width:0}
+.ov-right{grid-column:span 1;display:flex;flex-direction:column;min-width:0}
 .ov-left>.ov-health-slot{flex:1}
 .ov-left>.ov-health-slot>.ov-health{flex:1}
-.ov-center>#console-sampling{flex:1;display:flex;flex-direction:column;min-height:0}
-.ov-center #console-sampling>.ov-sampling{flex:1}
+/* 采样数据概览独立一行，宽度占满，指标卡片横向自适应排列 */
+.ov-sampling-row{margin-top:16px;min-width:0}
+.ov-sampling-row>.ov-sampling{width:100%}
 .ov-right>.ov-quick{flex:1}
 .ov-health-slot{display:flex!important;flex-direction:column!important;gap:16px;grid-template-columns:none!important}
 .ov-dash .console-analytics.ov-health-slot{margin-bottom:0}
@@ -822,6 +822,13 @@ button.ov-metric:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(17
 .spark-tip text{fill:#fff;font-size:13px;font-weight:600;font-family:inherit}
 .spark-empty{height:72px;display:grid;place-items:center;font-size:11px;color:#a3aca6;background:#f7f9f7;border-radius:8px}
 .ov-sample-note{font-size:10px;color:var(--ov-muted)}
+/* 采样概览：独立整行 + 指标卡片横向网格，卡片高度随内容自适应，不再压缩堆叠 */
+.ov-dash .ov-sampling-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;flex:none;min-height:0}
+.ov-dash .sampling-metric{flex:none;flex-direction:column;align-items:stretch;gap:8px;padding:12px 14px;min-height:0}
+.ov-dash .ov-metric-main{flex:0 0 auto;min-width:0;gap:2px}
+.ov-dash .ov-reading{justify-content:flex-start}
+.ov-dash .ov-metric-chart{flex:none;width:100%;height:64px;min-width:0;overflow:visible}
+.ov-dash .ov-metric-chart .spark-chart{width:100%;height:64px;max-height:64px}
 .ov-select{position:relative;display:inline-flex;align-items:center}
 .ov-select select{appearance:none;border:1px solid #e6eae7;background:#fff;color:#495057;font-size:12px;border-radius:8px;padding:7px 26px 7px 10px;max-width:170px}
 .ov-select:after{content:'';position:absolute;right:10px;top:50%;width:6px;height:6px;border-right:1.5px solid #868e96;border-bottom:1.5px solid #868e96;transform:translateY(-70%) rotate(45deg);pointer-events:none}
@@ -926,8 +933,7 @@ button.ov-metric:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(17
 .workspace.customer-console .inventory-toolbar{background:#fff;border-radius:14px;box-shadow:0 2px 10px rgba(17,24,39,.05);padding:12px 18px}
 @media(max-width:1360px){
  .ov-dash .ov-main{grid-template-columns:repeat(2,minmax(0,1fr))}
- .ov-left,.ov-center{grid-column:span 1}
- .ov-right{grid-column:span 2}
+ .ov-left,.ov-right{grid-column:span 1}
  .ov-quick-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
  .ov-quick-grid button{aspect-ratio:auto;flex-direction:row;padding:14px}
  .ov-quick-grid button>span{width:38px;height:38px;border-radius:11px}
@@ -937,7 +943,7 @@ button.ov-metric:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(17
 @media(max-width:960px){
  .ov-dash .ov-metrics{grid-template-columns:1fr}
  .ov-dash .ov-main{grid-template-columns:1fr}
- .ov-left,.ov-center,.ov-right{grid-column:auto}
+ .ov-left,.ov-right{grid-column:auto}
  .ov-quick-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
  .ov-quick-grid button{flex-direction:column}
  .ov-lower-grid{grid-template-columns:1fr}
