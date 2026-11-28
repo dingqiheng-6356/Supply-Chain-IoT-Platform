@@ -184,8 +184,9 @@ function dashboardCards(){
 function deviceCards(list){return `<div class="device-grid">${list.map(raw=>{const d=effective(raw),s=deviceScene(d),[label,color]=status(s,d);return `<button class="device-card" data-device="${safe(d.id)}"><div class="card-top"><span class="project-symbol ${s.color}">${icon('device')}</span><span class="badge ${color}"><i class="dot"></i>${label}</span></div><span class="device-code">${safe(d.id)}</span><h2>${safe(d.name)}</h2><p>${safe(d.location)}</p><div class="device-sensors">${s.metrics.map(m=>`<span class="${alarms(s,d).some(a=>a.key===m.key)&&d.online?'warning-metric':''}">${safe(m.name)}</span>`).join('')}</div><div class="device-readings">${s.metrics.map(m=>`<div class="${d.online&&alarms(s,d).some(a=>a.key===m.key)?'reading-alert':''}"><small>${safe(m.name)}</small><strong>${Number.isFinite(d.values[m.key])?safe(d.values[m.key]):'—'}<em>${safe(m.unit)}</em></strong></div>`).join('')}</div>${!d.online?`<span class="last-reading-note">${d.mqtt?'离线 / 等待新上报 · 最后接收值':'离线 · 最后一次模拟采样'}</span>`:''}<div class="device-action"><span>查看传感器数据</span>${icon('arrow')}</div></button>`;}).join('')}</div>`;}
 function workspaceSparkline(metric,d){
  const rawValues=d.history?.[metric.key]||[],rawTimes=d.historyTimes?.[metric.key]||[];
- const samples=rawValues.map((value,i)=>({value,time:rawTimes[i]})).filter(s=>Number.isFinite(s.value)).slice(-10);
+ const samples=rawValues.map((value,i)=>({value,time:rawTimes[i]})).filter(s=>Number.isFinite(s.value)).slice(-180);
  if(!samples.length)return '<div class="spark-empty">暂无历史采样</div>';
+ const dense=samples.length>60;
  const limit=d.thresholds?.[metric.key];
  const effectiveMin=Number.isFinite(limit?.min)?limit.min:metric.min;
  const effectiveMax=Number.isFinite(limit?.max)?limit.max:metric.max;
@@ -194,18 +195,18 @@ function workspaceSparkline(metric,d){
  const marked=samples.map((s,i)=>({...s,i,isAnomaly:(Number.isFinite(effectiveMin)&&s.value<effectiveMin)||(Number.isFinite(effectiveMax)&&s.value>effectiveMax)}));
  const segments=[];let cur=null;
  marked.forEach(s=>{if(!cur||cur.isAnomaly!==s.isAnomaly){cur={isAnomaly:s.isAnomaly,pts:[]};segments.push(cur);}cur.pts.push(`${x(s.i)},${y(s.value)}`);});
- const polylines=segments.filter(seg=>seg.pts.length>=2).map(seg=>`<polyline points="${seg.pts.join(' ')}" fill="none" stroke="${seg.isAnomaly?'#e03131':'#547ee8'}" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>`).join('');
+ const polylines=segments.filter(seg=>seg.pts.length>=2).map(seg=>`<polyline points="${seg.pts.join(' ')}" fill="none" stroke="${seg.isAnomaly?'#e03131':'#547ee8'}" stroke-width="${dense?2:3.5}" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>`).join('');
  const gid='spark-'+String(metric.key).replace(/[^A-Za-z0-9_-]/g,'');
  const dots=marked.map(s=>{
   const label=`${metric.name}：${s.value}${metric.unit?' '+metric.unit:''}`,time=sampleTimeLabel(s.time);
   const tipX=Math.min(76,Math.max(4,x(s.i)-120)),tipY=Math.max(2,Math.min(16,y(s.value)>60?y(s.value)-80:y(s.value)+10));
   const dotFill=s.isAnomaly?'#e03131':'#547ee8';
-  return `<g class="spark-point"><circle cx="${x(s.i)}" cy="${y(s.value)}" r="11" fill="transparent"/><circle cx="${x(s.i)}" cy="${y(s.value)}" r="3.5" fill="${dotFill}" stroke="#fff" stroke-width="1.2"/><g class="spark-tip" transform="translate(${tipX},${tipY})"><rect width="240" height="72" rx="10"/><text x="15" y="26">${safe(label)}</text><text x="15" y="50">${safe(time)}</text></g></g>`;
+  return `<g class="spark-point"><circle cx="${x(s.i)}" cy="${y(s.value)}" r="${dense?5:11}" fill="transparent"/><circle cx="${x(s.i)}" cy="${y(s.value)}" r="${dense?1.8:3.5}" fill="${dotFill}" stroke="#fff" stroke-width="1.2"/><g class="spark-tip" transform="translate(${tipX},${tipY})"><rect width="240" height="72" rx="10"/><text x="15" y="26">${safe(label)}</text><text x="15" y="50">${safe(time)}</text></g></g>`;
  }).join('');
  return `<svg class="spark-chart" viewBox="0 0 320 92" role="group" aria-label="${safe(metric.name)}最近 ${samples.length} 次采样趋势"><defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#547ee8" stop-opacity=".22"/><stop offset="1" stop-color="#547ee8" stop-opacity="0"/></linearGradient></defs><polygon points="${marked.map(s=>x(s.i)+','+y(s.value)).join(' ')} 310,92 10,92" fill="url(#${gid})"/>${polylines}${dots}</svg>`;
 }
 function fitLegacySparklines(){
- document.querySelectorAll('.company-dashboard:not(.ov-dash) .spark-chart').forEach(svg=>{
+ document.querySelectorAll('.company-dashboard .spark-chart').forEach(svg=>{
   const lines=svg.querySelectorAll('polyline'),area=svg.querySelector('polygon');if(!lines.length||!area)return;
   if(!svg.dataset.basePoints){
    svg.dataset.basePoints=JSON.stringify(Array.from(lines).map(l=>l.getAttribute('points')));svg.dataset.baseArea=area.getAttribute('points');
@@ -225,7 +226,7 @@ function scheduleLegacySparklineFit(){requestAnimationFrame(fitLegacySparklines)
 window.addEventListener('resize',scheduleLegacySparklineFit);
 const sparkChartObserver=new MutationObserver(records=>{
  const replaced=records.some(record=>Array.from(record.addedNodes).some(node=>node.nodeType===1&&(node.matches?.('.spark-chart')||node.querySelector?.('.spark-chart'))));
- if(replaced)fitLegacySparklines();
+ if(replaced)scheduleLegacySparklineFit();
 });
 sparkChartObserver.observe(app,{childList:true,subtree:true});
 let overviewDeviceId=null,overviewDeviceOpen=false;

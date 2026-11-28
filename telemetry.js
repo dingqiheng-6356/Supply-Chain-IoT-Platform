@@ -52,8 +52,8 @@ function applyTelemetry(d,row){
  for(const m of row.metrics){
   if(d.lastMessage!==row.sequence){
    const history=d.history[m.key]||[],times=history.map((_,i)=>d.historyTimes[m.key]?.[i]??null);
-   d.history[m.key]=[...history,row.values[m.key]].slice(-30);
-   d.historyTimes[m.key]=[...times,row.time||null].slice(-30);
+   d.history[m.key]=[...history,row.values[m.key]].slice(-180);
+   d.historyTimes[m.key]=[...times,row.time||null].slice(-180);
   }
  }
  d.lastMessage=row.sequence;
@@ -178,8 +178,8 @@ function liveAdvance(d){
   const history=d.history?.[metric.key]||[],times=history.map((_,index)=>d.historyTimes?.[metric.key]?.[index]??null);
   d.values[metric.key]=next;
   d.history||={};d.historyTimes||={};
-  d.history[metric.key]=[...history,next].slice(-60);
-  d.historyTimes[metric.key]=[...times,new Date(now).toISOString()].slice(-60);
+  d.history[metric.key]=[...history,next].slice(-180);
+  d.historyTimes[metric.key]=[...times,new Date(now).toISOString()].slice(-180);
  }
 }
 function livePersist(d){

@@ -822,13 +822,13 @@ button.ov-metric:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(17
 .spark-tip text{fill:#fff;font-size:13px;font-weight:600;font-family:inherit}
 .spark-empty{height:72px;display:grid;place-items:center;font-size:11px;color:#a3aca6;background:#f7f9f7;border-radius:8px}
 .ov-sample-note{font-size:10px;color:var(--ov-muted)}
-/* 采样概览：独立整行 + 指标卡片横向网格，卡片高度随内容自适应，不再压缩堆叠 */
-.ov-dash .ov-sampling-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;flex:none;min-height:0}
-.ov-dash .sampling-metric{flex:none;flex-direction:column;align-items:stretch;gap:8px;padding:12px 14px;min-height:0}
+/* 采样概览：独立整行 + 指标卡片竖列排列，图表撑满卡片可用区域，最多 180 个采样点 */
+.ov-dash .ov-sampling-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;flex:none;min-height:0}
+.ov-dash .sampling-metric{flex:none;flex-direction:column;align-items:stretch;gap:8px;padding:12px 14px;min-height:200px}
 .ov-dash .ov-metric-main{flex:0 0 auto;min-width:0;gap:2px}
 .ov-dash .ov-reading{justify-content:flex-start}
-.ov-dash .ov-metric-chart{flex:none;width:100%;height:64px;min-width:0;overflow:visible}
-.ov-dash .ov-metric-chart .spark-chart{width:100%;height:64px;max-height:64px}
+.ov-dash .ov-metric-chart{flex:1 1 auto;width:100%;height:118px;min-height:110px;min-width:0;overflow:hidden}
+.ov-dash .ov-metric-chart .spark-chart{width:100%;height:100%;max-height:none;display:block}
 .ov-select{position:relative;display:inline-flex;align-items:center}
 .ov-select select{appearance:none;border:1px solid #e6eae7;background:#fff;color:#495057;font-size:12px;border-radius:8px;padding:7px 26px 7px 10px;max-width:170px}
 .ov-select:after{content:'';position:absolute;right:10px;top:50%;width:6px;height:6px;border-right:1.5px solid #868e96;border-bottom:1.5px solid #868e96;transform:translateY(-70%) rotate(45deg);pointer-events:none}
