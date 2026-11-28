@@ -184,9 +184,9 @@ function dashboardCards(){
 function deviceCards(list){return `<div class="device-grid">${list.map(raw=>{const d=effective(raw),s=deviceScene(d),[label,color]=status(s,d);return `<button class="device-card" data-device="${safe(d.id)}"><div class="card-top"><span class="project-symbol ${s.color}">${icon('device')}</span><span class="badge ${color}"><i class="dot"></i>${label}</span></div><span class="device-code">${safe(d.id)}</span><h2>${safe(d.name)}</h2><p>${safe(d.location)}</p><div class="device-sensors">${s.metrics.map(m=>`<span class="${alarms(s,d).some(a=>a.key===m.key)&&d.online?'warning-metric':''}">${safe(m.name)}</span>`).join('')}</div><div class="device-readings">${s.metrics.map(m=>`<div class="${d.online&&alarms(s,d).some(a=>a.key===m.key)?'reading-alert':''}"><small>${safe(m.name)}</small><strong>${Number.isFinite(d.values[m.key])?safe(d.values[m.key]):'—'}<em>${safe(m.unit)}</em></strong></div>`).join('')}</div>${!d.online?`<span class="last-reading-note">${d.mqtt?'离线 / 等待新上报 · 最后接收值':'离线 · 最后一次模拟采样'}</span>`:''}<div class="device-action"><span>查看传感器数据</span>${icon('arrow')}</div></button>`;}).join('')}</div>`;}
 function workspaceSparkline(metric,d){
  const rawValues=d.history?.[metric.key]||[],rawTimes=d.historyTimes?.[metric.key]||[];
- const samples=rawValues.map((value,i)=>({value,time:rawTimes[i]})).filter(s=>Number.isFinite(s.value)).slice(-180);
+ const samples=rawValues.map((value,i)=>({value,time:rawTimes[i]})).filter(s=>Number.isFinite(s.value)).slice(-60);
  if(!samples.length)return '<div class="spark-empty">暂无历史采样</div>';
- const dense=samples.length>60;
+ const dense=samples.length>30;
  const limit=d.thresholds?.[metric.key];
  const effectiveMin=Number.isFinite(limit?.min)?limit.min:metric.min;
  const effectiveMax=Number.isFinite(limit?.max)?limit.max:metric.max;
@@ -258,7 +258,7 @@ function consoleSamplingPanel(){
  const head=`<div class="ov-card-head"><div><span class="ov-kicker">SENSOR OVERVIEW</span><h2>采样数据概览</h2></div>${picker}</div>`;
  if(!d)return `<section class="insight-panel ov-sampling">${head}<p class="dashboard-empty">尚未配置监测设备</p></section>`;
  if(!s||!s.metrics.length)return `<section class="insight-panel ov-sampling">${head}<p class="dashboard-empty">等待设备首次上报后显示指标</p></section>`;
- return `<section class="insight-panel ov-sampling">${head}<div class="ov-sampling-grid">${s.metrics.map(m=>{const warning=d.online&&alarms(s,d).some(a=>a.key===m.key),value=d.values[m.key],count=(d.history?.[m.key]||[]).filter(Number.isFinite).length;return `<div class="sampling-metric ${warning?'is-alert':''}"><div class="ov-metric-main"><span class="ov-metric-name">${icon(m.icon)} ${safe(m.name)}</span><div class="ov-reading"><strong>${Number.isFinite(value)?safe(value):'—'}</strong><small>${safe(m.unit)}</small></div><span class="ov-sample-note">最近 ${count} 次${d.mqtt?'实际':'模拟'}采样</span></div><div class="ov-metric-chart">${workspaceSparkline(m,d)}</div></div>`;}).join('')}</div><button class="dashboard-text-link" data-device="${safe(d.id)}">查看设备详情 ${icon('arrow')}</button></section>`;
+ return `<section class="insight-panel ov-sampling">${head}<div class="ov-sampling-grid">${s.metrics.map(m=>{const warning=d.online&&alarms(s,d).some(a=>a.key===m.key),value=d.values[m.key],count=Math.min(60,(d.history?.[m.key]||[]).filter(Number.isFinite).length);return `<div class="sampling-metric ${warning?'is-alert':''}"><div class="ov-metric-main"><span class="ov-metric-name">${icon(m.icon)} ${safe(m.name)}</span><div class="ov-reading"><strong>${Number.isFinite(value)?safe(value):'—'}</strong><small>${safe(m.unit)}</small></div><span class="ov-sample-note">最近 ${count} 次${d.mqtt?'实际':'模拟'}采样</span></div><div class="ov-metric-chart">${workspaceSparkline(m,d)}</div></div>`;}).join('')}</div><button class="dashboard-text-link" data-device="${safe(d.id)}">查看设备详情 ${icon('arrow')}</button></section>`;
 }
 function alarmItemHTML(m,d){
  const v=d.values[m.key];
