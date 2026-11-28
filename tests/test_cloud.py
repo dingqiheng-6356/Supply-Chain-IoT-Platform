@@ -71,20 +71,22 @@ class CloudTest(unittest.TestCase):
 
     def test_history_scope_pagination_retention_and_restart(self):
         config,_=self.make_device()
-        for i in range(45):
-            self.registry.ingest(config['id'],f'Touch_{i}'.encode())
         now=time.time()
-        first=self.registry.history(self.user,config['id'],now-60,now,limit=20)
-        second=self.registry.history(self.user,config['id'],now-60,now,before=first['nextBefore'],limit=20)
-        third=self.registry.history(self.user,config['id'],now-60,now,before=second['nextBefore'],limit=20)
+        with self.registry.connect() as db:
+            for i in range(45):
+                db.execute('INSERT INTO readings(device, received, payload) VALUES (?, ?, ?)',
+                           (config['id'], now-200+i, f'Touch_{i}'))
+        first=self.registry.history(self.user,config['id'],now-300,now,limit=20)
+        second=self.registry.history(self.user,config['id'],now-300,now,before=first['nextBefore'],limit=20)
+        third=self.registry.history(self.user,config['id'],now-300,now,before=second['nextBefore'],limit=20)
         all_rows=first['readings']+second['readings']+third['readings']
         self.assertEqual(len({r['sequence'] for r in all_rows}),45)
         self.assertIsNone(third['nextBefore'])
         self.assertEqual(first['readings'][0]['payload'],'Touch_44')
         snapshot=next(d for d in self.registry.snapshot(self.user) if d['id']==config['id'])
-        self.assertEqual(len(snapshot['readings']),30)
-        self.assertEqual(snapshot['readings'][0]['payload'],'Touch_15')
-        self.assertEqual(len(DeviceRegistry(self.root/'platform.sqlite3',self.root).history(self.user,config['id'],now-60,now,limit=100)['readings']),45)
+        self.assertEqual(len(snapshot['readings']),45)
+        self.assertEqual(snapshot['readings'][0]['payload'],'Touch_0')
+        self.assertEqual(len(DeviceRegistry(self.root/'platform.sqlite3',self.root).history(self.user,config['id'],now-300,now,limit=100)['readings']),45)
         other={'id':'other','role':'customer','companyId':'company-other'}
         with self.assertRaises(RegistryError) as failure:
             self.registry.history(other,config['id'],now-60,now)

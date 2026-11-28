@@ -149,18 +149,20 @@ class PlatformTest(unittest.TestCase):
         client.publish(config['topic'], '温度：10 ℃ 湿度：42％', qos=1).wait_for_publish(3)
         self.wait_for(lambda: len(self.readings(cookie, config['clientId'])) == 1)
         client.publish(config['topic'], '温度：11 ℃', qos=1).wait_for_publish(3)
-        self.wait_for(lambda: len(self.readings(cookie, config['clientId'])) == 2)
+        # 同一整分钟内只保留一条采样记录，后到的上报覆盖本分钟数据。
+        self.wait_for(lambda: any('11' in row['payload'] for row in self.readings(cookie, config['clientId'])))
+        self.assertEqual(len(self.readings(cookie, config['clientId'])), 1)
         with self.registry.connect() as db:
             stored = db.execute('SELECT secret_hash FROM devices WHERE id = ?', (config['clientId'],)).fetchone()[0]
         self.assertNotEqual(stored, config['password'])
         restarted = DeviceRegistry(self.root / 'platform.sqlite3', self.root)
         self.assertTrue(restarted.authenticate_device(config['clientId'], config['password']))
-        self.assertEqual(len(next(d for d in restarted.snapshot(self.registry.account('developer', '123456')) if d['id'] == config['clientId'])['readings']), 2)
+        self.assertEqual(len(next(d for d in restarted.snapshot(self.registry.account('developer', '123456')) if d['id'] == config['clientId'])['readings']), 1)
         customer = self.login('customer')
         owner = self.registry.accounts.create('grant_owner','private-password-123','公司管理员','company_admin','company-c')
         customer_user = self.registry.account('customer','123456')
         self.registry.organization.assign(owner, {'userId':customer_user['id'],'deviceIds':[config['clientId']]})
-        self.assertEqual(len(self.readings(customer, config['clientId'])), 2)
+        self.assertEqual(len(self.readings(customer, config['clientId'])), 1)
         _, failed = self.connect(config, password='wrong-secret', client_id=config['clientId'])
         self.assertTrue(failed)
 
@@ -203,13 +205,15 @@ class PlatformTest(unittest.TestCase):
         client.publish(first['topic'], '温度：22 ℃', qos=1, retain=True).wait_for_publish(3)
         # A subsequent valid message is a processing barrier for earlier publishes.
         client.publish(first['topic'], '温度：23 ℃', qos=1).wait_for_publish(3)
-        self.wait_for(lambda: len(self.readings(cookie, first['clientId'])) == 2)
+        # 保留消息不记录；同一整分钟只保留一条采样，23 ℃ 覆盖本分钟数据。
+        self.wait_for(lambda: any('23' in row['payload'] for row in self.readings(cookie, first['clientId'])))
+        self.assertEqual(len(self.readings(cookie, first['clientId'])), 1)
         self.assertEqual(self.request('POST', '/api/devices/topic-first/reset-secret', {}, cookie)[0], 200)
         client.publish(first['topic'], '温度：77 ℃', qos=1).wait_for_publish(3)
         client.disconnect()
         _, failed = self.connect(first)
         self.assertTrue(failed)
-        self.assertEqual(len(self.readings(cookie, first['clientId'])), 2)
+        self.assertEqual(len(self.readings(cookie, first['clientId'])), 1)
         self.assertEqual(self.request('POST', '/api/devices/topic-second/delete', {}, cookie)[0], 200)
         _, failed = self.connect(second)
         self.assertTrue(failed)
@@ -263,9 +267,18 @@ class PlatformTest(unittest.TestCase):
         self.assertEqual(status, 201)
         self.assertTrue(data['device']['id'].startswith('dev-'))
         device_id = data['device']['id']
-        for n in range(40):
-            self.registry.ingest(device_id, f'温度：{n} ℃'.encode())
-        self.assertEqual(len(self.readings(cookie, device_id)), 30)
+        now = time.time()
+        with self.registry.connect() as db:
+            for n in range(40):
+                db.execute('INSERT INTO readings(device, received, payload) VALUES (?, ?, ?)',
+                           (device_id, now - (40 - n) * 60, f'温度：{n} ℃'))
+        # 快照返回最近 60 条整分钟记录
+        self.assertEqual(len(self.readings(cookie, device_id)), 40)
+        for n in range(3):
+            self.registry.ingest(device_id, f'湿度：{n} %'.encode())
+        rows = self.readings(cookie, device_id)
+        self.assertEqual(len(rows), 41)
+        self.assertEqual(rows[-1]['payload'], '湿度：2 %')
         snapshot = json.dumps(self.request('GET', '/api/devices', cookie=cookie)[1])
         self.assertNotIn(data['connection']['password'], snapshot)
         self.assertNotIn('secret_hash', snapshot)

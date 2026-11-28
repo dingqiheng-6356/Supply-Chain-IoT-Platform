@@ -327,7 +327,14 @@ class DeviceRegistry:
             row = db.execute('SELECT id FROM devices WHERE id = ? AND deleted = 0', (device_id,)).fetchone()
             if not row:
                 return
-            db.execute('INSERT INTO readings(device, received, payload) VALUES (?, ?, ?)', (device_id, time.time(), text))
+            # 只记录每个整分钟的数据：同一分钟内后到的上报覆盖本分钟记录，不改动设备自身上报周期。
+            minute = math.floor(time.time() / 60) * 60
+            existing = db.execute('SELECT sequence FROM readings WHERE device=? AND received=? LIMIT 1',
+                                  (device_id, minute)).fetchone()
+            if existing:
+                db.execute('UPDATE readings SET payload=? WHERE sequence=?', (text, existing['sequence']))
+            else:
+                db.execute('INSERT INTO readings(device, received, payload) VALUES (?, ?, ?)', (device_id, minute, text))
             now=time.time()
             if now-self.last_cleanup>=3600:
                 db.execute('DELETE FROM readings WHERE received < ?', (now-self.retention_days*86400,))
@@ -420,7 +427,7 @@ class DeviceRegistry:
                             mqtt={'topic': self.topic(row['id']), 'key': json.dumps([self.topic(row['id']), ''], separators=(',', ':'))},
                             metrics=[], values={}, history={}, diagnostics=[])
                 item['readings'] = [dict(r) for r in db.execute(
-                    'SELECT sequence, received, payload FROM readings WHERE device = ? AND received >= ? ORDER BY sequence DESC LIMIT 30',
+                    'SELECT sequence, received, payload FROM readings WHERE device = ? AND received >= ? ORDER BY sequence DESC LIMIT 60',
                     (row['id'],time.time()-self.retention_days*86400))][::-1]
                 item['alertWorkflows'] = [self.alert_record(r) for r in db.execute(
                     'SELECT * FROM alert_workflows WHERE device=? ORDER BY handled_at DESC LIMIT 20', (row['id'],))]

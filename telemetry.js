@@ -48,12 +48,21 @@ function applyTelemetry(d,row){
  d.online=mqttFresh(row,d.sampleInterval);
  if(!row)return;
  d.metrics=row.metrics;d.values={...row.values};d.lastSeen=row.time;
- d.history||={};d.historyTimes||={};
+ d.history||={};d.historyTimes||={};d.historyMinutes||={};
+ const stamped=Date.parse(row.time),minute=Number.isFinite(stamped)?Math.floor(stamped/60000):null;
  for(const m of row.metrics){
   if(d.lastMessage!==row.sequence){
    const history=d.history[m.key]||[],times=history.map((_,i)=>d.historyTimes[m.key]?.[i]??null);
-   d.history[m.key]=[...history,row.values[m.key]].slice(-180);
-   d.historyTimes[m.key]=[...times,row.time||null].slice(-180);
+   // 每整分钟只记录一个采样点：同一分钟内后到的上报覆盖本分钟的数据。
+   if(minute!=null&&history.length&&d.historyMinutes[m.key]===minute){
+    const values=[...history],stamps=[...times];
+    values[values.length-1]=row.values[m.key];stamps[stamps.length-1]=row.time||null;
+    d.history[m.key]=values;d.historyTimes[m.key]=stamps;
+   }else{
+    d.history[m.key]=[...history,row.values[m.key]].slice(-180);
+    d.historyTimes[m.key]=[...times,row.time||null].slice(-180);
+    if(minute!=null)d.historyMinutes[m.key]=minute;
+   }
   }
  }
  d.lastMessage=row.sequence;
@@ -160,14 +169,14 @@ function liveSeedTimes(d,metric,now){
  if(d.historyTimes[metric.key]?.length===history.length)return;
  d.historyTimes[metric.key]=history.map((_,index)=>new Date(now-(history.length-1-index)*Math.max(5,d.sampleInterval||60)*1000).toISOString());
 }
-function liveAdvance(d){
+function liveAdvance(d,at){
  const scene=deviceScene(d);if(!scene)return;
- const now=Date.now();
+ const now=Date.now(),stamp=new Date(Number.isFinite(at)?at:now).toISOString();
  for(const metric of scene.metrics){
   const config=metricConfig(scene,d,metric),current=d.values?.[metric.key];
   if(!Number.isFinite(current))continue;
   d.liveBase||={};
-  if(!Number.isFinite(d.liveBase[metric.key])){d.liveBase[metric.key]=current;liveSeedTimes(d,metric,now);}
+  if(!Number.isFinite(d.liveBase[metric.key])){d.liveBase[metric.key]=current;liveSeedTimes(d,metric,Number.isFinite(at)?at:now);}
   const span=Number.isFinite(config.max)&&Number.isFinite(config.min)?Math.max(1,config.max-config.min):Math.max(1,Math.abs(current)*0.2);
   const drift=(d.liveBase[metric.key]-current)*0.06;
   const noise=span*(0.008+Math.random()*0.022)*(Math.random()<0.5?-1:1);
@@ -180,7 +189,7 @@ function liveAdvance(d){
   d.values[metric.key]=next;
   d.history||={};d.historyTimes||={};
   d.history[metric.key]=[...history,next].slice(-180);
-  d.historyTimes[metric.key]=[...times,new Date(now).toISOString()].slice(-180);
+  d.historyTimes[metric.key]=[...times,stamp].slice(-180);
  }
 }
 function livePersist(d){
@@ -191,12 +200,12 @@ function livePersist(d){
 function liveTick(){
  if(typeof currentUser!=='undefined'&&!currentUser&&!(typeof wbState!=='undefined'&&wbState.public))return;
  let changed=false;
- const now=Date.now();
+ const now=Date.now(),minute=Math.floor(now/60000);
  for(const d of liveDevices()){
   if(liveShouldSimulate(d)){
    liveApply(d);
-   // 模拟数据统一 1 分钟上报一次：tick 仍高频执行，只有到达采样时刻才生成新采样点。
-   if(now>=(liveNextAt.get(d.id)||0)){liveAdvance(d);livePersist(d);liveNextAt.set(d.id,now+60000);changed=true;}
+   // 模拟数据同样按整分钟记录：每分钟只生成一个采样点，时间戳取整分钟。
+   if(liveNextAt.get(d.id)!==minute){liveAdvance(d,minute*60000);livePersist(d);liveNextAt.set(d.id,minute);changed=true;}
   }else{
    liveNextAt.delete(d.id);
    if(liveStore.has(d.id))liveStore.delete(d.id);
