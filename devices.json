@@ -124,6 +124,102 @@
         "ammonia": [8.3, 8.7, 8.5, 9.0, 8.7, 9.2, 8.9, 9.1]
       },
       "diagnostics": [], "companyId": "company-c"
+    },
+    {
+      "id": "ENV-010", "sceneId": "pig-house", "name": "二号舍东侧监测站", "location": "2 号猪舍 · 东侧",
+      "lng": 119.2129, "lat": 36.7751,
+      "online": true, "sampleInterval": 60, "cameraUrl": "mock",
+      "values": {"temperature": 25.2, "humidity": 60.3, "ammonia": 8.0},
+      "history": {
+        "temperature": [24.2, 24.8, 24.4, 25.1, 24.7, 25.4, 24.9, 25.2],
+        "humidity": [58.1, 59.4, 58.6, 60.1, 59.3, 60.8, 59.8, 60.3],
+        "ammonia": [7.2, 7.6, 7.4, 7.9, 7.6, 8.1, 7.8, 8.0]
+      },
+      "diagnostics": [], "companyId": "company-c"
+    },
+    {
+      "id": "ENV-011", "sceneId": "pig-house", "name": "二号舍西侧监测站", "location": "2 号猪舍 · 西侧",
+      "lng": 119.2097, "lat": 36.7743,
+      "online": true, "sampleInterval": 60, "cameraUrl": "mock",
+      "values": {"temperature": 24.6, "humidity": 58.6, "ammonia": 7.3},
+      "history": {
+        "temperature": [23.6, 24.2, 23.8, 24.5, 24.0, 24.8, 24.3, 24.6],
+        "humidity": [56.4, 57.8, 56.9, 58.4, 57.5, 59.0, 58.1, 58.6],
+        "ammonia": [6.5, 6.9, 6.7, 7.2, 6.9, 7.4, 7.1, 7.3]
+      },
+      "diagnostics": [], "companyId": "company-c"
+    },
+    {
+      "id": "ENV-012", "sceneId": "pig-house", "name": "二号舍北侧监测站", "location": "2 号猪舍 · 北侧",
+      "lng": 119.2135, "lat": 36.7736,
+      "online": true, "sampleInterval": 60, "cameraUrl": "mock",
+      "values": {"temperature": 27.3, "humidity": 64.2, "ammonia": 10.2},
+      "history": {
+        "temperature": [26.3, 26.9, 26.5, 27.2, 26.8, 27.5, 27.0, 27.3],
+        "humidity": [61.9, 63.3, 62.4, 64.0, 63.1, 64.6, 63.7, 64.2],
+        "ammonia": [9.4, 9.8, 9.6, 10.1, 9.8, 10.3, 10.0, 10.2]
+      },
+      "diagnostics": [], "companyId": "company-c"
+    },
+    {
+      "id": "ENV-013", "sceneId": "pig-house", "name": "二号舍南侧监测站", "location": "2 号猪舍 · 南侧",
+      "lng": 119.2112, "lat": 36.7689,
+      "online": true, "sampleInterval": 60, "cameraUrl": "mock",
+      "values": {"temperature": 23.9, "humidity": 55.9, "ammonia": 5.9},
+      "history": {
+        "temperature": [22.9, 23.5, 23.1, 23.8, 23.3, 24.0, 23.6, 23.9],
+        "humidity": [53.7, 55.1, 54.2, 55.7, 54.8, 56.3, 55.4, 55.9],
+        "ammonia": [5.1, 5.5, 5.3, 5.8, 5.5, 6.0, 5.7, 5.9]
+      },
+      "diagnostics": [], "companyId": "company-c"
+    },
+    {
+      "id": "ENV-014", "sceneId": "pig-house", "name": "二号舍通风口监测站", "location": "2 号猪舍 · 通风口",
+      "lng": 119.2146, "lat": 36.7719,
+      "online": true, "sampleInterval": 60, "cameraUrl": "mock",
+      "values": {"temperature": 26.1, "humidity": 62.1, "ammonia": 8.9},
+      "history": {
+        "temperature": [25.1, 25.7, 25.3, 26.0, 25.6, 26.3, 25.8, 26.1],
+        "humidity": [59.8, 61.2, 60.3, 61.9, 61.0, 62.5, 61.6, 62.1],
+        "ammonia": [8.1, 8.5, 8.3, 8.8, 8.5, 9.0, 8.7, 8.9]
+      },
+      "diagnostics": [], "companyId": "company-c"
+    },
+    {
+      "id": "ENV-015", "sceneId": "pig-house", "name": "二号舍饲料区监测站", "location": "2 号猪舍 · 饲料区",
+      "lng": 119.2088, "lat": 36.7729,
+      "online": true, "sampleInterval": 60, "cameraUrl": "mock",
+      "values": {"temperature": 25.7, "humidity": 59.9, "ammonia": 7.8},
+      "history": {
+        "temperature": [24.7, 25.3, 24.9, 25.6, 25.2, 25.9, 25.4, 25.7],
+        "humidity": [57.6, 59.0, 58.1, 59.7, 58.8, 60.3, 59.4, 59.9],
+        "ammonia": [7.0, 7.4, 7.2, 7.7, 7.4, 7.9, 7.6, 7.8]
+      },
+      "diagnostics": [], "companyId": "company-c"
+    },
+    {
+      "id": "ENV-016", "sceneId": "pig-house", "name": "二号舍饮水区监测站", "location": "2 号猪舍 · 饮水区",
+      "lng": 119.2124, "lat": 36.7698,
+      "online": true, "sampleInterval": 60, "cameraUrl": "mock",
+      "values": {"temperature": 24.3, "humidity": 57.5, "ammonia": 6.9},
+      "history": {
+        "temperature": [23.3, 23.9, 23.5, 24.2, 23.7, 24.4, 24.0, 24.3],
+        "humidity": [55.2, 56.6, 55.7, 57.3, 56.4, 57.9, 57.0, 57.5],
+        "ammonia": [6.1, 6.5, 6.3, 6.8, 6.5, 7.0, 6.7, 6.9]
+      },
+      "diagnostics": [], "companyId": "company-c"
+    },
+    {
+      "id": "ENV-017", "sceneId": "pig-house", "name": "二号舍出入口监测站", "location": "2 号猪舍 · 出入口",
+      "lng": 119.2151, "lat": 36.7748,
+      "online": true, "sampleInterval": 60, "cameraUrl": "mock",
+      "values": {"temperature": 27.0, "humidity": 62.8, "ammonia": 9.6},
+      "history": {
+        "temperature": [26.0, 26.6, 26.2, 26.9, 26.5, 27.2, 26.7, 27.0],
+        "humidity": [60.5, 61.9, 61.0, 62.6, 61.7, 63.2, 62.3, 62.8],
+        "ammonia": [8.8, 9.2, 9.0, 9.5, 9.2, 9.7, 9.4, 9.6]
+      },
+      "diagnostics": [], "companyId": "company-c"
     }
   ]
 }

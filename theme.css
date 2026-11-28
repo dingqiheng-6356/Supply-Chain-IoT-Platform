@@ -1015,3 +1015,25 @@ button.ov-metric:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(17
 .camera-focus .settings-note{margin:12px 0 0}
 @media(max-width:960px){.camera-wall{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}}
 @media(max-width:620px){.camera-wall{grid-template-columns:minmax(0,1fr)}.camera-focus-head{gap:10px}.camera-focus-head .badge{margin-left:0}.camera-scene-panel{gap:10px}}
+
+/* ===== 监测画面：先选择安装位置 ===== */
+.camera-locations{padding:18px}
+.camera-locations>.section-heading{align-items:flex-start}
+.camera-locations>.section-heading p{margin:6px 0 0;color:#8ba0b5;font-size:11px}
+.camera-location-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:14px;margin-top:14px}
+.camera-location-card{position:relative;display:grid;grid-template-columns:132px minmax(0,1fr) auto;align-items:center;gap:14px;padding:10px;border:1px solid #123a2c;border-radius:12px;background:#0b1a14;text-align:left;cursor:pointer;transition:transform .16s,box-shadow .16s,border-color .16s}
+.camera-location-card:hover{transform:translateY(-2px);border-color:#57e39b73;box-shadow:0 14px 26px #0b2b4024}
+.camera-location-card:focus-visible{outline:2px solid #287cf0;outline-offset:2px}
+.camera-location-thumb{position:relative;display:block;aspect-ratio:16/10;border-radius:8px;overflow:hidden;background:#0d1a15}
+.camera-location-thumb img,.camera-location-thumb video,.camera-location-thumb iframe{width:100%;height:100%;object-fit:cover;border:0;background:#0d1a15;pointer-events:none}
+.camera-location-thumb .monitor-camera-mock .cam-mock-caption strong{font-size:11px;letter-spacing:0}
+.camera-location-thumb .monitor-camera-mock .cam-mock-caption small{display:none}
+.camera-location-thumb .cam-mock-rec,.camera-location-thumb .cam-mock-tag{display:none}
+.camera-location-meta{display:grid;gap:6px;min-width:0}
+.camera-location-meta strong{color:#e8f4ec;font-size:15px;font-weight:600}
+.camera-location-meta small{color:#87a89a;font-size:11px}
+.camera-location-go{display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:#14352a;color:#7fd3a5}
+.camera-wall-bar{display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap}
+.camera-wall-bar .secondary{display:inline-flex;align-items:center;gap:6px;margin:0}
+.camera-wall-crumb{color:#8ba0b5;font-size:11px}
+@media(max-width:620px){.camera-location-card{grid-template-columns:96px minmax(0,1fr) auto;gap:10px}.camera-location-grid{grid-template-columns:minmax(0,1fr)}}

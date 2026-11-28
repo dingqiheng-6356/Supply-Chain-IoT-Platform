@@ -569,21 +569,29 @@ function cameraSceneGroups(){
 function cameraTile(d){
  return `<button type="button" class="camera-tile ${d.online?'is-live':'is-offline'}" data-camera-focus="${safe(d.id)}" aria-label="放大查看 ${safe(d.name)} 监视画面"><span class="camera-tile-media">${monitorCameraMedia(d.cameraUrl,d)}</span><span class="camera-tile-meta"><strong>${safe(d.name)}</strong><small>${safe(d.location)}</small></span><span class="camera-tile-state badge ${d.online?'green':'gray'}">${d.online?'LIVE':'离线'}</span></button>`;
 }
+function cameraLocationCard(g){
+ const first=g.devices[0],online=g.devices.filter(d=>d.online).length;
+ return `<button type="button" class="camera-location-card" data-camera-scene="${safe(g.key)}"><span class="camera-location-thumb">${first?monitorCameraMedia(first.cameraUrl,first):''}</span><span class="camera-location-meta"><strong>${safe(g.name)}</strong><small>${g.devices.length} 路摄像头 · ${online} 路在线</small></span><span class="camera-location-go">${icon('arrow')}</span></button>`;
+}
 function renderCamera(){
  const groups=cameraSceneGroups();
- const top=heading('COMPANY / CAMERA MONITOR','监测画面',`${safe(company()?.name)} · 按安装位置查看全部摄像头画面`,'<button class="secondary" data-route="company">返回概览</button>');
+ const top=heading('COMPANY / CAMERA MONITOR','监测画面',`${safe(company()?.name)} · 先选择安装位置，再查看该位置的全部摄像头画面`,'<button class="secondary" data-route="company">返回概览</button>');
  if(!groups.length)return `<div class="camera-page">${top}<section class="panel read-only-panel"><span class="feature-icon blue">${icon('camera')}</span><h2>暂无摄像头画面</h2><p>在设备配置中填写摄像头画面地址后，这里会按安装位置汇总显示全部画面。</p></section></div>`;
- const current=groups.find(g=>g.key===cameraSceneKey)||groups[0];cameraSceneKey=current.key;
+ const current=groups.find(g=>g.key===cameraSceneKey)||null;
+ if(!current){
+  cameraSceneKey='';cameraFocusId=null;
+  return `<div class="camera-page">${top}<section class="panel camera-locations"><div class="section-heading"><div><h2>选择安装位置</h2><p>共 ${groups.length} 个位置 · ${groups.reduce((total,g)=>total+g.devices.length,0)} 路摄像头，选择后查看该位置全部画面</p></div></div><div class="camera-location-grid">${groups.map(cameraLocationCard).join('')}</div></section></div>`;
+ }
  const focus=current.devices.find(d=>d.id===cameraFocusId)||null;if(!focus)cameraFocusId=null;
- const tabs=`<div class="camera-scene-tabs" role="tablist" aria-label="选择安装位置">${groups.map(g=>`<button type="button" class="camera-scene-tab ${g.key===current.key?'active':''}" data-camera-scene="${safe(g.key)}" role="tab" aria-selected="${g.key===current.key}">${icon('environment')}${safe(g.name)}<small>${g.devices.length} 路</small></button>`).join('')}</div>`;
- const sceneBar=`<section class="panel camera-scene-panel"><span class="camera-scene-label">选择安装位置</span>${tabs}</section>`;
- if(focus)return `<div class="camera-page">${top}${sceneBar}<section class="panel camera-focus"><div class="camera-focus-head"><button type="button" class="secondary" data-camera-back>${icon('arrow')} 返回全部画面</button><div><strong>${safe(focus.name)}</strong><small>${safe(focus.location)}</small></div><span class="badge ${focus.online?'green':'gray'}">${focus.online?'LIVE':'设备离线'}</span></div><div class="camera-focus-frame">${monitorCameraMedia(focus.cameraUrl,focus)}</div><p class="settings-note">${focus.cameraUrl==='mock'?'当前为模拟画面，可在设备配置中填写真实摄像头地址替换。':'画面来自设备配置中的摄像头地址。'} 按 Esc 或点击上方按钮返回该位置全部画面。</p></section></div>`;
- return `<div class="camera-page">${top}${sceneBar}<section class="panel camera-wall-panel"><div class="section-heading"><div><h2>${safe(current.name)} · 全部画面</h2><p>共 ${current.devices.length} 路摄像头，单击任一画面放大查看</p></div><span class="badge blue">${current.devices.filter(d=>d.online).length}/${current.devices.length} 路在线</span></div><div class="camera-wall">${current.devices.map(cameraTile).join('')}</div></section></div>`;
+ const wallBar=`<div class="camera-wall-bar"><button type="button" class="secondary" data-camera-scenes>${icon('grid')} 选择其它位置</button><span class="camera-wall-crumb">${safe(current.name)} · ${current.devices.length} 路摄像头</span></div>`;
+ if(focus)return `<div class="camera-page">${top}<section class="panel camera-focus">${wallBar}<div class="camera-focus-head"><button type="button" class="secondary" data-camera-back>${icon('arrow')} 返回全部画面</button><div><strong>${safe(focus.name)}</strong><small>${safe(focus.location)}</small></div><span class="badge ${focus.online?'green':'gray'}">${focus.online?'LIVE':'设备离线'}</span></div><div class="camera-focus-frame">${monitorCameraMedia(focus.cameraUrl,focus)}</div><p class="settings-note">${focus.cameraUrl==='mock'?'当前为模拟画面，可在设备配置中填写真实摄像头地址替换。':'画面来自设备配置中的摄像头地址。'} 按 Esc 或点击上方按钮返回该位置全部画面。</p></section></div>`;
+ return `<div class="camera-page">${top}<section class="panel camera-wall-panel">${wallBar}<div class="section-heading"><div><h2>${safe(current.name)} · 全部画面</h2><p>共 ${current.devices.length} 路摄像头，单击任一画面放大查看</p></div><span class="badge blue">${current.devices.filter(d=>d.online).length}/${current.devices.length} 路在线</span></div><div class="camera-wall">${current.devices.map(cameraTile).join('')}</div></section></div>`;
 }
 function bindCameraWall(){
- document.querySelectorAll('[data-camera-scene]').forEach(button=>button.onclick=()=>{cameraSceneKey=button.dataset.cameraScene;cameraFocusId=null;render();});
+ document.querySelectorAll('[data-camera-scene]').forEach(button=>button.onclick=()=>{cameraSceneKey=button.dataset.cameraScene;cameraFocusId=null;render();window.scrollTo(0,0);});
  document.querySelectorAll('[data-camera-focus]').forEach(button=>button.onclick=()=>{cameraFocusId=button.dataset.cameraFocus;render();window.scrollTo(0,0);});
  const back=document.querySelector('[data-camera-back]');if(back)back.onclick=()=>{cameraFocusId=null;render();};
+ const toScenes=document.querySelector('[data-camera-scenes]');if(toScenes)toScenes.onclick=()=>{cameraSceneKey='';cameraFocusId=null;render();window.scrollTo(0,0);};
 }
 document.addEventListener('keydown',event=>{if(event.key==='Escape'&&view==='camera'&&cameraFocusId){cameraFocusId=null;render();}},true);
 function startMonitorHistory(){
