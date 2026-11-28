@@ -16,6 +16,7 @@ const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'
 Object.assign(paths, {
  truck:'<path d="M3 6h11v11H3zM14 10h4l3 4v3h-7"/><circle cx="7" cy="18" r="2"/><circle cx="18" cy="18" r="2"/>',
  environment:'<path d="M4 19V9l8-6 8 6v10H4Zm4 0v-6h8v6"/><path d="M9 8h6"/>',
+ camera:'<rect x="2.5" y="6" width="13" height="12" rx="2.5"/><path d="m15.5 12 6-4v8l-6-4Z"/>',
  temperature:'<path d="M9 14V5a3 3 0 0 1 6 0v9a5 5 0 1 1-6 0Z"/><path d="M12 8v10"/>',
  humidity:'<path d="M12 2S4 11 4 15a8 8 0 0 0 16 0c0-4-8-13-8-13Z"/><path d="M8 15a4 4 0 0 0 4 4"/>',
  power:'<path d="m13 2-9 12h7l-1 8 10-13h-7z"/>',

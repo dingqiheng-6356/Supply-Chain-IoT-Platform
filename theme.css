@@ -969,3 +969,49 @@ button.ov-metric:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(17
 .ov-dev-home .settings-actions{margin-top:14px}
 @media(max-width:1360px){.ov-dev-main,.ov-dev-side{grid-column:span 24}}
 
+
+/* ===== 监测画面：按场景汇总的摄像头墙 ===== */
+.camera-page{display:grid;gap:14px}
+.camera-scene-panel{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:16px 18px}
+.camera-scene-label{color:#738da7;font-size:11px;letter-spacing:.5px}
+.camera-scene-tabs{display:flex;gap:10px;flex-wrap:wrap}
+.camera-scene-tab{display:inline-flex;align-items:center;gap:8px;padding:9px 16px;border:1px solid #e2ebf5;border-radius:999px;background:#fff;color:#4b6a88;font-size:12px;cursor:pointer;transition:background .15s,border-color .15s,color .15s,box-shadow .15s}
+.camera-scene-tab .icon{width:16px;height:16px}
+.camera-scene-tab small{color:#8ba1b6;font-size:10px}
+.camera-scene-tab:hover{border-color:#bcd4ec}
+.camera-scene-tab.active{background:#287cf0;border-color:#287cf0;color:#fff;box-shadow:0 6px 16px #287cf026}
+.camera-scene-tab.active small{color:#dbe8ff}
+.camera-wall-panel{padding:16px}
+.camera-wall-panel>.section-heading{align-items:flex-start}
+.camera-wall-panel>.section-heading p{margin:6px 0 0;color:#8ba0b5;font-size:11px}
+.camera-wall{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px;margin-top:14px}
+.camera-tile{position:relative;display:block;padding:0;border:1px solid #123a2c;border-radius:10px;overflow:hidden;background:#0b1a14;cursor:zoom-in;text-align:left;transition:transform .16s,box-shadow .16s,border-color .16s}
+.camera-tile:hover{transform:translateY(-2px);border-color:#57e39b73;box-shadow:0 14px 26px #0b2b4024}
+.camera-tile:focus-visible{outline:2px solid #287cf0;outline-offset:2px}
+.camera-tile-media{position:relative;display:block;aspect-ratio:16/9;overflow:hidden;background:#0d1a15}
+.camera-tile-media img,.camera-tile-media video,.camera-tile-media iframe{width:100%;height:100%;object-fit:cover;border:0;background:#0d1a15;pointer-events:none}
+.camera-tile-media.is-error img{display:none}
+.camera-tile-media.is-error:after{content:'画面加载失败';position:absolute;inset:0;display:grid;place-items:center;color:#c9d8cd;font-size:11px}
+.camera-tile-media .monitor-camera-mock .cam-mock-caption strong{font-size:13px;letter-spacing:.5px}
+.camera-tile-media .monitor-camera-mock .cam-mock-caption small{margin-top:5px;font-size:10px}
+.camera-tile-media .cam-mock-rec{top:8px;left:9px;font-size:9px}
+.camera-tile-media .cam-mock-tag{top:8px;right:9px;padding:2px 7px;font-size:8px}
+.camera-tile-meta{display:block;padding:9px 11px 10px;background:#0f241c}
+.camera-tile-meta strong{display:block;color:#e8f4ec;font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.camera-tile-meta small{display:block;margin-top:3px;color:#87a89a;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.camera-tile-state{position:absolute;top:8px;right:8px;z-index:3;display:none}
+.camera-tile.is-offline{filter:saturate(.5)}
+.camera-tile.is-offline:after{content:'离线';position:absolute;top:8px;right:8px;z-index:3;padding:2px 8px;border-radius:999px;background:#1d2a24cc;color:#9fb4ab;font-size:9px}
+.camera-focus{padding:16px}
+.camera-focus-head{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:12px}
+.camera-focus-head>div{display:grid;gap:3px}
+.camera-focus-head strong{color:#345675;font-size:14px}
+.camera-focus-head small{color:#8ba0b5;font-size:11px}
+.camera-focus-head .badge{margin-left:auto}
+.camera-focus-frame{position:relative;display:grid;place-items:center;aspect-ratio:16/9;max-height:72vh;background:#0d1a15;border-radius:10px;overflow:hidden}
+.camera-focus-frame img,.camera-focus-frame video,.camera-focus-frame iframe{width:100%;height:100%;object-fit:contain;border:0;background:#0d1a15}
+.camera-focus-frame.is-error img{display:none}
+.camera-focus-frame.is-error:after{content:'画面加载失败，请检查摄像头地址与网络';position:absolute;color:#c9d8cd;font-size:13px}
+.camera-focus .settings-note{margin:12px 0 0}
+@media(max-width:960px){.camera-wall{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}}
+@media(max-width:620px){.camera-wall{grid-template-columns:minmax(0,1fr)}.camera-focus-head{gap:10px}.camera-focus-head .badge{margin-left:0}.camera-scene-panel{gap:10px}}
