@@ -18,7 +18,7 @@
     {
       "id": "ENV-001", "sceneId": "pig-house", "name": "东侧环境监测站", "location": "1 号猪舍 · 东侧",
       "lng": 119.2132, "lat": 36.7731,
-      "online": true, "sampleInterval": 30,
+      "online": true, "sampleInterval": 60,
       "values": {"temperature": 25.6, "humidity": 62.4, "ammonia": 8.2},
       "history": {
         "temperature": [22.8, 23.8, 23.0, 24.8, 24.3, 26.1, 25.1, 25.6],
@@ -30,7 +30,7 @@
     {
       "id": "ENV-002", "sceneId": "pig-house", "name": "西侧环境监测站", "location": "1 号猪舍 · 西侧",
       "lng": 119.2098, "lat": 36.7722,
-      "online": true, "sampleInterval": 30,
+      "online": true, "sampleInterval": 60,
       "values": {"temperature": 28.1, "humidity": 68.5, "ammonia": 23.6},
       "history": {
         "temperature": [25.0, 26.1, 25.3, 27.3, 26.7, 28.7, 27.5, 28.1],
@@ -43,7 +43,7 @@
     {
       "id": "ENV-003", "sceneId": "pig-house", "name": "中部环境监测站", "location": "2 号猪舍 · 中部",
       "lng": 119.2114, "lat": 36.7704,
-      "online": false, "sampleInterval": 30,
+      "online": false, "sampleInterval": 60,
       "values": {"temperature": 24.3, "humidity": 60.1, "ammonia": 7.5},
       "history": {
         "temperature": [21.6, 22.6, 21.9, 23.6, 23.1, 24.8, 23.8, 24.3],

@@ -193,7 +193,7 @@ class WhiteboardStore:
                 readings = [dict(r) for r in db.execute(
                     'SELECT sequence,received,payload FROM readings WHERE device=? ORDER BY sequence DESC LIMIT 30', (device['id'],))][::-1]
                 result['devices'].append({'id': device['id'], 'name': config.get('name', device['id']),
-                    'location': config.get('location', ''), 'sampleInterval': config.get('sampleInterval', 30),
+                    'location': config.get('location', ''), 'sampleInterval': config.get('sampleInterval', 60),
                     'sceneId': config.get('sceneId'), 'demo': config.get('demo') is True,
                     'demoOnline': config.get('demoOnline') is not False, 'readings': readings})
             return result

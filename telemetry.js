@@ -9,7 +9,7 @@ const deviceScene=d=>{
   return {...configured,...metric,min:configured?.min,max:configured?.max};
  })};
 };
-const mqttFresh=(row,interval=30)=>!!row&&!row.retained&&Number.isFinite(Date.parse(row.time))&&Date.now()-Date.parse(row.time)<Math.max(15000,interval*3000);
+const mqttFresh=(row,interval=60)=>!!row&&!row.retained&&Number.isFinite(Date.parse(row.time))&&Date.now()-Date.parse(row.time)<Math.max(15000,interval*3000);
 function parseTelemetry(text){
  const metrics=[],values=Object.create(null);
  const aliases={temperature:['temperature','温度','℃'],temp:['temperature','温度','℃'],'温度':['temperature','温度','℃'],humidity:['humidity','湿度','%'],'湿度':['humidity','湿度','%'],ammonia:['ammonia','氨气浓度','ppm'],nh3:['ammonia','氨气浓度','ppm'],'氨气':['ammonia','氨气浓度','ppm'],'氨气浓度':['ammonia','氨气浓度','ppm']};
@@ -120,6 +120,7 @@ function syncMqttPolling(){
 }
 /* ===== 实时演示数据：真实上报优先，未被真实数据覆盖的演示设备持续平滑变化 ===== */
 const liveStore=new Map();
+const liveNextAt=new Map();
 let liveTimer=null;
 function liveDemoBase(d){
  if(typeof baseDevices==='undefined'||!Array.isArray(baseDevices))return null;
@@ -157,7 +158,7 @@ function liveSeedTimes(d,metric,now){
  const history=d.history?.[metric.key]||[];
  d.historyTimes||={};
  if(d.historyTimes[metric.key]?.length===history.length)return;
- d.historyTimes[metric.key]=history.map((_,index)=>new Date(now-(history.length-1-index)*Math.max(5,d.sampleInterval||30)*1000).toISOString());
+ d.historyTimes[metric.key]=history.map((_,index)=>new Date(now-(history.length-1-index)*Math.max(5,d.sampleInterval||60)*1000).toISOString());
 }
 function liveAdvance(d){
  const scene=deviceScene(d);if(!scene)return;
@@ -190,9 +191,16 @@ function livePersist(d){
 function liveTick(){
  if(typeof currentUser!=='undefined'&&!currentUser&&!(typeof wbState!=='undefined'&&wbState.public))return;
  let changed=false;
+ const now=Date.now();
  for(const d of liveDevices()){
-  if(liveShouldSimulate(d)){liveApply(d);liveAdvance(d);livePersist(d);changed=true;}
-  else if(liveStore.has(d.id))liveStore.delete(d.id);
+  if(liveShouldSimulate(d)){
+   liveApply(d);
+   // 模拟数据统一 1 分钟上报一次：tick 仍高频执行，只有到达采样时刻才生成新采样点。
+   if(now>=(liveNextAt.get(d.id)||0)){liveAdvance(d);livePersist(d);liveNextAt.set(d.id,now+60000);changed=true;}
+  }else{
+   liveNextAt.delete(d.id);
+   if(liveStore.has(d.id))liveStore.delete(d.id);
+  }
  }
  if(changed&&typeof refreshLiveView==='function')refreshLiveView();
 }

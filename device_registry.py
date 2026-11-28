@@ -136,7 +136,7 @@ class DeviceRegistry:
                 raise RegistryError(f'请填写有效的设备名称和安装位置（最多 {limit} 字）。')
             config[key] = value.strip()
         config.update(self.coordinates(data.get('lng'), data.get('lat')))
-        interval = data.get('sampleInterval', 30)
+        interval = data.get('sampleInterval', 60)
         try:
             number = float(interval)
             if isinstance(interval, bool) or not number.is_integer() or not 1 <= number <= 3600:
@@ -372,7 +372,7 @@ class DeviceRegistry:
                      self.digest(secrets.token_urlsafe(32))))
                 if not cursor.rowcount:
                     continue
-                interval = raw.get('sampleInterval', 30)
+                interval = raw.get('sampleInterval', 60)
                 history = raw.get('history', {})
                 count = max([len(series) for series in history.values()
                              if isinstance(series, list)] + [1])
